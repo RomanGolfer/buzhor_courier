@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:ui';
 import 'dart:math' as math;
 
 void main() {
@@ -38,12 +37,12 @@ class BubblePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     for (final b in bubbles) {
       final paint = Paint()
-        ..color = const Color(0xFF5BB8F5).withOpacity(b.opacity)
+        ..color = const Color(0xFF5BB8F5).withValues(alpha: b.opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2;
       canvas.drawCircle(Offset(b.x * size.width, b.y * size.height), b.size, paint);
       final innerPaint = Paint()
-        ..color = const Color(0xFF5BB8F5).withOpacity(b.opacity * 0.15)
+        ..color = const Color(0xFF5BB8F5).withValues(alpha: b.opacity * 0.15)
         ..style = PaintingStyle.fill;
       canvas.drawCircle(Offset(b.x * size.width, b.y * size.height), b.size, innerPaint);
     }
@@ -176,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(width: 30, height: 1, color: const Color(0xFF5BB8F5).withOpacity(0.5)),
+                            Container(width: 30, height: 1, color: const Color(0xFF5BB8F5).withValues(alpha: 128)),
                             const SizedBox(width: 10),
                             const Text(
                               'КУРЬЕРСКОЕ ПРИЛОЖЕНИЕ',
@@ -188,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Container(width: 30, height: 1, color: const Color(0xFF5BB8F5).withOpacity(0.5)),
+                            Container(width: 30, height: 1, color: const Color(0xFF5BB8F5).withValues(alpha: 128)),
                           ],
                         ),
                       ],
@@ -202,11 +201,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           // Draggable bottom sheet
           DraggableScrollableSheet(
             controller: _sheetController,
-            initialChildSize: 0.48,
-            minChildSize: 0.48,
+            initialChildSize: 0.50,
+            minChildSize: 0.50,
             maxChildSize: 1.0,
             snap: true,
-            snapSizes: const [0.48, 1.0],
+            snapSizes: const [0.50, 1.0],
             builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
@@ -228,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(
                       28, 16, 28,
-                      MediaQuery.of(context).viewInsets.bottom + 40,
+                      MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 100,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -335,7 +334,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFE8720C).withOpacity(0.45),
+                                  color: const Color(0xFFE8720C).withValues(alpha: 115),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -365,7 +364,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         Text(
                           'Бужор · Анапа',
                           style: TextStyle(
-                            color: const Color(0xFF6B8CAE).withOpacity(0.6),
+                            color: const Color(0xFF6B8CAE).withValues(alpha: 153),
                             fontSize: 11,
                             letterSpacing: 1,
                           ),
@@ -417,7 +416,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           decoration: InputDecoration(
             labelText: label,
             hintText: hint,
-            hintStyle: TextStyle(color: const Color(0xFF6B8CAE).withOpacity(0.5)),
+            hintStyle: TextStyle(color: const Color(0xFF6B8CAE).withValues(alpha: 128)),
             labelStyle: TextStyle(
               color: focused ? const Color(0xFF1B5FA8) : const Color(0xFF6B8CAE),
               fontWeight: focused ? FontWeight.w600 : FontWeight.normal,
