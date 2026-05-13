@@ -12,12 +12,20 @@ class BubblePainter extends CustomPainter {
         ..color = const Color(0xFF5BB8F5).withValues(alpha: b.opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2;
-      canvas.drawCircle(Offset(b.x * size.width, b.y * size.height), b.size, paint);
+      canvas.drawCircle(
+        Offset(b.x * size.width, b.y * size.height),
+        b.size,
+        paint,
+      );
 
       final innerPaint = Paint()
         ..color = const Color(0xFF5BB8F5).withValues(alpha: b.opacity * 0.15)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(b.x * size.width, b.y * size.height), b.size, innerPaint);
+      canvas.drawCircle(
+        Offset(b.x * size.width, b.y * size.height),
+        b.size,
+        innerPaint,
+      );
     }
   }
 

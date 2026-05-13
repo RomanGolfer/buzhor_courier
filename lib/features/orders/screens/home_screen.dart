@@ -1,7 +1,7 @@
+import 'package:buzhor_courier/screens/route_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
-import 'route_screen.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 
@@ -41,17 +41,17 @@ class OrderItem {
   });
 
   OrderItem copyWith({bool? isDone}) => OrderItem(
-        id: id,
-        clientName: clientName,
-        address: address,
-        district: district,
-        price: price,
-        payment: payment,
-        bottles: bottles,
-        lat: lat,
-        lng: lng,
-        isDone: isDone ?? this.isDone,
-      );
+    id: id,
+    clientName: clientName,
+    address: address,
+    district: district,
+    price: price,
+    payment: payment,
+    bottles: bottles,
+    lat: lat,
+    lng: lng,
+    isDone: isDone ?? this.isDone,
+  );
 }
 
 class HomeScreen extends StatefulWidget {
@@ -66,11 +66,7 @@ class TimeSlot {
   final List<OrderItem> orders;
   bool isExpanded;
 
-  TimeSlot({
-    required this.label,
-    required this.orders,
-    this.isExpanded = true,
-  });
+  TimeSlot({required this.label, required this.orders, this.isExpanded = true});
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -91,46 +87,83 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _allOrders = [
     OrderItem(
-      id: '#4821', clientName: 'Иванова Марина',
-      address: 'ул. Крымская, 45, кв. 12', district: 'Центр',
-      price: 840, payment: PaymentType.card, bottles: 3,
-      lat: 44.8951, lng: 37.3168,
+      id: '#4821',
+      clientName: 'Иванова Марина',
+      address: 'ул. Крымская, 45, кв. 12',
+      district: 'Центр',
+      price: 840,
+      payment: PaymentType.card,
+      bottles: 3,
+      lat: 44.8951,
+      lng: 37.3168,
     ),
     OrderItem(
-      id: '#4822', clientName: 'Петров Александр',
-      address: 'ул. Набережная, 18', district: 'Горгиппия',
-      price: 560, payment: PaymentType.cash, bottles: 2,
-      lat: 44.8883, lng: 37.3082,
+      id: '#4822',
+      clientName: 'Петров Александр',
+      address: 'ул. Набережная, 18',
+      district: 'Горгиппия',
+      price: 560,
+      payment: PaymentType.cash,
+      bottles: 2,
+      lat: 44.8883,
+      lng: 37.3082,
     ),
     OrderItem(
-      id: '#4823', clientName: 'Смирнова Елена',
-      address: 'ул. Ленина, 102, кв. 3', district: 'Центр',
-      price: 1120, payment: PaymentType.qr, bottles: 4,
-      lat: 44.8932, lng: 37.3195,
+      id: '#4823',
+      clientName: 'Смирнова Елена',
+      address: 'ул. Ленина, 102, кв. 3',
+      district: 'Центр',
+      price: 1120,
+      payment: PaymentType.qr,
+      bottles: 4,
+      lat: 44.8932,
+      lng: 37.3195,
     ),
     OrderItem(
-      id: '#4824', clientName: 'ООО «Рассвет»',
-      address: 'ул. Шевченко, 7', district: 'Пром. зона',
-      price: 2800, payment: PaymentType.contract, bottles: 10,
-      lat: 44.9021, lng: 37.3378, isDone: true,
+      id: '#4824',
+      clientName: 'ООО «Рассвет»',
+      address: 'ул. Шевченко, 7',
+      district: 'Пром. зона',
+      price: 2800,
+      payment: PaymentType.contract,
+      bottles: 10,
+      lat: 44.9021,
+      lng: 37.3378,
+      isDone: true,
     ),
     OrderItem(
-      id: '#4825', clientName: 'Козлов Дмитрий',
-      address: 'ул. Советская, 23, кв. 8', district: 'Восток',
-      price: 280, payment: PaymentType.online, bottles: 1,
-      lat: 44.8975, lng: 37.3298,
+      id: '#4825',
+      clientName: 'Козлов Дмитрий',
+      address: 'ул. Советская, 23, кв. 8',
+      district: 'Восток',
+      price: 280,
+      payment: PaymentType.online,
+      bottles: 1,
+      lat: 44.8975,
+      lng: 37.3298,
     ),
     OrderItem(
-      id: '#4826', clientName: 'Фёдорова Анна',
-      address: 'пер. Морской, 6, кв. 15', district: 'Центр',
-      price: 560, payment: PaymentType.card, bottles: 2,
-      lat: 44.8906, lng: 37.3128, isDone: true,
+      id: '#4826',
+      clientName: 'Фёдорова Анна',
+      address: 'пер. Морской, 6, кв. 15',
+      district: 'Центр',
+      price: 560,
+      payment: PaymentType.card,
+      bottles: 2,
+      lat: 44.8906,
+      lng: 37.3128,
+      isDone: true,
     ),
     OrderItem(
-      id: '#4827', clientName: 'Захаров Игорь',
-      address: 'ул. Горького, 34, кв. 7', district: 'Восток',
-      price: 840, payment: PaymentType.cash, bottles: 3,
-      lat: 44.8965, lng: 37.3275,
+      id: '#4827',
+      clientName: 'Захаров Игорь',
+      address: 'ул. Горького, 34, кв. 7',
+      district: 'Восток',
+      price: 840,
+      payment: PaymentType.cash,
+      bottles: 3,
+      lat: 44.8965,
+      lng: 37.3275,
     ),
   ];
 
@@ -179,14 +212,15 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       if (permission == LocationPermission.whileInUse ||
           permission == LocationPermission.always) {
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-          ),
-        ).timeout(
-          const Duration(seconds: 12),
-          onTimeout: () => throw Exception('GPS timeout'),
-        );
+        final position =
+            await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.high,
+              ),
+            ).timeout(
+              const Duration(seconds: 12),
+              onTimeout: () => throw Exception('GPS timeout'),
+            );
         if (mounted) setState(() => _currentPosition = position);
       }
     } catch (_) {
@@ -244,18 +278,30 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            boxShadow: [BoxShadow(color: _blue.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))],
+            boxShadow: [
+              BoxShadow(
+                color: _blue.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, -4),
+              ),
+            ],
           ),
           child: Column(
             children: [
               Container(
                 margin: const EdgeInsets.only(top: 8, bottom: 8),
-                width: 36, height: 4,
-                decoration: BoxDecoration(color: const Color(0xFFD6E4F0), borderRadius: BorderRadius.circular(2)),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD6E4F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
               Expanded(
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: _buildMapWidget(),
                 ),
               ),
@@ -268,13 +314,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMapWidget() {
     // center map on first active order or a default point
-    final center = _activeOrders.isNotEmpty ? ll.LatLng(_activeOrders[0].lat, _activeOrders[0].lng) : ll.LatLng(44.8951, 37.3168);
+    final center = _activeOrders.isNotEmpty
+        ? ll.LatLng(_activeOrders[0].lat, _activeOrders[0].lng)
+        : ll.LatLng(44.8951, 37.3168);
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        center: center,
-        zoom: 13,
-        interactiveFlags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+        initialCenter: center,
+        initialZoom: 13,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+        ),
       ),
       children: [
         TileLayer(
@@ -288,13 +338,26 @@ class _HomeScreenState extends State<HomeScreen> {
               point: ll.LatLng(o.lat, o.lng),
               width: 44,
               height: 44,
-              builder: (ctx) => Container(
+              child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(22),
-                  boxShadow: [BoxShadow(color: _blue.withValues(alpha: 0.12), blurRadius: 6)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: _blue.withValues(alpha: 0.12),
+                      blurRadius: 6,
+                    ),
+                  ],
                 ),
-                child: Center(child: Text('${i+1}', style: const TextStyle(color: _orange, fontWeight: FontWeight.w800))),
+                child: Center(
+                  child: Text(
+                    '${i + 1}',
+                    style: const TextStyle(
+                      color: _orange,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
               ),
             );
           }),
@@ -353,11 +416,21 @@ class _HomeScreenState extends State<HomeScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            width: 12, height: 12,
-            child: CircularProgressIndicator(color: Colors.white.withValues(alpha: 0.8), strokeWidth: 1.5),
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(
+              color: Colors.white.withValues(alpha: 0.8),
+              strokeWidth: 1.5,
+            ),
           ),
           const SizedBox(width: 6),
-          Text('GPS...', style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 11)),
+          Text(
+            'GPS...',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 11,
+            ),
+          ),
         ],
       );
     }
@@ -367,7 +440,14 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Icon(Icons.gps_fixed_rounded, color: _liveGreen, size: 13),
           const SizedBox(width: 4),
-          const Text('GPS', style: TextStyle(color: _liveGreen, fontSize: 11, fontWeight: FontWeight.w600)),
+          const Text(
+            'GPS',
+            style: TextStyle(
+              color: _liveGreen,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       );
     }
@@ -376,9 +456,19 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.gps_off_rounded, color: Colors.white.withValues(alpha: 0.55), size: 13),
+          Icon(
+            Icons.gps_off_rounded,
+            color: Colors.white.withValues(alpha: 0.55),
+            size: 13,
+          ),
           const SizedBox(width: 4),
-          Text('GPS', style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11)),
+          Text(
+            'GPS',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.55),
+              fontSize: 11,
+            ),
+          ),
         ],
       ),
     );
@@ -392,7 +482,10 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Container(
         height: 40,
-        decoration: BoxDecoration(color: const Color(0xFFEEF4FB), borderRadius: BorderRadius.circular(12)),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEEF4FB),
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: Row(
           children: [
             _buildTab('Список', Icons.list_rounded, !_isMapView),
@@ -413,18 +506,33 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
             color: active ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: active ? [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, 2))] : [],
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 16, color: active ? _blue : const Color(0xFF8AACCC)),
+              Icon(
+                icon,
+                size: 16,
+                color: active ? _blue : const Color(0xFF8AACCC),
+              ),
               const SizedBox(width: 6),
-              Text(label, style: TextStyle(
-                color: active ? _darkBlue : const Color(0xFF8AACCC),
-                fontSize: 13,
-                fontWeight: active ? FontWeight.w700 : FontWeight.normal,
-              )),
+              Text(
+                label,
+                style: TextStyle(
+                  color: active ? _darkBlue : const Color(0xFF8AACCC),
+                  fontSize: 13,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.normal,
+                ),
+              ),
             ],
           ),
         ),
@@ -440,12 +548,28 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_rounded, size: 56, color: _lightBlue.withValues(alpha: 0.4)),
+            Icon(
+              Icons.inbox_rounded,
+              size: 56,
+              color: _lightBlue.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 12),
-            const Text('Все заказы выполнены!',
-                style: TextStyle(color: _darkBlue, fontSize: 16, fontWeight: FontWeight.w600)),
+            const Text(
+              'Все заказы выполнены!',
+              style: TextStyle(
+                color: _darkBlue,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Отличная работа', style: TextStyle(color: const Color(0xFF6B8CAE).withValues(alpha: 0.8), fontSize: 13)),
+            Text(
+              'Отличная работа',
+              style: TextStyle(
+                color: const Color(0xFF6B8CAE).withValues(alpha: 0.8),
+                fontSize: 13,
+              ),
+            ),
           ],
         ),
       );
@@ -457,7 +581,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         itemCount: _timeSlots.length,
-        itemBuilder: (context, slotIndex) => _buildTimeSlotGroup(_timeSlots[slotIndex], slotIndex),
+        itemBuilder: (context, slotIndex) =>
+            _buildTimeSlotGroup(_timeSlots[slotIndex], slotIndex),
       ),
     );
   }
@@ -474,7 +599,13 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
-              boxShadow: [BoxShadow(color: _blue.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 3))],
+              boxShadow: [
+                BoxShadow(
+                  color: _blue.withValues(alpha: 0.06),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -484,12 +615,19 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         slot.label,
-                        style: const TextStyle(color: _darkBlue, fontSize: 15, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          color: _darkBlue,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${slot.orders.length} заказов',
-                        style: TextStyle(color: Color(0xFF6B8CAE).withValues(alpha: 0.7), fontSize: 12),
+                        style: TextStyle(
+                          color: Color(0xFF6B8CAE).withValues(alpha: 0.7),
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -498,17 +636,33 @@ class _HomeScreenState extends State<HomeScreen> {
                 GestureDetector(
                   onTap: () => _buildRouteForSlot(slot),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [_orange, Color(0xFFFF9A3C)]),
+                      gradient: const LinearGradient(
+                        colors: [_orange, Color(0xFFFF9A3C)],
+                      ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text('Маршрут', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                        Text(
+                          'Маршрут',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         SizedBox(width: 3),
-                        Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 13),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 13,
+                        ),
                       ],
                     ),
                   ),
@@ -517,7 +671,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 AnimatedRotation(
                   turns: slot.isExpanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.expand_less_rounded, color: _blue, size: 20),
+                  child: const Icon(
+                    Icons.expand_less_rounded,
+                    color: _blue,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -537,20 +695,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _buildRouteForSlot(TimeSlot slot) async {
     if (_isBuilding || slot.orders.isEmpty) return;
     final nav = Navigator.of(context);
-    setState(() { _isBuilding = true; _listOpacity = 0.0; });
+    setState(() {
+      _isBuilding = true;
+      _listOpacity = 0.0;
+    });
 
     await Future.delayed(const Duration(milliseconds: 300));
 
     if (!mounted) return;
-    setState(() { _isBuilding = false; _listOpacity = 1.0; });
+    setState(() {
+      _isBuilding = false;
+      _listOpacity = 1.0;
+    });
 
-    nav.push(MaterialPageRoute(
-      builder: (_) => RouteScreen(
-        orders: List.from(slot.orders),
-        startLat: _currentPosition?.latitude,
-        startLng: _currentPosition?.longitude,
+    nav.push(
+      MaterialPageRoute(
+        builder: (_) => RouteScreen(
+          orders: List.from(slot.orders),
+          startLat: _currentPosition?.latitude,
+          startLng: _currentPosition?.longitude,
+        ),
       ),
-    ));
+    );
   }
 
   // ─── COMPLETED VIEW ────────────────────────────────────────────────────────
@@ -561,10 +727,20 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.check_circle_outline_rounded, size: 56, color: _green.withValues(alpha: 0.4)),
+            Icon(
+              Icons.check_circle_outline_rounded,
+              size: 56,
+              color: _green.withValues(alpha: 0.4),
+            ),
             const SizedBox(height: 12),
-            Text('Нет выполненных заказов',
-                style: TextStyle(color: _darkBlue.withValues(alpha: 0.6), fontSize: 15, fontWeight: FontWeight.w600)),
+            Text(
+              'Нет выполненных заказов',
+              style: TextStyle(
+                color: _darkBlue.withValues(alpha: 0.6),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       );
@@ -590,7 +766,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
             itemCount: _completedOrders.length,
-            itemBuilder: (context, i) => _buildCompletedCard(_completedOrders[i], i + 1),
+            itemBuilder: (context, i) =>
+                _buildCompletedCard(_completedOrders[i], i + 1),
           ),
         ),
       ],
@@ -607,38 +784,43 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Text(
         label.isEmpty ? value : '$value $label',
-        style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w700),
+        style: TextStyle(
+          color: color,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
 
   // ─── PLACEHOLDERS ──────────────────────────────────────────────────────────
 
-  Widget _buildMapPlaceholder() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.map_outlined, size: 64, color: _lightBlue.withValues(alpha: 0.5)),
-          const SizedBox(height: 12),
-          const Text('Карта маршрута', style: TextStyle(color: _darkBlue, fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          const Text('Нажмите «Построить маршрут»', style: TextStyle(color: Color(0xFF8AACCC), fontSize: 13)),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTabPlaceholder(int index) {
     final labels = ['', '', 'Отчёт', 'Профиль'];
-    final icons = [null, null, Icons.bar_chart_outlined, Icons.person_outline_rounded];
+    final icons = [
+      null,
+      null,
+      Icons.bar_chart_outlined,
+      Icons.person_outline_rounded,
+    ];
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icons[index], size: 56, color: _lightBlue.withValues(alpha: 0.4)),
+          Icon(
+            icons[index],
+            size: 56,
+            color: _lightBlue.withValues(alpha: 0.4),
+          ),
           const SizedBox(height: 12),
-          Text(labels[index], style: TextStyle(color: _darkBlue.withValues(alpha: 0.5), fontSize: 16, fontWeight: FontWeight.w600)),
+          Text(
+            labels[index],
+            style: TextStyle(
+              color: _darkBlue.withValues(alpha: 0.5),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -652,7 +834,13 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: _blue.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(
+            color: _blue.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -661,13 +849,26 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             // Stop number
             Container(
-              width: 30, height: 30,
+              width: 30,
+              height: 30,
               decoration: BoxDecoration(
                 color: _orange.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
-                border: Border.all(color: _orange.withValues(alpha: 0.4), width: 1.5),
+                border: Border.all(
+                  color: _orange.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
               ),
-              child: Center(child: Text('$number', style: const TextStyle(color: _orange, fontSize: 13, fontWeight: FontWeight.w800))),
+              child: Center(
+                child: Text(
+                  '$number',
+                  style: const TextStyle(
+                    color: _orange,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(child: _buildCardContent(order)),
@@ -684,7 +885,13 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: _green.withValues(alpha: 0.2)),
-        boxShadow: [BoxShadow(color: _green.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: _green.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -692,13 +899,26 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 30, height: 30,
+              width: 30,
+              height: 30,
               decoration: BoxDecoration(
                 color: _green.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
-                border: Border.all(color: _green.withValues(alpha: 0.4), width: 1.5),
+                border: Border.all(
+                  color: _green.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
               ),
-              child: Center(child: Text('$number', style: const TextStyle(color: _green, fontSize: 13, fontWeight: FontWeight.w800))),
+              child: Center(
+                child: Text(
+                  '$number',
+                  style: const TextStyle(
+                    color: _green,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(child: _buildCardContent(order)),
@@ -714,36 +934,86 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Row(
           children: [
-            Text(order.id, style: const TextStyle(color: _blue, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+            Text(
+              order.id,
+              style: const TextStyle(
+                color: _blue,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
             if (order.isDone) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(color: _green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                child: const Text('Выполнен', style: TextStyle(color: _green, fontSize: 10, fontWeight: FontWeight.w600)),
+                decoration: BoxDecoration(
+                  color: _green.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'Выполнен',
+                  style: TextStyle(
+                    color: _green,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
             const Spacer(),
             _buildPaymentBadge(order.payment),
             const SizedBox(width: 8),
-            Text('${order.price.toInt()} ₽', style: const TextStyle(color: _darkBlue, fontSize: 15, fontWeight: FontWeight.w800)),
+            Text(
+              '${order.price.toInt()} ₽',
+              style: const TextStyle(
+                color: _darkBlue,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 6),
-        Text(order.clientName, style: const TextStyle(color: _darkBlue, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(
+          order.clientName,
+          style: const TextStyle(
+            color: _darkBlue,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 5),
         Row(
           children: [
-            const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF8AACCC)),
+            const Icon(
+              Icons.location_on_outlined,
+              size: 13,
+              color: Color(0xFF8AACCC),
+            ),
             const SizedBox(width: 3),
             Expanded(
-              child: Text(order.address, style: const TextStyle(color: Color(0xFF6B8CAE), fontSize: 12), overflow: TextOverflow.ellipsis),
+              child: Text(
+                order.address,
+                style: const TextStyle(color: Color(0xFF6B8CAE), fontSize: 12),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(color: const Color(0xFFEEF4FB), borderRadius: BorderRadius.circular(5)),
-              child: Text(order.district, style: const TextStyle(color: _blue, fontSize: 11, fontWeight: FontWeight.w600)),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF4FB),
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: Text(
+                order.district,
+                style: const TextStyle(
+                  color: _blue,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ],
         ),
@@ -752,7 +1022,14 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Icon(Icons.water_drop_outlined, size: 15, color: _lightBlue),
             const SizedBox(width: 4),
-            Text('${order.bottles} бут.', style: const TextStyle(color: Color(0xFF6B8CAE), fontSize: 12, fontWeight: FontWeight.w500)),
+            Text(
+              '${order.bottles} бут.',
+              style: const TextStyle(
+                color: Color(0xFF6B8CAE),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const Spacer(),
             GestureDetector(
               onTap: () {},
@@ -760,15 +1037,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: 32,
                 padding: const EdgeInsets.symmetric(horizontal: 13),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [_orange, Color(0xFFFF9A3C)]),
+                  gradient: const LinearGradient(
+                    colors: [_orange, Color(0xFFFF9A3C)],
+                  ),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Маршрут', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Маршрут',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                     SizedBox(width: 3),
-                    Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 13),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 13,
+                    ),
                   ],
                 ),
               ),
@@ -784,21 +1074,46 @@ class _HomeScreenState extends State<HomeScreen> {
     final Color color;
     final String label;
     switch (type) {
-      case PaymentType.card:    icon = Icons.credit_card_rounded;  color = _blue;                     label = 'Карта';
-      case PaymentType.cash:    icon = Icons.payments_outlined;    color = _green;                    label = 'Нал';
-      case PaymentType.qr:      icon = Icons.qr_code_rounded;      color = const Color(0xFF7B3FE4);   label = 'QR';
-      case PaymentType.online:  icon = Icons.smartphone_rounded;   color = _orange;                   label = 'Онлайн';
-      case PaymentType.contract:icon = Icons.description_outlined; color = const Color(0xFF8AACCC);   label = 'Договор';
+      case PaymentType.card:
+        icon = Icons.credit_card_rounded;
+        color = _blue;
+        label = 'Карта';
+      case PaymentType.cash:
+        icon = Icons.payments_outlined;
+        color = _green;
+        label = 'Нал';
+      case PaymentType.qr:
+        icon = Icons.qr_code_rounded;
+        color = const Color(0xFF7B3FE4);
+        label = 'QR';
+      case PaymentType.online:
+        icon = Icons.smartphone_rounded;
+        color = _orange;
+        label = 'Онлайн';
+      case PaymentType.contract:
+        icon = Icons.description_outlined;
+        color = const Color(0xFF8AACCC);
+        label = 'Договор';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(7)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(7),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 13, color: color),
           const SizedBox(width: 3),
-          Text(label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -809,14 +1124,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBottomNav() {
     const items = [
       (Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Заказы'),
-      (Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 'Выполнено'),
+      (
+        Icons.check_circle_outline_rounded,
+        Icons.check_circle_rounded,
+        'Выполнено',
+      ),
       (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Отчёт'),
       (Icons.person_outline_rounded, Icons.person_rounded, 'Профиль'),
     ];
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Color(0x10000000), blurRadius: 8, offset: Offset(0, -2))],
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: SafeArea(
         top: false,
@@ -828,26 +1153,43 @@ class _HomeScreenState extends State<HomeScreen> {
               final (iconOut, iconFill, label) = items[i];
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() { _navIndex = i; _isMapView = false; }),
+                  onTap: () => setState(() {
+                    _navIndex = i;
+                    _isMapView = false;
+                  }),
                   behavior: HitTestBehavior.opaque,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: active ? _blue.withValues(alpha: 0.1) : Colors.transparent,
+                          color: active
+                              ? _blue.withValues(alpha: 0.1)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(active ? iconFill : iconOut, color: active ? _blue : const Color(0xFF8AACCC), size: 24),
+                        child: Icon(
+                          active ? iconFill : iconOut,
+                          color: active ? _blue : const Color(0xFF8AACCC),
+                          size: 24,
+                        ),
                       ),
                       const SizedBox(height: 2),
-                      Text(label, style: TextStyle(
-                        color: active ? _blue : const Color(0xFF8AACCC),
-                        fontSize: 11,
-                        fontWeight: active ? FontWeight.w700 : FontWeight.normal,
-                      )),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: active ? _blue : const Color(0xFF8AACCC),
+                          fontSize: 11,
+                          fontWeight: active
+                              ? FontWeight.w700
+                              : FontWeight.normal,
+                        ),
+                      ),
                     ],
                   ),
                 ),

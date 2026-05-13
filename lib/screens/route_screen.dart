@@ -1,9 +1,9 @@
 import 'dart:convert';
+import 'package:buzhor_courier/features/orders/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'home_screen.dart';
 
 const _blue = Color(0xFF1B5FA8);
 const _darkBlue = Color(0xFF0D3D6E);
@@ -31,7 +31,7 @@ class _RouteScreenState extends State<RouteScreen> {
   late final MapController _mapController;
   late List<OrderItem> _sortedOrders;
 
-  LatLng? _startPoint;   // GPS or custom start
+  LatLng? _startPoint; // GPS or custom start
   bool _isGpsStart = false;
   bool _isSearching = false;
   String _searchError = '';
@@ -73,7 +73,10 @@ class _RouteScreenState extends State<RouteScreen> {
     var bestDist = _sq(startLat, startLng, remaining[0].lat, remaining[0].lng);
     for (var i = 1; i < remaining.length; i++) {
       final d = _sq(startLat, startLng, remaining[i].lat, remaining[i].lng);
-      if (d < bestDist) { bestDist = d; bestIdx = i; }
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
     }
     result.add(remaining.removeAt(bestIdx));
 
@@ -83,7 +86,10 @@ class _RouteScreenState extends State<RouteScreen> {
       var nDist = _sq(last.lat, last.lng, remaining[0].lat, remaining[0].lng);
       for (var i = 1; i < remaining.length; i++) {
         final d = _sq(last.lat, last.lng, remaining[i].lat, remaining[i].lng);
-        if (d < nDist) { nDist = d; nIdx = i; }
+        if (d < nDist) {
+          nDist = d;
+          nIdx = i;
+        }
       }
       result.add(remaining.removeAt(nIdx));
     }
@@ -108,7 +114,10 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Future<void> _searchAddress(String query) async {
     if (query.trim().isEmpty) return;
-    setState(() { _isSearching = true; _searchError = ''; });
+    setState(() {
+      _isSearching = true;
+      _searchError = '';
+    });
     try {
       final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
         'q': query,
@@ -116,7 +125,8 @@ class _RouteScreenState extends State<RouteScreen> {
         'limit': '1',
         'countrycodes': 'ru',
       });
-      final response = await http.get(uri, headers: {'User-Agent': 'BuzhorCourier/1.0'})
+      final response = await http
+          .get(uri, headers: {'User-Agent': 'BuzhorCourier/1.0'})
           .timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as List;
@@ -147,83 +157,133 @@ class _RouteScreenState extends State<RouteScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return StatefulBuilder(builder: (ctx, setLocal) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
               ),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 36, height: 4,
-                      decoration: BoxDecoration(color: const Color(0xFFD6E4F0), borderRadius: BorderRadius.circular(2)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Начальная точка', style: TextStyle(color: _darkBlue, fontSize: 16, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 4),
-                  Text('Введите адрес или долгим нажатием на карте',
-                      style: TextStyle(color: const Color(0xFF6B8CAE).withValues(alpha: 0.8), fontSize: 12)),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F5FB),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFD6E4F0)),
-                    ),
-                    child: TextField(
-                      controller: controller,
-                      autofocus: true,
-                      style: const TextStyle(color: _darkBlue, fontSize: 14),
-                      decoration: const InputDecoration(
-                        hintText: 'ул. Крымская, 45, Анапа',
-                        hintStyle: TextStyle(color: Color(0xFF8AACCC)),
-                        prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF8AACCC), size: 20),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      ),
-                      onSubmitted: (v) {
-                        _searchAddress(v);
-                        Navigator.pop(ctx);
-                      },
-                    ),
-                  ),
-                  if (_searchError.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(_searchError, style: const TextStyle(color: Colors.red, fontSize: 12)),
-                  ],
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: GestureDetector(
-                      onTap: () {
-                        _searchAddress(controller.text);
-                        Navigator.pop(ctx);
-                      },
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
                       child: Container(
+                        width: 36,
+                        height: 4,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [_blue, _lightBlue]),
-                          borderRadius: BorderRadius.circular(12),
+                          color: const Color(0xFFD6E4F0),
+                          borderRadius: BorderRadius.circular(2),
                         ),
-                        child: _isSearching
-                            ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)))
-                            : const Center(child: Text('Найти', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700))),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Начальная точка',
+                      style: TextStyle(
+                        color: _darkBlue,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Введите адрес или долгим нажатием на карте',
+                      style: TextStyle(
+                        color: const Color(0xFF6B8CAE).withValues(alpha: 0.8),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0F5FB),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFD6E4F0)),
+                      ),
+                      child: TextField(
+                        controller: controller,
+                        autofocus: true,
+                        style: const TextStyle(color: _darkBlue, fontSize: 14),
+                        decoration: const InputDecoration(
+                          hintText: 'ул. Крымская, 45, Анапа',
+                          hintStyle: TextStyle(color: Color(0xFF8AACCC)),
+                          prefixIcon: Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF8AACCC),
+                            size: 20,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 14,
+                          ),
+                        ),
+                        onSubmitted: (v) {
+                          _searchAddress(v);
+                          Navigator.pop(ctx);
+                        },
+                      ),
+                    ),
+                    if (_searchError.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        _searchError,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: GestureDetector(
+                        onTap: () {
+                          _searchAddress(controller.text);
+                          Navigator.pop(ctx);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [_blue, _lightBlue],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: _isSearching
+                              ? const Center(
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                )
+                              : const Center(
+                                  child: Text(
+                                    'Найти',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -238,16 +298,39 @@ class _RouteScreenState extends State<RouteScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.inbox_rounded, size: 56, color: Color(0xFF8AACCC)),
+              const Icon(
+                Icons.inbox_rounded,
+                size: 56,
+                color: Color(0xFF8AACCC),
+              ),
               const SizedBox(height: 12),
-              const Text('Нет активных заказов', style: TextStyle(color: _darkBlue, fontSize: 16, fontWeight: FontWeight.w600)),
+              const Text(
+                'Нет активных заказов',
+                style: TextStyle(
+                  color: _darkBlue,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               const SizedBox(height: 16),
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(color: _blue, borderRadius: BorderRadius.circular(12)),
-                  child: const Text('Назад', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _blue,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Назад',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -258,8 +341,12 @@ class _RouteScreenState extends State<RouteScreen> {
 
     final points = _sortedOrders.map((o) => LatLng(o.lat, o.lng)).toList();
     final allPoints = [?_startPoint, ...points];
-    final centerLat = allPoints.map((p) => p.latitude).reduce((a, b) => a + b) / allPoints.length;
-    final centerLng = allPoints.map((p) => p.longitude).reduce((a, b) => a + b) / allPoints.length;
+    final centerLat =
+        allPoints.map((p) => p.latitude).reduce((a, b) => a + b) /
+        allPoints.length;
+    final centerLng =
+        allPoints.map((p) => p.longitude).reduce((a, b) => a + b) /
+        allPoints.length;
 
     return Scaffold(
       body: Stack(
@@ -277,7 +364,9 @@ class _RouteScreenState extends State<RouteScreen> {
                     backgroundColor: _darkBlue,
                     behavior: SnackBarBehavior.floating,
                     duration: const Duration(seconds: 2),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 );
               },
@@ -289,38 +378,42 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
               // Route polyline — dashed segment from start to first stop
               if (_startPoint != null)
-                PolylineLayer(polylines: [
-                  Polyline(
-                    points: [_startPoint!, points.first],
-                    color: _blue.withValues(alpha: 0.5),
-                    strokeWidth: 2.5,
-                    pattern: StrokePattern.dashed(segments: const [8, 6]),
-                  ),
-                ]),
-              // Main route polyline
-              PolylineLayer(polylines: [
-                Polyline(
-                  points: points,
-                  color: _orange,
-                  strokeWidth: 3.5,
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: [_startPoint!, points.first],
+                      color: _blue.withValues(alpha: 0.5),
+                      strokeWidth: 2.5,
+                      pattern: StrokePattern.dashed(segments: const [8, 6]),
+                    ),
+                  ],
                 ),
-              ]),
+              // Main route polyline
+              PolylineLayer(
+                polylines: [
+                  Polyline(points: points, color: _orange, strokeWidth: 3.5),
+                ],
+              ),
               // Start marker
               if (_startPoint != null)
-                MarkerLayer(markers: [
-                  Marker(
-                    point: _startPoint!,
-                    width: 36, height: 36,
-                    child: _StartMarker(isGps: _isGpsStart),
-                  ),
-                ]),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: _startPoint!,
+                      width: 36,
+                      height: 36,
+                      child: _StartMarker(isGps: _isGpsStart),
+                    ),
+                  ],
+                ),
               // Stop markers
               MarkerLayer(
                 markers: List.generate(_sortedOrders.length, (i) {
                   final o = _sortedOrders[i];
                   return Marker(
                     point: LatLng(o.lat, o.lng),
-                    width: 32, height: 32,
+                    width: 32,
+                    height: 32,
                     child: _StopMarker(number: i + 1, isDone: o.isDone),
                   );
                 }),
@@ -336,27 +429,48 @@ class _RouteScreenState extends State<RouteScreen> {
                 children: [
                   _MapBtn(
                     onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.arrow_back_rounded, size: 20, color: _darkBlue),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      size: 20,
+                      color: _darkBlue,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 2))],
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.route_rounded, color: _orange, size: 16),
+                          const Icon(
+                            Icons.route_rounded,
+                            color: _orange,
+                            size: 16,
+                          ),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               _startPoint == null
                                   ? '${_sortedOrders.length} остановок'
                                   : '${_isGpsStart ? 'GPS' : 'Своя точка'} · ${_sortedOrders.length} остановок',
-                              style: const TextStyle(color: _darkBlue, fontSize: 13, fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                color: _darkBlue,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -367,12 +481,21 @@ class _RouteScreenState extends State<RouteScreen> {
                   const SizedBox(width: 10),
                   _MapBtn(
                     onTap: _showAddressSheet,
-                    child: const Icon(Icons.search_rounded, size: 20, color: _darkBlue),
+                    child: const Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: _darkBlue,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   _MapBtn(
-                    onTap: () => _mapController.move(LatLng(centerLat, centerLng), 14.5),
-                    child: const Icon(Icons.center_focus_strong_rounded, size: 20, color: _darkBlue),
+                    onTap: () =>
+                        _mapController.move(LatLng(centerLat, centerLng), 14.5),
+                    child: const Icon(
+                      Icons.center_focus_strong_rounded,
+                      size: 20,
+                      color: _darkBlue,
+                    ),
                   ),
                 ],
               ),
@@ -383,9 +506,13 @@ class _RouteScreenState extends State<RouteScreen> {
           if (_startPoint == null)
             Positioned(
               bottom: 220,
-              left: 16, right: 16,
+              left: 16,
+              right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: _darkBlue.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
@@ -394,10 +521,20 @@ class _RouteScreenState extends State<RouteScreen> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.touch_app_rounded, color: Colors.white, size: 16),
+                    Icon(
+                      Icons.touch_app_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                     SizedBox(width: 8),
-                    Text('Удерживайте карту для выбора точки старта',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+                    Text(
+                      'Удерживайте карту для выбора точки старта',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -405,7 +542,9 @@ class _RouteScreenState extends State<RouteScreen> {
 
           // ── Bottom stop summary ────────────────────────────────────────────
           Positioned(
-            left: 0, right: 0, bottom: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
             child: _buildStopSummary(context),
           ),
         ],
@@ -415,33 +554,65 @@ class _RouteScreenState extends State<RouteScreen> {
 
   Widget _buildStopSummary(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final remaining = _sortedOrders.where((o) => !o.isDone).fold<int>(0, (s, o) => s + o.bottles);
+    final remaining = _sortedOrders
+        .where((o) => !o.isDone)
+        .fold<int>(0, (s, o) => s + o.bottles);
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Color(0x22000000), blurRadius: 24, offset: Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x22000000),
+            blurRadius: 24,
+            offset: Offset(0, -4),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 10),
           Container(
-            width: 36, height: 4,
-            decoration: BoxDecoration(color: const Color(0xFFD6E4F0), borderRadius: BorderRadius.circular(2)),
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD6E4F0),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Text('Остановки', style: TextStyle(color: _darkBlue, fontSize: 15, fontWeight: FontWeight.w700)),
+                const Text(
+                  'Остановки',
+                  style: TextStyle(
+                    color: _darkBlue,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 const Spacer(),
                 if (remaining > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: _orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Text('$remaining бут. осталось', style: const TextStyle(color: _orange, fontSize: 12, fontWeight: FontWeight.w600)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$remaining бут. осталось',
+                      style: const TextStyle(
+                        color: _orange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -470,10 +641,14 @@ class _RouteScreenState extends State<RouteScreen> {
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: order.isDone ? const Color(0xFFF2FBF0) : const Color(0xFFF0F5FB),
+          color: order.isDone
+              ? const Color(0xFFF2FBF0)
+              : const Color(0xFFF0F5FB),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: order.isDone ? _green.withValues(alpha: 0.3) : _blue.withValues(alpha: 0.15),
+            color: order.isDone
+                ? _green.withValues(alpha: 0.3)
+                : _blue.withValues(alpha: 0.15),
           ),
         ),
         child: Column(
@@ -482,27 +657,81 @@ class _RouteScreenState extends State<RouteScreen> {
             Row(
               children: [
                 Container(
-                  width: 22, height: 22,
-                  decoration: BoxDecoration(color: order.isDone ? _green : _orange, shape: BoxShape.circle),
-                  child: Center(child: Text('$number', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800))),
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: order.isDone ? _green : _orange,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$number',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(order.id, style: const TextStyle(color: _blue, fontSize: 12, fontWeight: FontWeight.w700), overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    order.id,
+                    style: const TextStyle(
+                      color: _blue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                if (order.isDone) const Icon(Icons.check_circle_rounded, size: 13, color: _green),
+                if (order.isDone)
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 13,
+                    color: _green,
+                  ),
               ],
             ),
             const SizedBox(height: 6),
-            Text(order.clientName, style: const TextStyle(color: _darkBlue, fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis, maxLines: 1),
+            Text(
+              order.clientName,
+              style: const TextStyle(
+                color: _darkBlue,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
             const SizedBox(height: 2),
-            Text(order.district, style: TextStyle(color: _lightBlue.withValues(alpha: 0.8), fontSize: 11)),
+            Text(
+              order.district,
+              style: TextStyle(
+                color: _lightBlue.withValues(alpha: 0.8),
+                fontSize: 11,
+              ),
+            ),
             const Spacer(),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('${order.bottles} бут.', style: TextStyle(color: const Color(0xFF6B8CAE).withValues(alpha: 0.9), fontSize: 11)),
-                Text('${order.price.toInt()} ₽', style: TextStyle(color: order.isDone ? _green : _darkBlue, fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(
+                  '${order.bottles} бут.',
+                  style: TextStyle(
+                    color: const Color(0xFF6B8CAE).withValues(alpha: 0.9),
+                    fontSize: 11,
+                  ),
+                ),
+                Text(
+                  '${order.price.toInt()} ₽',
+                  style: TextStyle(
+                    color: order.isDone ? _green : _darkBlue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
           ],
@@ -525,7 +754,13 @@ class _StartMarker extends StatelessWidget {
         color: isGps ? const Color(0xFF1B5FA8) : const Color(0xFF7B3FE4),
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2.5),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Center(
         child: Icon(
@@ -550,10 +785,23 @@ class _StopMarker extends StatelessWidget {
         color: isDone ? _green : _orange,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.28), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.28),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Center(
-        child: Text('$number', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+        child: Text(
+          '$number',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
     );
   }
@@ -569,11 +817,18 @@ class _MapBtn extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40, height: 40,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: Colors.white,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 10, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: child,
       ),

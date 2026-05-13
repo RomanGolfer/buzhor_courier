@@ -60,6 +60,7 @@ class LoginStateNotifier extends StateNotifier<LoginState> {
   }
 }
 
-final loginStateProvider = StateNotifierProvider<LoginStateNotifier, LoginState>(
-  (ref) => LoginStateNotifier(),
-);
+final loginStateProvider =
+    StateNotifierProvider<LoginStateNotifier, LoginState>(
+      (ref) => LoginStateNotifier(),
+    );

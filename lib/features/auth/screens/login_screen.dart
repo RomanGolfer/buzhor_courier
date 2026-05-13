@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
+import 'package:buzhor_courier/models/bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:buzhor_courier/bubble_painter.dart';
-import 'package:buzhor_courier/models/bubble.dart';
+import 'package:buzhor_courier/features/auth/widgets/bubble_painter.dart';
 import 'package:buzhor_courier/providers/login_provider.dart';
 
-import 'home_screen.dart';
+import '../../orders/screens/home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -15,7 +15,8 @@ class LoginScreen extends ConsumerStatefulWidget {
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends ConsumerState<LoginScreen>
+    with TickerProviderStateMixin {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _sheetController = DraggableScrollableController();
@@ -33,21 +34,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
     super.initState();
 
     for (int i = 0; i < 18; i++) {
-      _bubbles.add(Bubble(
-        _random.nextDouble(),
-        _random.nextDouble(),
-        _random.nextDouble() * 18 + 4,
-        _random.nextDouble() * 0.003 + 0.001,
-        _random.nextDouble() * 0.12 + 0.04,
-      ));
+      _bubbles.add(
+        Bubble(
+          _random.nextDouble(),
+          _random.nextDouble(),
+          _random.nextDouble() * 18 + 4,
+          _random.nextDouble() * 0.003 + 0.001,
+          _random.nextDouble() * 0.12 + 0.04,
+        ),
+      );
     }
 
-    _logoController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
-    _bubbleController = AnimationController(vsync: this, duration: const Duration(seconds: 8))..repeat();
+    _logoController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _bubbleController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat();
 
     _logoFade = CurvedAnimation(parent: _logoController, curve: Curves.easeOut);
-    _logoScale = Tween<double>(begin: 0.7, end: 1.0)
-        .animate(CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack));
+    _logoScale = Tween<double>(begin: 0.7, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
+    );
 
     _bubbleController.addListener(() {
       setState(() {
@@ -68,7 +78,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
       }
     });
 
-    Future.delayed(const Duration(milliseconds: 100), () => _logoController.forward());
+    Future.delayed(
+      const Duration(milliseconds: 100),
+      () => _logoController.forward(),
+    );
   }
 
   @override
@@ -93,7 +106,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF071E3D), Color(0xFF0D3D6E), Color(0xFF1565A8)],
+                colors: [
+                  Color(0xFF071E3D),
+                  Color(0xFF0D3D6E),
+                  Color(0xFF1565A8),
+                ],
                 stops: [0.0, 0.5, 1.0],
               ),
             ),
@@ -124,7 +141,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Container(width: 30, height: 1, color: const Color(0xFF5BB8F5).withValues(alpha: 0.5)),
+                            Container(
+                              width: 30,
+                              height: 1,
+                              color: const Color(
+                                0xFF5BB8F5,
+                              ).withValues(alpha: 0.5),
+                            ),
                             const SizedBox(width: 10),
                             const Text(
                               'КУРЬЕРСКОЕ ПРИЛОЖЕНИЕ',
@@ -136,7 +159,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                               ),
                             ),
                             const SizedBox(width: 10),
-                            Container(width: 30, height: 1, color: const Color(0xFF5BB8F5).withValues(alpha: 0.5)),
+                            Container(
+                              width: 30,
+                              height: 1,
+                              color: const Color(
+                                0xFF5BB8F5,
+                              ).withValues(alpha: 0.5),
+                            ),
                           ],
                         ),
                       ],
@@ -176,7 +205,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                       28,
                       16,
                       28,
-                      MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 100,
+                      MediaQuery.of(context).viewInsets.bottom +
+                          MediaQuery.of(context).padding.bottom +
+                          100,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -239,7 +270,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           icon: Icons.phone_outlined,
                           keyboardType: TextInputType.phone,
                           focused: state.phoneFocused,
-                          onFocus: (v) => ref.read(loginStateProvider.notifier).setPhoneFocused(v),
+                          onFocus: (v) => ref
+                              .read(loginStateProvider.notifier)
+                              .setPhoneFocused(v),
                         ),
                         const SizedBox(height: 16),
                         _buildField(
@@ -249,11 +282,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           icon: Icons.lock_outline_rounded,
                           obscure: state.obscurePassword,
                           focused: state.passFocused,
-                          onFocus: (v) => ref.read(loginStateProvider.notifier).setPassFocused(v),
+                          onFocus: (v) => ref
+                              .read(loginStateProvider.notifier)
+                              .setPassFocused(v),
                           suffix: GestureDetector(
-                            onTap: ref.read(loginStateProvider.notifier).toggleObscurePassword,
+                            onTap: ref
+                                .read(loginStateProvider.notifier)
+                                .toggleObscurePassword,
                             child: Icon(
-                              state.obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              state.obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               color: const Color(0xFF6B8CAE),
                               size: 20,
                             ),
@@ -264,12 +303,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                           onTap: state.isLoading
                               ? null
                               : () async {
-                                  ref.read(loginStateProvider.notifier).setLoading(true);
+                                  ref
+                                      .read(loginStateProvider.notifier)
+                                      .setLoading(true);
                                   final nav = Navigator.of(context);
-                                  await Future.delayed(const Duration(milliseconds: 1500));
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 1500),
+                                  );
                                   if (!mounted) return;
                                   nav.pushReplacement(
-                                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                                    MaterialPageRoute(
+                                      builder: (_) => const HomeScreen(),
+                                    ),
                                   );
                                 },
                           child: Container(
@@ -284,7 +329,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFE8720C).withValues(alpha: 0.45),
+                                  color: const Color(
+                                    0xFFE8720C,
+                                  ).withValues(alpha: 0.45),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -315,7 +362,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                         Text(
                           'Бужор · Анапа',
                           style: TextStyle(
-                            color: const Color(0xFF6B8CAE).withValues(alpha: 0.6),
+                            color: const Color(
+                              0xFF6B8CAE,
+                            ).withValues(alpha: 0.6),
                             fontSize: 11,
                             letterSpacing: 1,
                           ),
@@ -367,14 +416,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
           decoration: InputDecoration(
             labelText: label,
             hintText: hint,
-            hintStyle: TextStyle(color: const Color(0xFF6B8CAE).withValues(alpha: 0.5)),
+            hintStyle: TextStyle(
+              color: const Color(0xFF6B8CAE).withValues(alpha: 0.5),
+            ),
             labelStyle: TextStyle(
-              color: focused ? const Color(0xFF1B5FA8) : const Color(0xFF6B8CAE),
+              color: focused
+                  ? const Color(0xFF1B5FA8)
+                  : const Color(0xFF6B8CAE),
               fontWeight: focused ? FontWeight.w600 : FontWeight.normal,
             ),
             prefixIcon: Icon(
               icon,
-              color: focused ? const Color(0xFF1B5FA8) : const Color(0xFF6B8CAE),
+              color: focused
+                  ? const Color(0xFF1B5FA8)
+                  : const Color(0xFF6B8CAE),
               size: 20,
             ),
             suffixIcon: suffix != null
@@ -384,7 +439,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with TickerProviderSt
                   )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 16,
+            ),
           ),
         ),
       ),
