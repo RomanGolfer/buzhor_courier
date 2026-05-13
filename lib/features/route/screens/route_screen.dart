@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:buzhor_courier/features/route/services/route_service.dart';
 
 const _blue = Color(0xFF1B5FA8);
 const _darkBlue = Color(0xFF0D3D6E);
@@ -44,7 +45,11 @@ class _RouteScreenState extends State<RouteScreen> {
       _startPoint = LatLng(widget.startLat!, widget.startLng!);
       _isGpsStart = true;
     }
-    _sortedOrders = _sort();
+    _sortedOrders = RouteService.nearestNeighborSort(
+      widget.orders,
+      widget.startLat!,
+      widget.startLng!,
+    );
   }
 
   @override
