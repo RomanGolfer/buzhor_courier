@@ -378,9 +378,11 @@ class _RouteScreenState extends State<RouteScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.buzhor_courier',
+                urlTemplate:
+                    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c', 'd'],
               ),
+              SimpleAttributionWidget(source: const Text('CartoDB')),
               // Route polyline — dashed segment from start to first stop
               if (_startPoint != null)
                 PolylineLayer(

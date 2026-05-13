@@ -281,9 +281,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
+          urlTemplate:
+              'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c', 'd'],
         ),
+        SimpleAttributionWidget(source: const Text('CartoDB')),
         MarkerLayer(
           markers: List.generate(_activeOrders.length, (i) {
             final o = _activeOrders[i];
