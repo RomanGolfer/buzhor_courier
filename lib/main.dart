@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
+import 'screens/home_screen.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -319,8 +320,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         GestureDetector(
                           onTap: _isLoading ? null : () async {
                             setState(() => _isLoading = true);
+                            final nav = Navigator.of(context);
                             await Future.delayed(const Duration(milliseconds: 1500));
-                            if (mounted) setState(() => _isLoading = false);
+                            if (!mounted) return;
+                            nav.pushReplacement(
+                              MaterialPageRoute(builder: (_) => const HomeScreen()),
+                            );
                           },
                           child: Container(
                             width: double.infinity,
