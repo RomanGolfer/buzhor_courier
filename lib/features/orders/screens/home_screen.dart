@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 
 const _blue = Color(0xFF1B5FA8);
 const _darkBlue = Color(0xFF0D3D6E);
@@ -19,14 +20,6 @@ class HomeScreen extends StatefulWidget {
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class TimeSlot {
-  final String label; // "10:00 – 14:00"
-  final List<OrderItem> orders;
-  bool isExpanded;
-
-  TimeSlot({required this.label, required this.orders, this.isExpanded = true});
 }
 
 class _HomeScreenState extends State<HomeScreen> {
