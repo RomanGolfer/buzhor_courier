@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:buzhor_courier/features/orders/screens/home_screen.dart';
+import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;

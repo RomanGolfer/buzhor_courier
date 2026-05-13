@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'dart:math';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
+import 'package:buzhor_courier/features/orders/models/order_item.dart';
 
 const _blue = Color(0xFF1B5FA8);
 const _darkBlue = Color(0xFF0D3D6E);
@@ -12,47 +13,6 @@ const _green = Color(0xFF4A8C2A);
 const _orange = Color(0xFFE8720C);
 const _bg = Color(0xFFF0F5FB);
 const _liveGreen = Color(0xFF6FCF3A);
-
-enum PaymentType { card, cash, qr, online, contract }
-
-class OrderItem {
-  final String id;
-  final String clientName;
-  final String address;
-  final String district;
-  final double price;
-  final PaymentType payment;
-  final int bottles;
-  final bool isDone;
-  final double lat;
-  final double lng;
-
-  const OrderItem({
-    required this.id,
-    required this.clientName,
-    required this.address,
-    required this.district,
-    required this.price,
-    required this.payment,
-    required this.bottles,
-    required this.lat,
-    required this.lng,
-    this.isDone = false,
-  });
-
-  OrderItem copyWith({bool? isDone}) => OrderItem(
-    id: id,
-    clientName: clientName,
-    address: address,
-    district: district,
-    price: price,
-    payment: payment,
-    bottles: bottles,
-    lat: lat,
-    lng: lng,
-    isDone: isDone ?? this.isDone,
-  );
-}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
