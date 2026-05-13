@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
 import 'route_screen.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 const _blue = Color(0xFF1B5FA8);
 const _darkBlue = Color(0xFF0D3D6E);
@@ -80,6 +82,9 @@ class _HomeScreenState extends State<HomeScreen> {
   List<OrderItem> _activeOrders = [];
   List<OrderItem> _completedOrders = [];
   List<TimeSlot> _timeSlots = [];
+  // Map + draggable sheet controllers
+  late final MapController _mapController;
+  late final DraggableScrollableController _mapSheetController;
 
   Position? _currentPosition;
   bool _isLocating = false;
@@ -136,6 +141,13 @@ class _HomeScreenState extends State<HomeScreen> {
     _completedOrders = _allOrders.where((o) => o.isDone).toList();
     _buildTimeSlots();
     _initLocation();
+    _mapController = MapController();
+    _mapSheetController = DraggableScrollableController();
+    _mapSheetController.addListener(() {
+      // when sheet near top, consider it map-focused
+      // (could be used to toggle UI later)
+      setState(() {});
+    });
   }
 
   void _buildTimeSlots() {
@@ -202,12 +214,93 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     switch (_navIndex) {
       case 0:
-        return _isMapView ? _buildMapPlaceholder() : _buildActiveList();
+        // Show list as background with a draggable map sheet on top
+        return Stack(
+          children: [
+            // Background list
+            _buildActiveList(),
+            // Map sheet overlay
+            _buildMapSheet(),
+          ],
+        );
       case 1:
         return _buildCompletedView();
       default:
         return _buildTabPlaceholder(_navIndex);
     }
+  }
+
+  Widget _buildMapSheet() {
+    final initial = 0.42;
+    return DraggableScrollableSheet(
+      controller: _mapSheetController,
+      initialChildSize: initial,
+      minChildSize: 0.18,
+      maxChildSize: 0.95,
+      snap: true,
+      snapSizes: const [0.18, 0.42, 0.95],
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [BoxShadow(color: _blue.withValues(alpha: 0.08), blurRadius: 12, offset: const Offset(0, -4))],
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 8, bottom: 8),
+                width: 36, height: 4,
+                decoration: BoxDecoration(color: const Color(0xFFD6E4F0), borderRadius: BorderRadius.circular(2)),
+              ),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: _buildMapWidget(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMapWidget() {
+    // center map on first active order or a default point
+    final center = _activeOrders.isNotEmpty ? ll.LatLng(_activeOrders[0].lat, _activeOrders[0].lng) : ll.LatLng(44.8951, 37.3168);
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        center: center,
+        zoom: 13,
+        interactiveFlags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c'],
+        ),
+        MarkerLayer(
+          markers: List.generate(_activeOrders.length, (i) {
+            final o = _activeOrders[i];
+            return Marker(
+              point: ll.LatLng(o.lat, o.lng),
+              width: 44,
+              height: 44,
+              builder: (ctx) => Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [BoxShadow(color: _blue.withValues(alpha: 0.12), blurRadius: 6)],
+                ),
+                child: Center(child: Text('${i+1}', style: const TextStyle(color: _orange, fontWeight: FontWeight.w800))),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 
   // ─── HEADER ────────────────────────────────────────────────────────────────
