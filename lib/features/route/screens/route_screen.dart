@@ -134,7 +134,9 @@ class _RouteScreenState extends State<RouteScreen> {
           .get(uri, headers: {'User-Agent': 'BuzhorCourier/1.0'})
           .timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
+        // Ensure proper UTF-8 decoding for Cyrillic text
+        final decoded = utf8.decode(response.bodyBytes);
+        final data = json.decode(decoded) as List;
         if (data.isNotEmpty) {
           final point = LatLng(
             double.parse(data[0]['lat'] as String),

@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
+import 'package:buzhor_courier/core/constants/app_strings.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 import 'package:buzhor_courier/features/orders/widgets/order_card.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class SlotHeader extends StatelessWidget {
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
@@ -86,8 +87,8 @@ class SlotHeader extends StatelessWidget {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        SizedBox(width: 3),
-                        Icon(
+                        const SizedBox(width: 3),
+                        const Icon(
                           Icons.arrow_forward_rounded,
                           color: Colors.white,
                           size: 13,

@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/features/route/screens/route_screen.dart';
+import 'package:buzhor_courier/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
@@ -6,6 +7,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
+import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
 
 const _blue = Color(0xFF1B5FA8);
 const _darkBlue = Color(0xFF0D3D6E);
@@ -38,91 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Position? _currentPosition;
   bool _isLocating = false;
 
-  static const _allOrders = [
-    OrderItem(
-      id: '#4821',
-      clientName: '╨Ш╨▓╨░╨╜╨╛╨▓╨░ ╨Ь╨░╤А╨╕╨╜╨░',
-      address: '╤Г╨╗. ╨Ъ╤А╤Л╨╝╤Б╨║╨░╤П, 45, ╨║╨▓. 12',
-      district: '╨ж╨╡╨╜╤В╤А',
-      price: 840,
-      payment: PaymentType.card,
-      bottles: 3,
-      lat: 44.8951,
-      lng: 37.3168,
-      comment:
-          '╨Ф╨╛╨╝╨╛╤Д╨╛╨╜ ╨╜╨╡ ╤А╨░╨▒╨╛╤В╨░╨╡╤В, ╨╖╨▓╨╛╨╜╨╕╤В╤М ╨┐╨╛ ╤В╨╡╨╗.',
-    ),
-    OrderItem(
-      id: '#4822',
-      clientName: '╨Я╨╡╤В╤А╨╛╨▓ ╨Р╨╗╨╡╨║╤Б╨░╨╜╨┤╤А',
-      address: '╤Г╨╗. ╨Э╨░╨▒╨╡╤А╨╡╨╢╨╜╨░╤П, 18',
-      district: '╨У╨╛╤А╨│╨╕╨┐╨┐╨╕╤П',
-      price: 560,
-      payment: PaymentType.cash,
-      bottles: 2,
-      lat: 44.8883,
-      lng: 37.3082,
-    ),
-    OrderItem(
-      id: '#4823',
-      clientName: '╨б╨╝╨╕╤А╨╜╨╛╨▓╨░ ╨Х╨╗╨╡╨╜╨░',
-      address: '╤Г╨╗. ╨Ы╨╡╨╜╨╕╨╜╨░, 102, ╨║╨▓. 3',
-      district: '╨ж╨╡╨╜╤В╤А',
-      price: 1120,
-      payment: PaymentType.qr,
-      bottles: 4,
-      lat: 44.8932,
-      lng: 37.3195,
-      comment: '╨Ю╤Б╤В╨░╨▓╨╕╤В╤М ╤Г ╨┤╨▓╨╡╤А╨╕, ╨║╨╗╨╕╨╡╨╜╤В ╨╜╨░ ╤А╨░╨▒╨╛╤В╨╡',
-    ),
-    OrderItem(
-      id: '#4824',
-      clientName: '╨Ю╨Ю╨Ю ┬л╨а╨░╤Б╤Б╨▓╨╡╤В┬╗',
-      address: '╤Г╨╗. ╨и╨╡╨▓╤З╨╡╨╜╨║╨╛, 7',
-      district: '╨Я╤А╨╛╨╝. ╨╖╨╛╨╜╨░',
-      price: 2800,
-      payment: PaymentType.contract,
-      bottles: 10,
-      lat: 44.9021,
-      lng: 37.3378,
-      isDone: true,
-    ),
-    OrderItem(
-      id: '#4825',
-      clientName: '╨Ъ╨╛╨╖╨╗╨╛╨▓ ╨Ф╨╝╨╕╤В╤А╨╕╨╣',
-      address: '╤Г╨╗. ╨б╨╛╨▓╨╡╤В╤Б╨║╨░╤П, 23, ╨║╨▓. 8',
-      district: '╨Т╨╛╤Б╤В╨╛╨║',
-      price: 280,
-      payment: PaymentType.online,
-      bottles: 1,
-      lat: 44.8975,
-      lng: 37.3298,
-    ),
-    OrderItem(
-      id: '#4826',
-      clientName: '╨д╤С╨┤╨╛╤А╨╛╨▓╨░ ╨Р╨╜╨╜╨░',
-      address: '╨┐╨╡╤А. ╨Ь╨╛╤А╤Б╨║╨╛╨╣, 6, ╨║╨▓. 15',
-      district: '╨ж╨╡╨╜╤В╤А',
-      price: 560,
-      payment: PaymentType.card,
-      bottles: 2,
-      lat: 44.8906,
-      lng: 37.3128,
-      isDone: true,
-      comment: '╨б╨┤╨░╤З╨░ ╤Б 1000 тВ╜',
-    ),
-    OrderItem(
-      id: '#4827',
-      clientName: '╨Ч╨░╤Е╨░╤А╨╛╨▓ ╨Ш╨│╨╛╤А╤М',
-      address: '╤Г╨╗. ╨У╨╛╤А╤М╨║╨╛╨│╨╛, 34, ╨║╨▓. 7',
-      district: '╨Т╨╛╤Б╤В╨╛╨║',
-      price: 840,
-      payment: PaymentType.cash,
-      bottles: 3,
-      lat: 44.8965,
-      lng: 37.3275,
-    ),
-  ];
+  static const _allOrders =
+      sampleOrders; // Using sampleOrders to ensure proper UTF-8 encoding for Cyrillic text
 
   @override
   void initState() {
@@ -141,17 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _buildTimeSlots() {
-    // Group orders into time slots (example: 10:00тАУ14:00)
+    // Group orders into time slots (example: 10:00 - 14:00)
     // In a real app, this would come from the API or orders themselves
     final slot10_14 = _activeOrders.sublist(0, min(_activeOrders.length, 4));
     final slot14_18 = _activeOrders.sublist(min(_activeOrders.length, 4));
 
     _timeSlots = [];
     if (slot10_14.isNotEmpty) {
-      _timeSlots.add(TimeSlot(label: '10:00 тАУ 14:00', orders: slot10_14));
+      _timeSlots.add(TimeSlot(label: '10:00 - 14:00', orders: slot10_14));
     }
     if (slot14_18.isNotEmpty) {
-      _timeSlots.add(TimeSlot(label: '14:00 тАУ 18:00', orders: slot14_18));
+      _timeSlots.add(TimeSlot(label: '14:00 - 18:00', orders: slot14_18));
     }
   }
 
@@ -181,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (mounted) setState(() => _currentPosition = position);
       }
     } catch (_) {
-      // GPS unavailable тАФ continue without it
+      // GPS unavailable — continue without it
     } finally {
       if (mounted) setState(() => _isLocating = false);
     }
@@ -320,8 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА HEADER тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
-
+  // Header
   Widget _buildHeader() {
     return Stack(
       children: [
@@ -346,7 +264,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 const Text(
-                  '╨С╤Г╨╢╨╛╤А',
+                  'Заказы',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -428,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА TAB SWITCHER тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+  // Tab switcher
 
   Widget _buildTabSwitcher() {
     return Container(
@@ -442,8 +360,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            _buildTab('╨б╨┐╨╕╤Б╨╛╨║', Icons.list_rounded, !_isMapView),
-            _buildTab('╨Ъ╨░╤А╤В╨░', Icons.map_outlined, _isMapView),
+            _buildTab('Список', Icons.list_rounded, !_isMapView),
+            _buildTab('Карта', Icons.map_outlined, _isMapView),
           ],
         ),
       ),
@@ -453,7 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTab(String label, IconData icon, bool active) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _isMapView = label == '╨Ъ╨░╤А╤В╨░'),
+        onTap: () => setState(() => _isMapView = label == 'Карта'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),
@@ -494,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА ACTIVE ORDERS LIST тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+  // ACTIVE ORDERS LIST
 
   Widget _buildActiveList() {
     if (_activeOrders.isEmpty) {
@@ -509,7 +427,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              '╨Т╤Б╨╡ ╨╖╨░╨║╨░╨╖╤Л ╨▓╤Л╨┐╨╛╨╗╨╜╨╡╨╜╤Л!',
+              'Все заказы выполнены!',
               style: TextStyle(
                 color: _darkBlue,
                 fontSize: 16,
@@ -518,7 +436,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              '╨Ю╤В╨╗╨╕╤З╨╜╨░╤П ╤А╨░╨▒╨╛╤В╨░',
+              'Статистика работы',
               style: TextStyle(
                 color: const Color(0xFF6B8CAE).withValues(alpha: 0.8),
                 fontSize: 13,
@@ -577,7 +495,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${slot.orders.length} ╨╖╨░╨║╨░╨╖╨╛╨▓',
+                        '${slot.orders.length} заказов',
                         style: TextStyle(
                           color: Color(0xFF6B8CAE).withValues(alpha: 0.7),
                           fontSize: 12,
@@ -604,7 +522,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '╨Ь╨░╤А╤И╤А╤Г╤В',
+                          'Маршрут',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -673,9 +591,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА COMPLETED VIEW тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+  // COMPLETED VIEW
 
   Widget _buildCompletedView() {
+
     if (_completedOrders.isEmpty) {
       return Center(
         child: Column(
@@ -688,7 +607,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              '╨Э╨╡╤В ╨▓╤Л╨┐╨╛╨╗╨╜╨╡╨╜╨╜╤Л╤Е ╨╖╨░╨║╨░╨╖╨╛╨▓',
+              'Нет выполненных заказов',
               style: TextStyle(
                 color: _darkBlue.withValues(alpha: 0.6),
                 fontSize: 15,
@@ -708,15 +627,11 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
-              _buildStatChip(
-                '${_completedOrders.length}',
-                '╨╖╨░╨║╨░╨╖╨╛╨▓',
-                _green,
-              ),
+              _buildStatChip('${_completedOrders.length}', 'заказов', _green),
               const SizedBox(width: 10),
-              _buildStatChip('$totalBottles', '╨▒╤Г╤В.', _lightBlue),
+              _buildStatChip('$totalBottles', 'бут.', _lightBlue),
               const SizedBox(width: 10),
-              _buildStatChip('${totalPrice.toInt()} тВ╜', '', _orange),
+              _buildStatChip('${totalPrice.toInt()} ₽', '', _orange),
             ],
           ),
         ),
@@ -751,10 +666,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА PLACEHOLDERS тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+  // PLACEHOLDERS
 
   Widget _buildTabPlaceholder(int index) {
-    final labels = ['', '', '╨Ю╤В╤З╤С╤В', '╨Я╤А╨╛╤Д╨╕╨╗╤М'];
+    final labels = ['', '', 'Статистика', 'Профиль'];
     final icons = [
       null,
       null,
@@ -784,7 +699,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА ORDER CARDS тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+  // ORDER CARDS
 
   Widget _buildActiveCard(OrderItem order, int number) {
     return Container(
@@ -950,7 +865,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(
-                            '╨Т╤Л╨┐╨╛╨╗╨╜╨╡╨╜',
+                            'Выполнен',
                             style: TextStyle(
                               color: _green,
                               fontSize: 10,
@@ -978,7 +893,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${order.price.toInt()} тВ╜',
+                  '${order.price.toInt()} ₽',
                   style: const TextStyle(
                     color: _darkBlue,
                     fontSize: 15,
@@ -1068,7 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.water_drop_outlined, size: 15, color: _lightBlue),
             const SizedBox(width: 4),
             Text(
-              '${order.bottles} ╨▒╤Г╤В.',
+              '${order.bottles} бут.',
               style: const TextStyle(
                 color: Color(0xFF6B8CAE),
                 fontSize: 12,
@@ -1091,7 +1006,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '╨Ь╨░╤А╤И╤А╤Г╤В',
+                      'Маршрут',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -1122,11 +1037,11 @@ class _HomeScreenState extends State<HomeScreen> {
       case PaymentType.card:
         icon = Icons.credit_card_rounded;
         color = _blue;
-        label = '╨Ъ╨░╤А╤В╨░';
+        label = 'Карта';
       case PaymentType.cash:
         icon = Icons.payments_outlined;
         color = _green;
-        label = '╨Э╨░╨╗';
+        label = 'Нал';
       case PaymentType.qr:
         icon = Icons.qr_code_rounded;
         color = const Color(0xFF7B3FE4);
@@ -1134,11 +1049,11 @@ class _HomeScreenState extends State<HomeScreen> {
       case PaymentType.online:
         icon = Icons.smartphone_rounded;
         color = _orange;
-        label = '╨Ю╨╜╨╗╨░╨╣╨╜';
+        label = 'Онлайн';
       case PaymentType.contract:
         icon = Icons.description_outlined;
         color = const Color(0xFF8AACCC);
-        label = '╨Ф╨╛╨│╨╛╨▓╨╛╤А';
+        label = 'Договор';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
@@ -1164,22 +1079,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // тФАтФАтФА BOTTOM NAV тФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФАтФА
+  // BOTTOM NAV
 
   Widget _buildBottomNav() {
     const items = [
-      (
-        Icons.local_shipping_outlined,
-        Icons.local_shipping_rounded,
-        '╨Ч╨░╨║╨░╨╖╤Л',
-      ),
+      (Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Заказы'),
       (
         Icons.check_circle_outline_rounded,
         Icons.check_circle_rounded,
-        '╨Т╤Л╨┐╨╛╨╗╨╜╨╡╨╜╨╛',
+        'Выполнено',
       ),
-      (Icons.bar_chart_outlined, Icons.bar_chart_rounded, '╨Ю╤В╤З╤С╤В'),
-      (Icons.person_outline_rounded, Icons.person_rounded, '╨Я╤А╨╛╤Д╨╕╨╗╤М'),
+      (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Статистика'),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'Профиль'),
     ];
     return Container(
       decoration: const BoxDecoration(
