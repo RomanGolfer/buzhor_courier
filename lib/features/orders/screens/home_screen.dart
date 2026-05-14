@@ -1,5 +1,4 @@
 import 'package:buzhor_courier/features/route/screens/route_screen.dart';
-import 'package:buzhor_courier/core/constants/app_strings.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';

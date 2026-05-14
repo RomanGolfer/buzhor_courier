@@ -1,5 +1,4 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
-import 'package:buzhor_courier/core/constants/app_strings.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:flutter/material.dart';
 
