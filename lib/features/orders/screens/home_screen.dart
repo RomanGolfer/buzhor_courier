@@ -49,6 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottles: 3,
       lat: 44.8951,
       lng: 37.3168,
+      comment: 'Домофон не работает, звонить по тел.',
     ),
     OrderItem(
       id: '#4822',
@@ -71,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       bottles: 4,
       lat: 44.8932,
       lng: 37.3195,
+      comment: 'Оставить у двери, клиент на работе',
     ),
     OrderItem(
       id: '#4824',
@@ -106,6 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       lat: 44.8906,
       lng: 37.3128,
       isDone: true,
+      comment: 'Сдача с 1000 ₽',
     ),
     OrderItem(
       id: '#4827',
@@ -201,15 +204,15 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildBody() {
     switch (_navIndex) {
       case 0:
-        // Show list as background with a draggable map sheet on top
-        return Stack(
-          children: [
-            // Background list
-            _buildActiveList(),
-            // Map sheet overlay
-            _buildMapSheet(),
-          ],
-        );
+        if (_isMapView) {
+          return Stack(
+            children: [
+              _buildActiveList(),
+              _buildMapSheet(),
+            ],
+          );
+        }
+        return _buildActiveList();
       case 1:
         return _buildCompletedView();
       default:
@@ -785,48 +788,63 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildActiveCard(OrderItem order, int number) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _blue.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
+            color: _blue.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+      child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Stop number
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: _orange.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _orange.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$number',
-                  style: const TextStyle(
-                    color: _orange,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
+            Container(width: 4, color: _blue),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: _orange.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _orange.withValues(alpha: 0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$number',
+                          style: const TextStyle(
+                            color: _orange,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildCardContent(order)),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(child: _buildCardContent(order)),
           ],
         ),
       ),
@@ -835,48 +853,63 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCompletedCard(OrderItem order, int number) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _green.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: _green.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: _green.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+      child: IntrinsicHeight(
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: _green.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _green.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  '$number',
-                  style: const TextStyle(
-                    color: _green,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
+            Container(width: 4, color: _green),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: _green.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _green.withValues(alpha: 0.4),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$number',
+                          style: const TextStyle(
+                            color: _green,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: _buildCardContent(order)),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(child: _buildCardContent(order)),
           ],
         ),
       ),
@@ -888,57 +921,94 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              order.id,
-              style: const TextStyle(
-                color: _blue,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.3,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        order.id,
+                        style: const TextStyle(
+                          color: _blue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      if (order.isDone) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _green.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Выполнен',
+                            style: TextStyle(
+                              color: _green,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    order.clientName,
+                    style: const TextStyle(
+                      color: _darkBlue,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ),
-            if (order.isDone) ...[
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: _green.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'Выполнен',
-                  style: TextStyle(
-                    color: _green,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${order.price.toInt()} ₽',
+                  style: const TextStyle(
+                    color: _darkBlue,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ),
-            ],
-            const Spacer(),
-            _buildPaymentBadge(order.payment),
-            const SizedBox(width: 8),
-            Text(
-              '${order.price.toInt()} ₽',
-              style: const TextStyle(
-                color: _darkBlue,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                const SizedBox(height: 4),
+                _buildPaymentBadge(order.payment),
+              ],
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: () {},
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF4FB),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.chat_bubble_outline_rounded,
+                  size: 16,
+                  color: _blue,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          order.clientName,
-          style: const TextStyle(
-            color: _darkBlue,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
         Row(
           children: [
             const Icon(
@@ -972,6 +1042,30 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
+        if (order.comment != null) ...[
+          const SizedBox(height: 6),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.info_outline_rounded,
+                size: 13,
+                color: _orange,
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  order.comment!,
+                  style: TextStyle(
+                    color: _orange.withValues(alpha: 0.85),
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
         const SizedBox(height: 10),
         Row(
           children: [

@@ -193,7 +193,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x30000000),
-                      blurRadius: 30,
+                      blurRadius: 8,
                       offset: Offset(0, -5),
                     ),
                   ],
