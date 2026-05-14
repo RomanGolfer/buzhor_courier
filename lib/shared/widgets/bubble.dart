@@ -24,7 +24,7 @@ class BubbleWidget extends StatelessWidget {
       height: diameter,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: color.withOpacity(opacity),
+        color: color.withValues(alpha: opacity),
         boxShadow: [
           BoxShadow(
             color: shadowColor,
