@@ -1,4 +1,4 @@
-﻿import 'package:buzhor_courier/features/route/screens/route_screen.dart';
+import 'package:buzhor_courier/features/route/screens/route_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math';
@@ -49,7 +49,8 @@ class _HomeScreenState extends State<HomeScreen> {
       bottles: 3,
       lat: 44.8951,
       lng: 37.3168,
-      comment: '╨Ф╨╛╨╝╨╛╤Д╨╛╨╜ ╨╜╨╡ ╤А╨░╨▒╨╛╤В╨░╨╡╤В, ╨╖╨▓╨╛╨╜╨╕╤В╤М ╨┐╨╛ ╤В╨╡╨╗.',
+      comment:
+          '╨Ф╨╛╨╝╨╛╤Д╨╛╨╜ ╨╜╨╡ ╤А╨░╨▒╨╛╤В╨░╨╡╤В, ╨╖╨▓╨╛╨╜╨╕╤В╤М ╨┐╨╛ ╤В╨╡╨╗.',
     ),
     OrderItem(
       id: '#4822',
@@ -205,12 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (_navIndex) {
       case 0:
         if (_isMapView) {
-          return Stack(
-            children: [
-              _buildActiveList(),
-              _buildMapSheet(),
-            ],
-          );
+          return Stack(children: [_buildActiveList(), _buildMapSheet()]);
         }
         return _buildActiveList();
       case 1:
@@ -712,7 +708,11 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
-              _buildStatChip('${_completedOrders.length}', '╨╖╨░╨║╨░╨╖╨╛╨▓', _green),
+              _buildStatChip(
+                '${_completedOrders.length}',
+                '╨╖╨░╨║╨░╨╖╨╛╨▓',
+                _green,
+              ),
               const SizedBox(width: 10),
               _buildStatChip('$totalBottles', '╨▒╤Г╤В.', _lightBlue),
               const SizedBox(width: 10),
@@ -1047,11 +1047,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.info_outline_rounded,
-                size: 13,
-                color: _orange,
-              ),
+              const Icon(Icons.info_outline_rounded, size: 13, color: _orange),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
@@ -1172,7 +1168,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomNav() {
     const items = [
-      (Icons.local_shipping_outlined, Icons.local_shipping_rounded, '╨Ч╨░╨║╨░╨╖╤Л'),
+      (
+        Icons.local_shipping_outlined,
+        Icons.local_shipping_rounded,
+        '╨Ч╨░╨║╨░╨╖╤Л',
+      ),
       (
         Icons.check_circle_outline_rounded,
         Icons.check_circle_rounded,

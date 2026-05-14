@@ -33,11 +33,7 @@ class BubbleWidget extends StatelessWidget {
           ),
         ],
       ),
-      child: child == null
-          ? null
-          : Center(
-              child: child,
-            ),
+      child: child == null ? null : Center(child: child),
     );
   }
 }

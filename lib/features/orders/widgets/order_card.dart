@@ -105,11 +105,7 @@ class _CardContent extends StatelessWidget {
   final VoidCallback? onChatTap;
   final VoidCallback? onRouteTap;
 
-  const _CardContent({
-    required this.order,
-    this.onChatTap,
-    this.onRouteTap,
-  });
+  const _CardContent({required this.order, this.onChatTap, this.onRouteTap});
 
   @override
   Widget build(BuildContext context) {
@@ -216,10 +212,7 @@ class _CardContent extends StatelessWidget {
             Expanded(
               child: Text(
                 order.address,
-                style: const TextStyle(
-                  color: AppColors.grayBlue,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: AppColors.grayBlue, fontSize: 12),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
