@@ -1,6 +1,7 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class OrderCard extends StatelessWidget {
   final OrderItem order;
@@ -287,7 +288,19 @@ class _CardContent extends StatelessWidget {
             if (showRouteButton) ...[
               const Spacer(),
               GestureDetector(
-                onTap: onRouteTap,
+                onTap: () async {
+                  final yandex = Uri.parse(
+                    'yandexnavi://build_route_on_map?lat_to=${order.lat}&lon_to=${order.lng}&zoom=12',
+                  );
+                  final yandexWeb = Uri.parse(
+                    'https://yandex.ru/maps/?rtext=~${order.lat},${order.lng}&rtt=auto',
+                  );
+                  if (await canLaunchUrl(yandex)) {
+                    await launchUrl(yandex);
+                  } else {
+                    await launchUrl(yandexWeb, mode: LaunchMode.externalApplication);
+                  }
+                },
                 child: Container(
                   height: 32,
                   padding: const EdgeInsets.symmetric(horizontal: 13),

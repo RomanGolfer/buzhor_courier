@@ -21,14 +21,11 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final MapController _mapController;
-  late final DraggableScrollableController _mapSheetController;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
-    _mapSheetController = DraggableScrollableController();
-    _mapSheetController.addListener(() => setState(() {}));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationProvider.notifier).refreshLocation();
     });
@@ -36,7 +33,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
-    _mapSheetController.dispose();
     super.dispose();
   }
 
@@ -69,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     switch (ordersState.navIndex) {
       case 0:
         if (ordersState.isMapView) {
-          return Stack(children: [_buildActiveList(ordersState), _buildMapSheet(ordersState)]);
+          return _buildMapWidget(ordersState.activeOrders);
         }
         return _buildActiveList(ordersState);
       case 1:
@@ -77,54 +73,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       default:
         return _buildTabPlaceholder(ordersState.navIndex);
     }
-  }
-
-  Widget _buildMapSheet(OrdersState ordersState) {
-    const initial = 0.42;
-    return DraggableScrollableSheet(
-      controller: _mapSheetController,
-      initialChildSize: initial,
-      minChildSize: 0.18,
-      maxChildSize: 0.95,
-      snap: true,
-      snapSizes: const [0.18, 0.42, 0.95],
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.blue.withValues(alpha: 0.08),
-                blurRadius: 12,
-                offset: const Offset(0, -4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 8),
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.divider,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                  child: _buildMapWidget(ordersState.activeOrders),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   Widget _buildMapWidget(List<OrderItem> activeOrders) {
