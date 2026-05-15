@@ -1,141 +1,77 @@
-import 'package:buzhor_courier/features/route/screens/route_screen.dart';
-import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'dart:math';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' as ll;
+﻿import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
-import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
+import 'package:buzhor_courier/features/orders/providers/location_provider.dart';
+import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
+import 'package:buzhor_courier/features/orders/widgets/slot_header.dart';
+import 'package:buzhor_courier/features/route/screens/route_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
-const _blue = Color(0xFF1B5FA8);
-const _darkBlue = Color(0xFF0D3D6E);
-const _lightBlue = Color(0xFF5BB8F5);
-const _green = Color(0xFF4A8C2A);
-const _orange = Color(0xFFE8720C);
-const _bg = Color(0xFFF0F5FB);
-const _liveGreen = Color(0xFF6FCF3A);
-
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int _navIndex = 0;
-  bool _isMapView = false;
-  bool _isBuilding = false;
-  double _listOpacity = 1.0;
-
-  List<OrderItem> _activeOrders = [];
-  List<OrderItem> _completedOrders = [];
-  List<TimeSlot> _timeSlots = [];
-  // Map + draggable sheet controllers
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final MapController _mapController;
   late final DraggableScrollableController _mapSheetController;
-
-  Position? _currentPosition;
-  bool _isLocating = false;
-
-  static const _allOrders =
-      sampleOrders; // Using sampleOrders to ensure proper UTF-8 encoding for Cyrillic text
 
   @override
   void initState() {
     super.initState();
-    _activeOrders = _allOrders.where((o) => !o.isDone).toList();
-    _completedOrders = _allOrders.where((o) => o.isDone).toList();
-    _buildTimeSlots();
-    _initLocation();
     _mapController = MapController();
     _mapSheetController = DraggableScrollableController();
-    _mapSheetController.addListener(() {
-      // when sheet near top, consider it map-focused
-      // (could be used to toggle UI later)
-      setState(() {});
+    _mapSheetController.addListener(() => setState(() {}));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(locationProvider.notifier).refreshLocation();
     });
   }
 
-  void _buildTimeSlots() {
-    // Group orders into time slots (example: 10:00 - 14:00)
-    // In a real app, this would come from the API or orders themselves
-    final slot10_14 = _activeOrders.sublist(0, min(_activeOrders.length, 4));
-    final slot14_18 = _activeOrders.sublist(min(_activeOrders.length, 4));
-
-    _timeSlots = [];
-    if (slot10_14.isNotEmpty) {
-      _timeSlots.add(TimeSlot(label: '10:00 - 14:00', orders: slot10_14));
-    }
-    if (slot14_18.isNotEmpty) {
-      _timeSlots.add(TimeSlot(label: '14:00 - 18:00', orders: slot14_18));
-    }
-  }
-
-  Future<void> _initLocation() async {
-    setState(() => _isLocating = true);
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() => _isLocating = false);
-        return;
-      }
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) {
-        final position =
-            await Geolocator.getCurrentPosition(
-              locationSettings: const LocationSettings(
-                accuracy: LocationAccuracy.high,
-              ),
-            ).timeout(
-              const Duration(seconds: 12),
-              onTimeout: () => throw Exception('GPS timeout'),
-            );
-        if (mounted) setState(() => _currentPosition = position);
-      }
-    } catch (_) {
-      // GPS unavailable — continue without it
-    } finally {
-      if (mounted) setState(() => _isLocating = false);
-    }
+  @override
+  void dispose() {
+    _mapSheetController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final ordersState = ref.watch(ordersProvider);
+    final locationState = ref.watch(locationProvider);
+
     return Scaffold(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.bg,
       body: Column(
         children: [
-          _buildHeader(),
-          if (_navIndex == 0) _buildTabSwitcher(),
-          Expanded(child: _buildBody()),
+          _buildHeader(locationState),
+          if (ordersState.navIndex == 0) _buildTabSwitcher(ordersState),
+          Expanded(child: _buildBody(ordersState)),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(ordersState),
     );
   }
 
-  Widget _buildBody() {
-    switch (_navIndex) {
+  Widget _buildBody(OrdersState ordersState) {
+    switch (ordersState.navIndex) {
       case 0:
-        if (_isMapView) {
-          return Stack(children: [_buildActiveList(), _buildMapSheet()]);
+        if (ordersState.isMapView) {
+          return Stack(children: [_buildActiveList(ordersState), _buildMapSheet(ordersState)]);
         }
-        return _buildActiveList();
+        return _buildActiveList(ordersState);
       case 1:
-        return _buildCompletedView();
+        return _buildCompletedView(ordersState);
       default:
-        return _buildTabPlaceholder(_navIndex);
+        return _buildTabPlaceholder(ordersState.navIndex);
     }
   }
 
-  Widget _buildMapSheet() {
-    final initial = 0.42;
+  Widget _buildMapSheet(OrdersState ordersState) {
+    const initial = 0.42;
     return DraggableScrollableSheet(
       controller: _mapSheetController,
       initialChildSize: initial,
@@ -150,7 +86,7 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
             boxShadow: [
               BoxShadow(
-                color: _blue.withValues(alpha: 0.08),
+                color: AppColors.blue.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, -4),
               ),
@@ -163,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD6E4F0),
+                  color: AppColors.divider,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -172,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(16),
                   ),
-                  child: _buildMapWidget(),
+                  child: _buildMapWidget(ordersState.activeOrders),
                 ),
               ),
             ],
@@ -182,10 +118,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMapWidget() {
-    // center map on first active order or a default point
-    final center = _activeOrders.isNotEmpty
-        ? ll.LatLng(_activeOrders[0].lat, _activeOrders[0].lng)
+  Widget _buildMapWidget(List<OrderItem> activeOrders) {
+    final center = activeOrders.isNotEmpty
+        ? ll.LatLng(activeOrders[0].lat, activeOrders[0].lng)
         : ll.LatLng(44.8951, 37.3168);
     return FlutterMap(
       mapController: _mapController,
@@ -198,14 +133,13 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c', 'd'],
         ),
         SimpleAttributionWidget(source: const Text('CartoDB')),
         MarkerLayer(
-          markers: List.generate(_activeOrders.length, (i) {
-            final o = _activeOrders[i];
+          markers: List.generate(activeOrders.length, (i) {
+            final o = activeOrders[i];
             return Marker(
               point: ll.LatLng(o.lat, o.lng),
               width: 44,
@@ -216,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: _blue.withValues(alpha: 0.12),
+                      color: AppColors.blue.withValues(alpha: 0.12),
                       blurRadius: 6,
                     ),
                   ],
@@ -225,7 +159,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Text(
                     '${i + 1}',
                     style: const TextStyle(
-                      color: _orange,
+                      color: AppColors.orange,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -238,11 +172,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Header
-  Widget _buildHeader() {
+  Widget _buildHeader(LocationState locationState) {
     return Stack(
       children: [
-        // Gradient overlay for system status bar visibility
         Container(
           height: 60,
           decoration: BoxDecoration(
@@ -250,8 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                _blue.withValues(alpha: 0.6),
-                _blue.withValues(alpha: 0.0),
+                AppColors.blue.withValues(alpha: 0.6),
+                AppColors.blue.withValues(alpha: 0.0),
               ],
             ),
           ),
@@ -272,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const Spacer(),
-                _buildGpsIndicator(),
+                _buildGpsIndicator(locationState),
               ],
             ),
           ),
@@ -281,8 +213,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildGpsIndicator() {
-    if (_isLocating) {
+  Widget _buildGpsIndicator(LocationState locationState) {
+    if (locationState.isLocating) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -305,16 +237,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       );
     }
-    if (_currentPosition != null) {
+
+    if (locationState.position != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.gps_fixed_rounded, color: _liveGreen, size: 13),
-          const SizedBox(width: 4),
-          const Text(
+        children: const [
+          Icon(Icons.gps_fixed_rounded, color: AppColors.liveGreen, size: 13),
+          SizedBox(width: 4),
+          Text(
             'GPS',
             style: TextStyle(
-              color: _liveGreen,
+              color: AppColors.liveGreen,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -322,8 +255,9 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       );
     }
+
     return GestureDetector(
-      onTap: _initLocation,
+      onTap: () => ref.read(locationProvider.notifier).refreshLocation(),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -345,22 +279,20 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Tab switcher
-
-  Widget _buildTabSwitcher() {
+  Widget _buildTabSwitcher(OrdersState ordersState) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          color: const Color(0xFFEEF4FB),
+          color: AppColors.cardBg,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            _buildTab('Список', Icons.list_rounded, !_isMapView),
-            _buildTab('Карта', Icons.map_outlined, _isMapView),
+            _buildTab('Список', Icons.list_rounded, !ordersState.isMapView),
+            _buildTab('Карта', Icons.map_outlined, ordersState.isMapView),
           ],
         ),
       ),
@@ -370,7 +302,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTab(String label, IconData icon, bool active) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _isMapView = label == 'Карта'),
+        onTap: () => ref.read(ordersProvider.notifier).setMapView(label == 'Карта'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),
@@ -393,13 +325,13 @@ class _HomeScreenState extends State<HomeScreen> {
               Icon(
                 icon,
                 size: 16,
-                color: active ? _blue : const Color(0xFF8AACCC),
+                color: active ? AppColors.blue : AppColors.grayBlueLight,
               ),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: TextStyle(
-                  color: active ? _darkBlue : const Color(0xFF8AACCC),
+                  color: active ? AppColors.darkBlue : AppColors.grayBlueLight,
                   fontSize: 13,
                   fontWeight: active ? FontWeight.w700 : FontWeight.normal,
                 ),
@@ -411,10 +343,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ACTIVE ORDERS LIST
-
-  Widget _buildActiveList() {
-    if (_activeOrders.isEmpty) {
+  Widget _buildActiveList(OrdersState ordersState) {
+    if (ordersState.activeOrders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -422,13 +352,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               Icons.inbox_rounded,
               size: 56,
-              color: _lightBlue.withValues(alpha: 0.4),
+              color: AppColors.lightBlue.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
             const Text(
               'Все заказы выполнены!',
               style: TextStyle(
-                color: _darkBlue,
+                color: AppColors.darkBlue,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -437,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               'Статистика работы',
               style: TextStyle(
-                color: const Color(0xFF6B8CAE).withValues(alpha: 0.8),
+                color: AppColors.grayBlue.withValues(alpha: 0.8),
                 fontSize: 13,
               ),
             ),
@@ -445,156 +375,49 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
+
     return AnimatedOpacity(
-      opacity: _listOpacity,
+      opacity: ordersState.listOpacity,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        itemCount: _timeSlots.length,
-        itemBuilder: (context, slotIndex) =>
-            _buildTimeSlotGroup(_timeSlots[slotIndex], slotIndex),
+        itemCount: ordersState.timeSlots.length,
+        itemBuilder: (context, slotIndex) => _buildTimeSlotGroup(
+          ordersState.timeSlots[slotIndex],
+          slotIndex,
+        ),
       ),
     );
   }
 
   Widget _buildTimeSlotGroup(TimeSlot slot, int slotIndex) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: () => setState(() => slot.isExpanded = !slot.isExpanded),
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: _blue.withValues(alpha: 0.06),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        slot.label,
-                        style: const TextStyle(
-                          color: _darkBlue,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${slot.orders.length} заказов',
-                        style: TextStyle(
-                          color: Color(0xFF6B8CAE).withValues(alpha: 0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () => _buildRouteForSlot(slot),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [_orange, Color(0xFFFF9A3C)],
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Маршрут',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(width: 3),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Colors.white,
-                          size: 13,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                AnimatedRotation(
-                  turns: slot.isExpanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(
-                    Icons.expand_less_rounded,
-                    color: _blue,
-                    size: 20,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (slot.isExpanded)
-          Column(
-            children: List.generate(slot.orders.length, (orderIndex) {
-              final order = slot.orders[orderIndex];
-              return _buildActiveCard(order, orderIndex + 1);
-            }),
-          ),
-      ],
+    return SlotHeader(
+      slot: slot,
+      onToggle: () => ref.read(ordersProvider.notifier).toggleSlotExpansion(slotIndex),
+      onBuildRoute: () => _buildRouteForSlot(slot),
     );
   }
 
   Future<void> _buildRouteForSlot(TimeSlot slot) async {
-    if (_isBuilding || slot.orders.isEmpty) return;
-    final nav = Navigator.of(context);
-    setState(() {
-      _isBuilding = true;
-      _listOpacity = 0.0;
-    });
+    if (slot.orders.isEmpty) return;
 
-    await Future.delayed(const Duration(milliseconds: 300));
-
+    await ref.read(ordersProvider.notifier).prepareRoute();
     if (!mounted) return;
-    setState(() {
-      _isBuilding = false;
-      _listOpacity = 1.0;
-    });
 
-    nav.push(
+    Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RouteScreen(
           orders: List.from(slot.orders),
-          startLat: _currentPosition?.latitude,
-          startLng: _currentPosition?.longitude,
+          startLat: ref.read(locationProvider).position?.latitude,
+          startLng: ref.read(locationProvider).position?.longitude,
         ),
       ),
     );
   }
 
-  // COMPLETED VIEW
-
-  Widget _buildCompletedView() {
-
-    if (_completedOrders.isEmpty) {
+  Widget _buildCompletedView(OrdersState ordersState) {
+    if (ordersState.completedOrders.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -602,13 +425,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Icon(
               Icons.check_circle_outline_rounded,
               size: 56,
-              color: _green.withValues(alpha: 0.4),
+              color: AppColors.green.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
             Text(
               'Нет выполненных заказов',
               style: TextStyle(
-                color: _darkBlue.withValues(alpha: 0.6),
+                color: AppColors.darkBlue.withValues(alpha: 0.6),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -617,8 +440,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     }
-    final totalPrice = _completedOrders.fold<double>(0, (s, o) => s + o.price);
-    final totalBottles = _completedOrders.fold<int>(0, (s, o) => s + o.bottles);
+
+    final totalPrice = ordersState.completedOrders.fold<double>(0, (sum, order) => sum + order.price);
+    final totalBottles = ordersState.completedOrders.fold<int>(0, (sum, order) => sum + order.bottles);
+
     return Column(
       children: [
         Container(
@@ -626,20 +451,19 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
-              _buildStatChip('${_completedOrders.length}', 'заказов', _green),
+              _buildStatChip('${ordersState.completedOrders.length}', 'заказов', AppColors.green),
               const SizedBox(width: 10),
-              _buildStatChip('$totalBottles', 'бут.', _lightBlue),
+              _buildStatChip('$totalBottles', 'бут.', AppColors.lightBlue),
               const SizedBox(width: 10),
-              _buildStatChip('${totalPrice.toInt()} ₽', '', _orange),
+              _buildStatChip('${totalPrice.toInt()} ₽', '', AppColors.orange),
             ],
           ),
         ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            itemCount: _completedOrders.length,
-            itemBuilder: (context, i) =>
-                _buildCompletedCard(_completedOrders[i], i + 1),
+            itemCount: ordersState.completedOrders.length,
+            itemBuilder: (context, i) => _buildCompletedCard(ordersState.completedOrders[i], i + 1),
           ),
         ),
       ],
@@ -665,8 +489,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // PLACEHOLDERS
-
   Widget _buildTabPlaceholder(int index) {
     final labels = ['', '', 'Статистика', 'Профиль'];
     final icons = [
@@ -682,85 +504,18 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(
             icons[index],
             size: 56,
-            color: _lightBlue.withValues(alpha: 0.4),
+            color: AppColors.lightBlue.withValues(alpha: 0.4),
           ),
           const SizedBox(height: 12),
           Text(
             labels[index],
             style: TextStyle(
-              color: _darkBlue.withValues(alpha: 0.5),
+              color: AppColors.darkBlue.withValues(alpha: 0.5),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ORDER CARDS
-
-  Widget _buildActiveCard(OrderItem order, int number) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: _blue.withValues(alpha: 0.10),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 4, color: _blue),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: _orange.withValues(alpha: 0.12),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _orange.withValues(alpha: 0.4),
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '$number',
-                          style: const TextStyle(
-                            color: _orange,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildCardContent(order)),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -774,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: _green.withValues(alpha: 0.10),
+            color: AppColors.green.withValues(alpha: 0.10),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -789,7 +544,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(width: 4, color: _green),
+            Container(width: 4, color: AppColors.green),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
@@ -800,10 +555,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       width: 30,
                       height: 30,
                       decoration: BoxDecoration(
-                        color: _green.withValues(alpha: 0.12),
+                        color: AppColors.green.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: _green.withValues(alpha: 0.4),
+                          color: AppColors.green.withValues(alpha: 0.4),
                           width: 1.5,
                         ),
                       ),
@@ -811,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Text(
                           '$number',
                           style: const TextStyle(
-                            color: _green,
+                            color: AppColors.green,
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
                           ),
@@ -846,7 +601,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         order.id,
                         style: const TextStyle(
-                          color: _blue,
+                          color: AppColors.blue,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
@@ -860,13 +615,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: _green.withValues(alpha: 0.1),
+                            color: AppColors.green.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(
                             'Выполнен',
                             style: TextStyle(
-                              color: _green,
+                              color: AppColors.green,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -879,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     order.clientName,
                     style: const TextStyle(
-                      color: _darkBlue,
+                      color: AppColors.darkBlue,
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                     ),
@@ -894,7 +649,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   '${order.price.toInt()} ₽',
                   style: const TextStyle(
-                    color: _darkBlue,
+                    color: AppColors.darkBlue,
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                   ),
@@ -910,13 +665,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEEF4FB),
+                  color: AppColors.cardBg,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.chat_bubble_outline_rounded,
                   size: 16,
-                  color: _blue,
+                  color: AppColors.blue,
                 ),
               ),
             ),
@@ -928,13 +683,13 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(
               Icons.location_on_outlined,
               size: 13,
-              color: Color(0xFF8AACCC),
+              color: AppColors.grayBlueLight,
             ),
             const SizedBox(width: 3),
             Expanded(
               child: Text(
                 order.address,
-                style: const TextStyle(color: Color(0xFF6B8CAE), fontSize: 12),
+                style: const TextStyle(color: AppColors.grayBlue, fontSize: 12),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -942,13 +697,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFEEF4FB),
+                color: AppColors.cardBg,
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 order.district,
                 style: const TextStyle(
-                  color: _blue,
+                  color: AppColors.blue,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
@@ -961,13 +716,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.info_outline_rounded, size: 13, color: _orange),
+              const Icon(Icons.info_outline_rounded, size: 13, color: AppColors.orange),
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
                   order.comment!,
                   style: TextStyle(
-                    color: _orange.withValues(alpha: 0.85),
+                    color: AppColors.orange.withValues(alpha: 0.85),
                     fontSize: 11.5,
                     fontWeight: FontWeight.w500,
                   ),
@@ -979,47 +734,14 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 10),
         Row(
           children: [
-            const Icon(Icons.water_drop_outlined, size: 15, color: _lightBlue),
+            const Icon(Icons.water_drop_outlined, size: 15, color: AppColors.lightBlue),
             const SizedBox(width: 4),
             Text(
               '${order.bottles} бут.',
               style: const TextStyle(
-                color: Color(0xFF6B8CAE),
+                color: AppColors.grayBlue,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-              ),
-            ),
-            const Spacer(),
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 13),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_orange, Color(0xFFFF9A3C)],
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Маршрут',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(width: 3),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white,
-                      size: 13,
-                    ),
-                  ],
-                ),
               ),
             ),
           ],
@@ -1035,23 +757,23 @@ class _HomeScreenState extends State<HomeScreen> {
     switch (type) {
       case PaymentType.card:
         icon = Icons.credit_card_rounded;
-        color = _blue;
+        color = AppColors.blue;
         label = 'Карта';
       case PaymentType.cash:
         icon = Icons.payments_outlined;
-        color = _green;
+        color = AppColors.green;
         label = 'Нал';
       case PaymentType.qr:
         icon = Icons.qr_code_rounded;
-        color = const Color(0xFF7B3FE4);
+        color = AppColors.purple;
         label = 'QR';
       case PaymentType.online:
         icon = Icons.smartphone_rounded;
-        color = _orange;
+        color = AppColors.orange;
         label = 'Онлайн';
       case PaymentType.contract:
         icon = Icons.description_outlined;
-        color = const Color(0xFF8AACCC);
+        color = AppColors.grayBlueLight;
         label = 'Договор';
     }
     return Container(
@@ -1078,16 +800,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // BOTTOM NAV
-
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(OrdersState ordersState) {
     const items = [
       (Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Заказы'),
-      (
-        Icons.check_circle_outline_rounded,
-        Icons.check_circle_rounded,
-        'Выполнено',
-      ),
+      (Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 'Выполнено'),
       (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Статистика'),
       (Icons.person_outline_rounded, Icons.person_rounded, 'Профиль'),
     ];
@@ -1108,14 +824,11 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: List.generate(items.length, (i) {
-              final active = _navIndex == i;
+              final active = ordersState.navIndex == i;
               final (iconOut, iconFill, label) = items[i];
               return Expanded(
                 child: GestureDetector(
-                  onTap: () => setState(() {
-                    _navIndex = i;
-                    _isMapView = false;
-                  }),
+                  onTap: () => ref.read(ordersProvider.notifier).setNavIndex(i),
                   behavior: HitTestBehavior.opaque,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1128,13 +841,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: active
-                              ? _blue.withValues(alpha: 0.1)
+                              ? AppColors.blue.withValues(alpha: 0.1)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           active ? iconFill : iconOut,
-                          color: active ? _blue : const Color(0xFF8AACCC),
+                          color: active ? AppColors.blue : AppColors.grayBlueLight,
                           size: 24,
                         ),
                       ),
@@ -1142,7 +855,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         label,
                         style: TextStyle(
-                          color: active ? _blue : const Color(0xFF8AACCC),
+                          color: active ? AppColors.blue : AppColors.grayBlueLight,
                           fontSize: 11,
                           fontWeight: active
                               ? FontWeight.w700
