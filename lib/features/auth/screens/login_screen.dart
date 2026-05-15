@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:buzhor_courier/shared/models/bubble.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/auth/widgets/bubble_painter.dart';
 import 'package:buzhor_courier/features/auth/providers/login_provider.dart';
@@ -96,9 +97,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(loginStateProvider);
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
+    final overlayStyle = state.isExpanded
+        ? const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          )
+        : const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          );
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: overlayStyle,
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Stack(
         children: [
           Container(
             decoration: const BoxDecoration(
@@ -376,6 +390,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             },
           ),
         ],
+        ),
       ),
     );
   }
