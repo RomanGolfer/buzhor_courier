@@ -7,6 +7,7 @@ class OrderCard extends StatelessWidget {
   final int number;
   final VoidCallback? onChatTap;
   final VoidCallback? onRouteTap;
+  final bool showRouteButton;
 
   const OrderCard({
     super.key,
@@ -14,6 +15,7 @@ class OrderCard extends StatelessWidget {
     required this.number,
     this.onChatTap,
     this.onRouteTap,
+    this.showRouteButton = true,
   });
 
   @override
@@ -56,6 +58,7 @@ class OrderCard extends StatelessWidget {
                         order: order,
                         onChatTap: onChatTap,
                         onRouteTap: onRouteTap,
+                        showRouteButton: showRouteButton,
                       ),
                     ),
                   ],
@@ -104,8 +107,14 @@ class _CardContent extends StatelessWidget {
   final OrderItem order;
   final VoidCallback? onChatTap;
   final VoidCallback? onRouteTap;
+  final bool showRouteButton;
 
-  const _CardContent({required this.order, this.onChatTap, this.onRouteTap});
+  const _CardContent({
+    required this.order,
+    this.onChatTap,
+    this.onRouteTap,
+    this.showRouteButton = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -275,39 +284,41 @@ class _CardContent extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const Spacer(),
-            GestureDetector(
-              onTap: onRouteTap,
-              child: Container(
-                height: 32,
-                padding: const EdgeInsets.symmetric(horizontal: 13),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.orange, AppColors.orangeLight],
+            if (showRouteButton) ...[
+              const Spacer(),
+              GestureDetector(
+                onTap: onRouteTap,
+                child: Container(
+                  height: 32,
+                  padding: const EdgeInsets.symmetric(horizontal: 13),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.orange, AppColors.orangeLight],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Маршрут',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Маршрут',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 3),
-                    Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Colors.white,
-                      size: 13,
-                    ),
-                  ],
+                      SizedBox(width: 3),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Colors.white,
+                        size: 13,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
       ],
