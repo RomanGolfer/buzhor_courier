@@ -44,12 +44,14 @@ class _RouteScreenState extends State<RouteScreen> {
     if (widget.startLat != null && widget.startLng != null) {
       _startPoint = LatLng(widget.startLat!, widget.startLng!);
       _isGpsStart = true;
+      _sortedOrders = RouteService.nearestNeighborSort(
+        widget.orders,
+        widget.startLat!,
+        widget.startLng!,
+      );
+    } else {
+      _sortedOrders = _sort();
     }
-    _sortedOrders = RouteService.nearestNeighborSort(
-      widget.orders,
-      widget.startLat!,
-      widget.startLng!,
-    );
   }
 
   @override
@@ -234,7 +236,6 @@ class _RouteScreenState extends State<RouteScreen> {
                         ),
                         onSubmitted: (v) {
                           _searchAddress(v);
-                          Navigator.pop(ctx);
                         },
                       ),
                     ),
@@ -252,7 +253,6 @@ class _RouteScreenState extends State<RouteScreen> {
                       child: GestureDetector(
                         onTap: () {
                           _searchAddress(controller.text);
-                          Navigator.pop(ctx);
                         },
                         child: Container(
                           decoration: BoxDecoration(
