@@ -1,12 +1,11 @@
 import 'dart:math' as math;
 
-import 'package:buzhor_courier/models/bubble.dart';
+import 'package:buzhor_courier/shared/models/bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/auth/widgets/bubble_painter.dart';
-import 'package:buzhor_courier/providers/login_provider.dart';
-
-import '../../orders/screens/home_screen.dart';
+import 'package:buzhor_courier/features/auth/providers/login_provider.dart';
+import 'package:buzhor_courier/features/orders/screens/home_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});

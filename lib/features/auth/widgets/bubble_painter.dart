@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:buzhor_courier/models/bubble.dart';
+import 'package:buzhor_courier/shared/models/bubble.dart';
 
 class BubblePainter extends CustomPainter {
   final List<Bubble> bubbles;

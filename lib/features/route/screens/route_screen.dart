@@ -1,16 +1,10 @@
-import 'dart:convert';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:buzhor_courier/core/constants/app_colors.dart';
+import 'package:buzhor_courier/features/route/services/geocoding_service.dart';
+import 'package:buzhor_courier/features/route/services/route_sorting_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:buzhor_courier/features/route/services/route_service.dart';
-
-const _blue = Color(0xFF1B5FA8);
-const _darkBlue = Color(0xFF0D3D6E);
-const _lightBlue = Color(0xFF5BB8F5);
-const _green = Color(0xFF4A8C2A);
-const _orange = Color(0xFFE8720C);
 
 class RouteScreen extends StatefulWidget {
   final List<OrderItem> orders;
@@ -44,7 +38,7 @@ class _RouteScreenState extends State<RouteScreen> {
     if (widget.startLat != null && widget.startLng != null) {
       _startPoint = LatLng(widget.startLat!, widget.startLng!);
       _isGpsStart = true;
-      _sortedOrders = RouteService.nearestNeighborSort(
+      _sortedOrders = RouteSortingService.sortFromLocation(
         widget.orders,
         widget.startLat!,
         widget.startLng!,
@@ -65,47 +59,18 @@ class _RouteScreenState extends State<RouteScreen> {
   List<OrderItem> _sort() {
     final start = _startPoint;
     if (start != null) {
-      return _sortFrom(start.latitude, start.longitude);
+      return RouteSortingService.sortFromLocation(
+        widget.orders,
+        start.latitude,
+        start.longitude,
+      );
     }
     // No start point: nearest-neighbor from first order
-    return _sortFrom(widget.orders.first.lat, widget.orders.first.lng);
-  }
-
-  List<OrderItem> _sortFrom(double startLat, double startLng) {
-    if (widget.orders.isEmpty) return [];
-    final remaining = List<OrderItem>.from(widget.orders);
-    final result = <OrderItem>[];
-
-    var bestIdx = 0;
-    var bestDist = _sq(startLat, startLng, remaining[0].lat, remaining[0].lng);
-    for (var i = 1; i < remaining.length; i++) {
-      final d = _sq(startLat, startLng, remaining[i].lat, remaining[i].lng);
-      if (d < bestDist) {
-        bestDist = d;
-        bestIdx = i;
-      }
-    }
-    result.add(remaining.removeAt(bestIdx));
-
-    while (remaining.isNotEmpty) {
-      final last = result.last;
-      var nIdx = 0;
-      var nDist = _sq(last.lat, last.lng, remaining[0].lat, remaining[0].lng);
-      for (var i = 1; i < remaining.length; i++) {
-        final d = _sq(last.lat, last.lng, remaining[i].lat, remaining[i].lng);
-        if (d < nDist) {
-          nDist = d;
-          nIdx = i;
-        }
-      }
-      result.add(remaining.removeAt(nIdx));
-    }
-    return result;
-  }
-
-  double _sq(double lat1, double lng1, double lat2, double lng2) {
-    final dl = lat1 - lat2, dn = lng1 - lng2;
-    return dl * dl + dn * dn;
+    return RouteSortingService.sortFromLocation(
+      widget.orders,
+      widget.orders.first.lat,
+      widget.orders.first.lng,
+    );
   }
 
   void _setCustomStart(LatLng point) {
@@ -125,33 +90,15 @@ class _RouteScreenState extends State<RouteScreen> {
       _isSearching = true;
       _searchError = '';
     });
+
     try {
-      final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
-        'q': query,
-        'format': 'json',
-        'limit': '1',
-        'countrycodes': 'ru',
-      });
-      final response = await http
-          .get(uri, headers: {'User-Agent': 'BuzhorCourier/1.0'})
-          .timeout(const Duration(seconds: 8));
-      if (response.statusCode == 200) {
-        // Ensure proper UTF-8 decoding for Cyrillic text
-        final decoded = utf8.decode(response.bodyBytes);
-        final data = json.decode(decoded) as List;
-        if (data.isNotEmpty) {
-          final point = LatLng(
-            double.parse(data[0]['lat'] as String),
-            double.parse(data[0]['lon'] as String),
-          );
-          if (mounted) {
-            Navigator.pop(context); // close sheet
-            _setCustomStart(point);
-          }
-          return;
-        }
+      final point = await GeocodingService.searchAddress(query);
+      if (point != null && mounted) {
+        Navigator.pop(context); // close sheet
+        _setCustomStart(point);
+      } else if (mounted) {
+        setState(() => _searchError = 'Адрес не найден');
       }
-      if (mounted) setState(() => _searchError = 'Адрес не найден');
     } catch (_) {
       if (mounted) setState(() => _searchError = 'Ошибка соединения');
     } finally {
@@ -196,7 +143,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     const Text(
                       'Начальная точка',
                       style: TextStyle(
-                        color: _darkBlue,
+                        color: AppColors.darkBlue,
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -219,7 +166,7 @@ class _RouteScreenState extends State<RouteScreen> {
                       child: TextField(
                         controller: controller,
                         autofocus: true,
-                        style: const TextStyle(color: _darkBlue, fontSize: 14),
+                        style: const TextStyle(color: AppColors.darkBlue, fontSize: 14),
                         decoration: const InputDecoration(
                           hintText: 'ул. Крымская, 45, Анапа',
                           hintStyle: TextStyle(color: Color(0xFF8AACCC)),
@@ -257,7 +204,7 @@ class _RouteScreenState extends State<RouteScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [_blue, _lightBlue],
+                              colors: [AppColors.blue, AppColors.lightBlue],
                             ),
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -314,7 +261,7 @@ class _RouteScreenState extends State<RouteScreen> {
               const Text(
                 'Нет активных заказов',
                 style: TextStyle(
-                  color: _darkBlue,
+                  color: AppColors.darkBlue,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
@@ -328,7 +275,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: _blue,
+                    color: AppColors.blue,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -368,7 +315,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: const Text('Начальная точка обновлена'),
-                    backgroundColor: _darkBlue,
+                    backgroundColor: AppColors.darkBlue,
                     behavior: SnackBarBehavior.floating,
                     duration: const Duration(seconds: 2),
                     shape: RoundedRectangleBorder(
@@ -391,7 +338,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   polylines: [
                     Polyline(
                       points: [_startPoint!, points.first],
-                      color: _blue.withValues(alpha: 0.5),
+                      color: AppColors.blue.withValues(alpha: 0.5),
                       strokeWidth: 2.5,
                       pattern: StrokePattern.dashed(segments: const [8, 6]),
                     ),
@@ -400,7 +347,7 @@ class _RouteScreenState extends State<RouteScreen> {
               // Main route polyline
               PolylineLayer(
                 polylines: [
-                  Polyline(points: points, color: _orange, strokeWidth: 3.5),
+                  Polyline(points: points, color: AppColors.orange, strokeWidth: 3.5),
                 ],
               ),
               // Start marker
@@ -441,7 +388,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     child: const Icon(
                       Icons.arrow_back_rounded,
                       size: 20,
-                      color: _darkBlue,
+                      color: AppColors.darkBlue,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -466,7 +413,7 @@ class _RouteScreenState extends State<RouteScreen> {
                         children: [
                           const Icon(
                             Icons.route_rounded,
-                            color: _orange,
+                            color: AppColors.orange,
                             size: 16,
                           ),
                           const SizedBox(width: 6),
@@ -476,7 +423,7 @@ class _RouteScreenState extends State<RouteScreen> {
                                   ? '${_sortedOrders.length} остановок'
                                   : '${_isGpsStart ? 'GPS' : 'Своя точка'} · ${_sortedOrders.length} остановок',
                               style: const TextStyle(
-                                color: _darkBlue,
+                                color: AppColors.darkBlue,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -493,7 +440,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     child: const Icon(
                       Icons.search_rounded,
                       size: 20,
-                      color: _darkBlue,
+                      color: AppColors.darkBlue,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -503,7 +450,7 @@ class _RouteScreenState extends State<RouteScreen> {
                     child: const Icon(
                       Icons.center_focus_strong_rounded,
                       size: 20,
-                      color: _darkBlue,
+                      color: AppColors.darkBlue,
                     ),
                   ),
                 ],
@@ -523,7 +470,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: _darkBlue.withValues(alpha: 0.85),
+                  color: AppColors.darkBlue.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Row(
@@ -598,7 +545,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 const Text(
                   'Остановки',
                   style: TextStyle(
-                    color: _darkBlue,
+                    color: AppColors.darkBlue,
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                   ),
@@ -611,13 +558,13 @@ class _RouteScreenState extends State<RouteScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: _orange.withValues(alpha: 0.1),
+                      color: AppColors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       '$remaining бут. осталось',
                       style: const TextStyle(
-                        color: _orange,
+                        color: AppColors.orange,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -656,8 +603,8 @@ class _RouteScreenState extends State<RouteScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: order.isDone
-                ? _green.withValues(alpha: 0.3)
-                : _blue.withValues(alpha: 0.15),
+                ? AppColors.green.withValues(alpha: 0.3)
+                : AppColors.blue.withValues(alpha: 0.15),
           ),
         ),
         child: Column(
@@ -669,7 +616,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   width: 22,
                   height: 22,
                   decoration: BoxDecoration(
-                    color: order.isDone ? _green : _orange,
+                    color: order.isDone ? AppColors.green : AppColors.orange,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -688,7 +635,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   child: Text(
                     order.id,
                     style: const TextStyle(
-                      color: _blue,
+                      color: AppColors.blue,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
@@ -699,7 +646,7 @@ class _RouteScreenState extends State<RouteScreen> {
                   const Icon(
                     Icons.check_circle_rounded,
                     size: 13,
-                    color: _green,
+                    color: AppColors.green,
                   ),
               ],
             ),
@@ -707,7 +654,7 @@ class _RouteScreenState extends State<RouteScreen> {
             Text(
               order.clientName,
               style: const TextStyle(
-                color: _darkBlue,
+                color: AppColors.darkBlue,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
@@ -718,7 +665,7 @@ class _RouteScreenState extends State<RouteScreen> {
             Text(
               order.district,
               style: TextStyle(
-                color: _lightBlue.withValues(alpha: 0.8),
+                color: AppColors.lightBlue.withValues(alpha: 0.8),
                 fontSize: 11,
               ),
             ),
@@ -736,7 +683,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 Text(
                   '${order.price.toInt()} ₽',
                   style: TextStyle(
-                    color: order.isDone ? _green : _darkBlue,
+                    color: order.isDone ? AppColors.green : AppColors.darkBlue,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -791,7 +738,7 @@ class _StopMarker extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: isDone ? _green : _orange,
+        color: isDone ? AppColors.green : AppColors.orange,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
@@ -844,3 +791,4 @@ class _MapBtn extends StatelessWidget {
     );
   }
 }
+
