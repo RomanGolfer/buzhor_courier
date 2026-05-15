@@ -63,6 +63,11 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     );
   }
 
+  Future<void> refreshOrders() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    await _loadOrders();
+  }
+
   void setNavIndex(int index) {
     state = state.copyWith(navIndex: index, isMapView: false);
   }

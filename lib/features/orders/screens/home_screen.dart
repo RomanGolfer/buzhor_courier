@@ -6,6 +6,7 @@ import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:buzhor_courier/features/orders/widgets/slot_header.dart';
 import 'package:buzhor_courier/features/route/screens/route_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart' as ll;
@@ -43,16 +44,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final ordersState = ref.watch(ordersProvider);
     final locationState = ref.watch(locationProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.bg,
-      body: Column(
-        children: [
-          _buildHeader(locationState),
-          if (ordersState.navIndex == 0) _buildTabSwitcher(ordersState),
-          Expanded(child: _buildBody(ordersState)),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
       ),
-      bottomNavigationBar: _buildBottomNav(ordersState),
+      child: Scaffold(
+        backgroundColor: AppColors.bg,
+        body: Column(
+          children: [
+            _buildHeader(locationState),
+            if (ordersState.navIndex == 0) _buildTabSwitcher(ordersState),
+            Expanded(child: _buildBody(ordersState)),
+          ],
+        ),
+        bottomNavigationBar: _buildBottomNav(ordersState),
+      ),
     );
   }
 
@@ -173,43 +181,43 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildHeader(LocationState locationState) {
-    return Stack(
-      children: [
-        Container(
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                AppColors.blue.withValues(alpha: 0.6),
-                AppColors.blue.withValues(alpha: 0.0),
-              ],
-            ),
-          ),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF063B6F), AppColors.blue],
         ),
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Row(
-              children: [
-                const Text(
-                  'Заказы',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x40000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text(
+                'Заказы',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
                 ),
-                const Spacer(),
-                _buildGpsIndicator(locationState),
-              ],
-            ),
+              ),
+              const Spacer(),
+              _buildGpsIndicator(locationState),
+            ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -380,12 +388,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       opacity: ordersState.listOpacity,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        itemCount: ordersState.timeSlots.length,
-        itemBuilder: (context, slotIndex) => _buildTimeSlotGroup(
-          ordersState.timeSlots[slotIndex],
-          slotIndex,
+      child: RefreshIndicator(
+        color: AppColors.blue,
+        backgroundColor: Colors.white,
+        onRefresh: _refreshOrders,
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          itemCount: ordersState.timeSlots.length,
+          itemBuilder: (context, slotIndex) => _buildTimeSlotGroup(
+            ordersState.timeSlots[slotIndex],
+            slotIndex,
+          ),
         ),
       ),
     );
@@ -414,6 +427,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _refreshOrders() async {
+    await ref.read(ordersProvider.notifier).refreshOrders();
   }
 
   Widget _buildCompletedView(OrdersState ordersState) {
