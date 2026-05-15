@@ -158,7 +158,6 @@ class SlotHeader extends StatelessWidget {
                         (i) => OrderCard(
                           order: slot.orders[i],
                           number: i + 1,
-                          onRouteTap: onBuildRoute,
                         ),
                       ),
                     ),

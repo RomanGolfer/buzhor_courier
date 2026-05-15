@@ -7,7 +7,6 @@ class OrderCard extends StatelessWidget {
   final OrderItem order;
   final int number;
   final VoidCallback? onChatTap;
-  final VoidCallback? onRouteTap;
   final bool showRouteButton;
 
   const OrderCard({
@@ -15,7 +14,6 @@ class OrderCard extends StatelessWidget {
     required this.order,
     required this.number,
     this.onChatTap,
-    this.onRouteTap,
     this.showRouteButton = true,
   });
 
@@ -58,7 +56,6 @@ class OrderCard extends StatelessWidget {
                       child: _CardContent(
                         order: order,
                         onChatTap: onChatTap,
-                        onRouteTap: onRouteTap,
                         showRouteButton: showRouteButton,
                       ),
                     ),
@@ -107,13 +104,11 @@ class _NumberBadge extends StatelessWidget {
 class _CardContent extends StatelessWidget {
   final OrderItem order;
   final VoidCallback? onChatTap;
-  final VoidCallback? onRouteTap;
   final bool showRouteButton;
 
   const _CardContent({
     required this.order,
     this.onChatTap,
-    this.onRouteTap,
     this.showRouteButton = true,
   });
 
