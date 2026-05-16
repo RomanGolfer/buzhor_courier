@@ -6,13 +6,30 @@ import 'package:url_launcher/url_launcher.dart';
 
 const _dispatcherPhone = '+79001234567';
 
-class OrderDetailScreen extends StatelessWidget {
+class OrderDetailScreen extends StatefulWidget {
   final OrderItem order;
 
   const OrderDetailScreen({super.key, required this.order});
 
   @override
+  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  late int _bottles;
+  late PaymentType _paymentType;
+  final Map<String, int> _extras = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _bottles = widget.order.bottles;
+    _paymentType = widget.order.payment;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final order = widget.order;
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Column(
@@ -22,7 +39,20 @@ class OrderDetailScreen extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               children: [
-                _AddressCard(order: order),
+                _AddressCard(
+                  order: order,
+                  bottles: _bottles,
+                  paymentType: _paymentType,
+                  extras: _extras,
+                  onBottlesChanged: (value) => setState(() => _bottles = value),
+                  onPaymentTypeChanged: (value) =>
+                      setState(() => _paymentType = value),
+                  onExtrasChanged: (value) => setState(() {
+                    _extras
+                      ..clear()
+                      ..addAll(value);
+                  }),
+                ),
                 if (order.comment != null) ...[
                   const SizedBox(height: 12),
                   _CommentCard(comment: order.comment!),
@@ -40,11 +70,15 @@ class OrderDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: _BottomButtons(order: order),
+      bottomNavigationBar: _BottomButtons(
+        order: order,
+        bottles: _bottles,
+        paymentType: _paymentType,
+        extras: _extras,
+      ),
     );
   }
 }
-
 // ─── Header ───────────────────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
@@ -121,18 +155,24 @@ class _Header extends StatelessWidget {
 
 // ─── Address card ─────────────────────────────────────────────────────────────
 
-class _AddressCard extends StatefulWidget {
+class _AddressCard extends StatelessWidget {
   final OrderItem order;
-  const _AddressCard({required this.order});
+  final int bottles;
+  final PaymentType paymentType;
+  final Map<String, int> extras;
+  final ValueChanged<int> onBottlesChanged;
+  final ValueChanged<PaymentType> onPaymentTypeChanged;
+  final ValueChanged<Map<String, int>> onExtrasChanged;
 
-  @override
-  State<_AddressCard> createState() => _AddressCardState();
-}
-
-class _AddressCardState extends State<_AddressCard> {
-  late int _bottles;
-  late PaymentType _paymentType;
-  final Map<String, int> _extras = {};
+  const _AddressCard({
+    required this.order,
+    required this.bottles,
+    required this.paymentType,
+    required this.extras,
+    required this.onBottlesChanged,
+    required this.onPaymentTypeChanged,
+    required this.onExtrasChanged,
+  });
 
   static const _extraOptions = ['Тара 19л', 'Помпа', 'Кулер', 'Другое'];
   static const _paymentCycle = [
@@ -142,119 +182,120 @@ class _AddressCardState extends State<_AddressCard> {
     PaymentType.contract,
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _bottles = widget.order.bottles;
-    _paymentType = widget.order.payment;
-    if (!_paymentCycle.contains(_paymentType)) {
-      _paymentType = PaymentType.card;
-    }
-  }
-
-  bool get _isPaid => _paymentType == PaymentType.online;
+  bool get _isPaid => paymentType == PaymentType.online;
 
   String _paymentLabel(PaymentType t) => switch (t) {
-        PaymentType.card => 'Карта',
-        PaymentType.cash => 'Нал',
-        PaymentType.qr => 'QR-код',
-        PaymentType.online => 'Онлайн',
-        PaymentType.contract => 'Договор',
-      };
+    PaymentType.card => 'Карта',
+    PaymentType.cash => 'Нал',
+    PaymentType.qr => 'QR-код',
+    PaymentType.online => 'Онлайн',
+    PaymentType.contract => 'Договор',
+  };
 
   String _paymentIcon(PaymentType t) => switch (t) {
-        PaymentType.card => '💳',
-        PaymentType.cash => '💵',
-        PaymentType.qr => '📱',
-        PaymentType.online => '✅',
-        PaymentType.contract => '📄',
-      };
+    PaymentType.card => '💳',
+    PaymentType.cash => '💵',
+    PaymentType.qr => '📱',
+    PaymentType.online => '✅',
+    PaymentType.contract => '📄',
+  };
 
   Color _paymentColor(PaymentType t) => switch (t) {
-        PaymentType.card => AppColors.blue,
-        PaymentType.cash => AppColors.green,
-        PaymentType.qr => AppColors.blue,
-        PaymentType.online => AppColors.green,
-        PaymentType.contract => AppColors.grayBlue,
-      };
+    PaymentType.card => AppColors.blue,
+    PaymentType.cash => AppColors.green,
+    PaymentType.qr => AppColors.blue,
+    PaymentType.online => AppColors.green,
+    PaymentType.contract => AppColors.grayBlue,
+  };
 
   void _cyclePayment() {
     if (_isPaid) return;
-    final index = _paymentCycle.indexOf(_paymentType);
+    final normalizedType = _paymentCycle.contains(paymentType)
+        ? paymentType
+        : PaymentType.card;
+    final index = _paymentCycle.indexOf(normalizedType);
     final nextIndex = (index + 1) % _paymentCycle.length;
-    setState(() {
-      _paymentType = _paymentCycle[nextIndex];
-    });
+    onPaymentTypeChanged(_paymentCycle[nextIndex]);
   }
 
-  void _showExtrasSheet() {
+  void _showExtrasSheet(BuildContext context) {
+    final sheetExtras = Map<String, int>.from(extras);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Выберите допы',
-                style: TextStyle(
-                  color: AppColors.darkBlue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ..._extraOptions.map(
-                (option) {
-                  final count = _extras[option] ?? 0;
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      option,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Выберите допы',
+                    style: TextStyle(
+                      color: AppColors.darkBlue,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
-                    trailing: count > 0
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: AppColors.green.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'x$count',
-                              style: const TextStyle(
-                                color: AppColors.green,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        : null,
-                    onTap: () {
-                      setState(() {
-                        _extras[option] = (_extras[option] ?? 0) + 1;
-                      });
-                    },
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Готово',
-                    style: TextStyle(fontWeight: FontWeight.w700),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  ..._extraOptions.map((option) {
+                    final count = sheetExtras[option] ?? 0;
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        option,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      trailing: count > 0
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.green.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                'x$count',
+                                style: const TextStyle(
+                                  color: AppColors.green,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          : null,
+                      onTap: () {
+                        setSheetState(() {
+                          sheetExtras[option] = (sheetExtras[option] ?? 0) + 1;
+                        });
+                        onExtrasChanged(sheetExtras);
+                      },
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: const Text(
+                        'Готово',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -268,11 +309,15 @@ class _AddressCardState extends State<_AddressCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.location_on_rounded, color: AppColors.blue, size: 20),
+              const Icon(
+                Icons.location_on_rounded,
+                color: AppColors.blue,
+                size: 20,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  widget.order.address,
+                  order.address,
                   style: const TextStyle(
                     color: AppColors.darkBlue,
                     fontSize: 15,
@@ -282,7 +327,8 @@ class _AddressCardState extends State<_AddressCard> {
               ),
               const SizedBox(width: 8),
               GestureDetector(
-                onTap: () => NavigationService.openExternalRoute(widget.order.lat, widget.order.lng),
+                onTap: () =>
+                    NavigationService.openExternalRoute(order.lat, order.lng),
                 child: Container(
                   width: 40,
                   height: 40,
@@ -311,10 +357,7 @@ class _AddressCardState extends State<_AddressCard> {
                   children: [
                     const Text(
                       'Бутылей',
-                      style: TextStyle(
-                        color: AppColors.grayBlue,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -322,16 +365,14 @@ class _AddressCardState extends State<_AddressCard> {
                         _CounterButton(
                           icon: Icons.remove,
                           onTap: () {
-                            if (_bottles > 0) {
-                              setState(() {
-                                _bottles -= 1;
-                              });
+                            if (bottles > 0) {
+                              onBottlesChanged(bottles - 1);
                             }
                           },
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          '$_bottles',
+                          '$bottles',
                           style: const TextStyle(
                             color: AppColors.darkBlue,
                             fontSize: 24,
@@ -341,11 +382,7 @@ class _AddressCardState extends State<_AddressCard> {
                         const SizedBox(width: 10),
                         _CounterButton(
                           icon: Icons.add,
-                          onTap: () {
-                            setState(() {
-                              _bottles += 1;
-                            });
-                          },
+                          onTap: () => onBottlesChanged(bottles + 1),
                         ),
                       ],
                     ),
@@ -364,35 +401,47 @@ class _AddressCardState extends State<_AddressCard> {
                   children: [
                     const Text(
                       'Оплата',
-                      style: TextStyle(
-                        color: AppColors.grayBlue,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
                     ),
                     const SizedBox(height: 8),
                     _isPaid
-                        ? _PaymentChip(label: 'Оплачено ✓', color: AppColors.green)
+                        ? _PaymentChip(
+                            label: 'Оплачено ✓',
+                            color: AppColors.green,
+                          )
                         : GestureDetector(
                             onTap: _cyclePayment,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
                               decoration: BoxDecoration(
-                                color: _paymentColor(_paymentType).withValues(alpha: 0.10),
+                                color: _paymentColor(
+                                  paymentType,
+                                ).withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: _paymentColor(_paymentType).withValues(alpha: 0.3)),
+                                border: Border.all(
+                                  color: _paymentColor(
+                                    paymentType,
+                                  ).withValues(alpha: 0.3),
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
-                                    _paymentIcon(_paymentType),
-                                    style: TextStyle(fontSize: 18, color: _paymentColor(_paymentType)),
+                                    _paymentIcon(paymentType),
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: _paymentColor(paymentType),
+                                    ),
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _paymentLabel(_paymentType),
+                                    _paymentLabel(paymentType),
                                     style: TextStyle(
-                                      color: _paymentColor(_paymentType),
+                                      color: _paymentColor(paymentType),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 14,
                                     ),
@@ -419,7 +468,7 @@ class _AddressCardState extends State<_AddressCard> {
               ),
               const Spacer(),
               GestureDetector(
-                onTap: _showExtrasSheet,
+                onTap: () => _showExtrasSheet(context),
                 child: const Text(
                   '+ Добавить',
                   style: TextStyle(
@@ -431,32 +480,32 @@ class _AddressCardState extends State<_AddressCard> {
               ),
             ],
           ),
-          if (_extras.isNotEmpty) ...[
+          if (extras.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _extras.entries.map(
-                (entry) {
-                  return Chip(
-                    label: Text(
-                      '${entry.key} ×${entry.value}',
-                      style: const TextStyle(
-                        color: AppColors.darkBlue,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
+              children: extras.entries.map((entry) {
+                return Chip(
+                  label: Text(
+                    '${entry.key} ×${entry.value}',
+                    style: const TextStyle(
+                      color: AppColors.darkBlue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
                     ),
-                    backgroundColor: AppColors.grayBlueLight.withValues(alpha: 0.16),
-                    deleteIcon: const Icon(Icons.close, size: 18),
-                    onDeleted: () {
-                      setState(() {
-                        _extras.remove(entry.key);
-                      });
-                    },
-                  );
-                },
-              ).toList(),
+                  ),
+                  backgroundColor: AppColors.grayBlueLight.withValues(
+                    alpha: 0.16,
+                  ),
+                  deleteIcon: const Icon(Icons.close, size: 18),
+                  onDeleted: () {
+                    final updatedExtras = Map<String, int>.from(extras)
+                      ..remove(entry.key);
+                    onExtrasChanged(updatedExtras);
+                  },
+                );
+              }).toList(),
             ),
           ],
         ],
@@ -464,7 +513,6 @@ class _AddressCardState extends State<_AddressCard> {
     );
   }
 }
-
 // ─── Dispatcher card ──────────────────────────────────────────────────────────
 
 class _DispatcherCard extends StatelessWidget {
@@ -558,7 +606,11 @@ class _DispatcherCard extends StatelessWidget {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.phone_rounded, color: AppColors.orange, size: 18),
+                        Icon(
+                          Icons.phone_rounded,
+                          color: AppColors.orange,
+                          size: 18,
+                        ),
                         SizedBox(width: 6),
                         Text(
                           'Позвонить',
@@ -690,7 +742,10 @@ class _QuickSmsCard extends StatelessWidget {
         child: Theme(
           data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
           child: ExpansionTile(
-            tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 2,
+            ),
             childrenPadding: EdgeInsets.zero,
             title: const Text(
               '💬 Сообщить клиенту',
@@ -898,7 +953,11 @@ class _CommentCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.orange, size: 18),
+          const Icon(
+            Icons.info_outline_rounded,
+            color: AppColors.orange,
+            size: 18,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -920,7 +979,16 @@ class _CommentCard extends StatelessWidget {
 
 class _BottomButtons extends StatelessWidget {
   final OrderItem order;
-  const _BottomButtons({required this.order});
+  final int bottles;
+  final PaymentType paymentType;
+  final Map<String, int> extras;
+
+  const _BottomButtons({
+    required this.order,
+    required this.bottles,
+    required this.paymentType,
+    required this.extras,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -929,7 +997,11 @@ class _BottomButtons extends StatelessWidget {
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
-          BoxShadow(color: Color(0x10000000), blurRadius: 8, offset: Offset(0, -2)),
+          BoxShadow(
+            color: Color(0x10000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
         ],
       ),
       child: SafeArea(
@@ -970,7 +1042,12 @@ class _BottomButtons extends StatelessWidget {
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (_) => _DeliverySheet(order: order),
+                  builder: (_) => _DeliverySheet(
+                    order: order,
+                    bottles: bottles,
+                    paymentType: paymentType,
+                    extras: extras,
+                  ),
                 ),
                 child: Container(
                   height: 52,
@@ -1004,7 +1081,16 @@ class _BottomButtons extends StatelessWidget {
 
 class _DeliverySheet extends StatefulWidget {
   final OrderItem order;
-  const _DeliverySheet({required this.order});
+  final int bottles;
+  final PaymentType paymentType;
+  final Map<String, int> extras;
+
+  const _DeliverySheet({
+    required this.order,
+    required this.bottles,
+    required this.paymentType,
+    required this.extras,
+  });
 
   @override
   State<_DeliverySheet> createState() => _DeliverySheetState();
@@ -1048,9 +1134,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                   ),
                 ),
               ),
-              const Center(
-                child: Text('😊', style: TextStyle(fontSize: 48)),
-              ),
+              const Center(child: Text('😊', style: TextStyle(fontSize: 48))),
               const SizedBox(height: 8),
               const Center(
                 child: Text(
@@ -1063,6 +1147,8 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                 ),
               ),
               const SizedBox(height: 24),
+              _DeliverySummary(bottles: widget.bottles, extras: widget.extras),
+              const SizedBox(height: 20),
               TextField(
                 controller: _commentController,
                 maxLines: 2,
@@ -1074,7 +1160,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.blue, width: 2),
+                    borderSide: const BorderSide(
+                      color: AppColors.blue,
+                      width: 2,
+                    ),
                   ),
                 ),
               ),
@@ -1094,7 +1183,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                   _CounterButton(
                     icon: Icons.remove,
                     onTap: () => setState(
-                      () => _returnedBottles = (_returnedBottles - 1).clamp(0, 99),
+                      () => _returnedBottles = (_returnedBottles - 1).clamp(
+                        0,
+                        99,
+                      ),
                     ),
                   ),
                   SizedBox(
@@ -1113,7 +1205,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                   _CounterButton(
                     icon: Icons.add,
                     onTap: () => setState(
-                      () => _returnedBottles = (_returnedBottles + 1).clamp(0, 99),
+                      () => _returnedBottles = (_returnedBottles + 1).clamp(
+                        0,
+                        99,
+                      ),
                     ),
                   ),
                 ],
@@ -1128,7 +1223,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                 ),
               ),
               const SizedBox(height: 10),
-              _buildPaymentSection(widget.order.payment),
+              _buildPaymentSection(widget.paymentType),
               const SizedBox(height: 28),
               GestureDetector(
                 onTap: () => Navigator.of(context).pop(),
@@ -1173,12 +1268,18 @@ class _DeliverySheetState extends State<_DeliverySheet> {
             decoration: BoxDecoration(
               color: AppColors.purple.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.purple.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.purple.withValues(alpha: 0.3),
+              ),
             ),
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.qr_code_scanner_rounded, color: AppColors.purple, size: 20),
+                Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: AppColors.purple,
+                  size: 20,
+                ),
                 SizedBox(width: 8),
                 Text(
                   'Сканировать QR',
@@ -1193,14 +1294,71 @@ class _DeliverySheetState extends State<_DeliverySheet> {
           ),
         );
       case PaymentType.online:
-        return const _PaymentChip(label: 'Оплачено онлайн ✓', color: AppColors.green);
+        return const _PaymentChip(
+          label: 'Оплачено онлайн ✓',
+          color: AppColors.green,
+        );
       case PaymentType.contract:
-        return const _PaymentChip(label: 'По договору ✓', color: AppColors.grayBlue);
+        return const _PaymentChip(
+          label: 'По договору ✓',
+          color: AppColors.grayBlue,
+        );
     }
   }
 }
 
 // ─── Failure reason sheet ─────────────────────────────────────────────────────
+
+class _DeliverySummary extends StatelessWidget {
+  final int bottles;
+  final Map<String, int> extras;
+
+  const _DeliverySummary({required this.bottles, required this.extras});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$bottles бут. к доставке',
+            style: const TextStyle(
+              color: AppColors.darkBlue,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (extras.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: extras.entries
+                  .map(
+                    (entry) => Chip(
+                      label: Text('${entry.key} ×${entry.value}'),
+                      visualDensity: VisualDensity.compact,
+                      backgroundColor: AppColors.lightBlue.withValues(
+                        alpha: 0.12,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 class _FailureSheet extends StatefulWidget {
   final OrderItem order;
@@ -1230,7 +1388,9 @@ class _FailureSheetState extends State<_FailureSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
         decoration: const BoxDecoration(
@@ -1267,9 +1427,8 @@ class _FailureSheetState extends State<_FailureSheet> {
               children: _reasons.map((r) {
                 final selected = _selectedReason == r;
                 return GestureDetector(
-                  onTap: () => setState(
-                    () => _selectedReason = selected ? null : r,
-                  ),
+                  onTap: () =>
+                      setState(() => _selectedReason = selected ? null : r),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -1279,7 +1438,9 @@ class _FailureSheetState extends State<_FailureSheet> {
                       color: selected ? Colors.red.shade50 : AppColors.cardBg,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: selected ? Colors.red.shade400 : AppColors.divider,
+                        color: selected
+                            ? Colors.red.shade400
+                            : AppColors.divider,
                       ),
                     ),
                     child: Text(
