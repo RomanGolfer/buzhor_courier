@@ -228,142 +228,146 @@ class _AddressCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () =>
-                    NavigationService.openExternalRoute(order.lat, order.lng),
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.orange, AppColors.orangeLight],
+              if (!isReadOnly) ...[
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () =>
+                      NavigationService.openExternalRoute(order.lat, order.lng),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [AppColors.orange, AppColors.orangeLight],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.navigation_rounded,
-                    color: Colors.white,
-                    size: 20,
+                    child: const Icon(
+                      Icons.navigation_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
-          const _RowDivider(),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Бутылей',
-                      style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        if (!isReadOnly) ...[
-                          _CounterButton(
-                            icon: Icons.remove,
-                            onTap: () {
-                              if (bottles > 0) {
-                                onBottlesChanged(bottles - 1);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 10),
-                        ],
-                        Text(
-                          '$bottles',
-                          style: const TextStyle(
-                            color: AppColors.darkBlue,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (!isReadOnly) ...[
-                          const SizedBox(width: 10),
-                          _CounterButton(
-                            icon: Icons.add,
-                            onTap: () => onBottlesChanged(bottles + 1),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 76,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                color: AppColors.divider,
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Оплата',
-                      style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    _isPaid || isReadOnly
-                        ? _PaymentChip(
-                            label: _isPaid
-                                ? 'Оплачено ✓'
-                                : _shortPaymentLabel(paymentType),
-                            color: _paymentColor(paymentType),
-                          )
-                        : GestureDetector(
-                            onTap: () => _showPaymentSheet(context),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _paymentColor(
-                                  paymentType,
-                                ).withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: _paymentColor(
-                                    paymentType,
-                                  ).withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    _paymentIcon(paymentType),
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: _paymentColor(paymentType),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    _shortPaymentLabel(paymentType),
-                                    style: TextStyle(
-                                      color: _paymentColor(paymentType),
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
-                              ),
+          if (!isReadOnly) ...[
+            const _RowDivider(),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Бутылей',
+                        style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (!isReadOnly) ...[
+                            _CounterButton(
+                              icon: Icons.remove,
+                              onTap: () {
+                                if (bottles > 0) {
+                                  onBottlesChanged(bottles - 1);
+                                }
+                              },
+                            ),
+                            const SizedBox(width: 10),
+                          ],
+                          Text(
+                            '$bottles',
+                            style: const TextStyle(
+                              color: AppColors.darkBlue,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                  ],
+                          if (!isReadOnly) ...[
+                            const SizedBox(width: 10),
+                            _CounterButton(
+                              icon: Icons.add,
+                              onTap: () => onBottlesChanged(bottles + 1),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+                Container(
+                  width: 1,
+                  height: 76,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  color: AppColors.divider,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Оплата',
+                        style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
+                      ),
+                      const SizedBox(height: 8),
+                      _isPaid || isReadOnly
+                          ? _PaymentChip(
+                              label: _isPaid
+                                  ? 'Оплачено ✓'
+                                  : _shortPaymentLabel(paymentType),
+                              color: _paymentColor(paymentType),
+                            )
+                          : GestureDetector(
+                              onTap: () => _showPaymentSheet(context),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _paymentColor(
+                                    paymentType,
+                                  ).withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: _paymentColor(
+                                      paymentType,
+                                    ).withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      _paymentIcon(paymentType),
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: _paymentColor(paymentType),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _shortPaymentLabel(paymentType),
+                                      style: TextStyle(
+                                        color: _paymentColor(paymentType),
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
           const _RowDivider(),
           Row(
             children: [
@@ -390,7 +394,7 @@ class _AddressCard extends StatelessWidget {
                 ),
             ],
           ),
-          if (extras.isNotEmpty) ...[
+          if (!isReadOnly && extras.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,

@@ -67,14 +67,16 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   const SizedBox(height: 12),
                   _DeliveryResultCard(order: order),
                 ],
-                if (order.comment != null) ...[
+                if (!order.isClosed && order.comment != null) ...[
                   const SizedBox(height: 12),
                   _CommentCard(comment: order.comment!),
                 ],
-                const SizedBox(height: 12),
-                _DispatcherCard(order: order),
-                const SizedBox(height: 12),
-                _QuickSmsCard(order: order),
+                if (!order.isClosed) ...[
+                  const SizedBox(height: 12),
+                  _DispatcherCard(order: order),
+                  const SizedBox(height: 12),
+                  _QuickSmsCard(order: order),
+                ],
                 const SizedBox(height: 12),
                 _ClientCard(order: order),
                 const SizedBox(height: 12),
