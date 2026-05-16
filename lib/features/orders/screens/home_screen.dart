@@ -3,6 +3,7 @@ import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 import 'package:buzhor_courier/features/orders/providers/location_provider.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
+import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart';
 import 'package:buzhor_courier/features/orders/widgets/order_card.dart';
 import 'package:buzhor_courier/features/orders/widgets/slot_header.dart';
 import 'package:buzhor_courier/features/route/screens/route_screen.dart';
@@ -433,6 +434,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               order: ordersState.completedOrders[i],
               number: i + 1,
               showRouteButton: false,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => OrderDetailScreen(
+                    order: ordersState.completedOrders[i],
+                  ),
+                ),
+              ),
             ),
           ),
         ),

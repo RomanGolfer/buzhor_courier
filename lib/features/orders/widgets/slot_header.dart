@@ -1,5 +1,6 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
+import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart';
 import 'package:buzhor_courier/features/orders/widgets/order_card.dart';
 import 'package:flutter/material.dart';
 
@@ -158,6 +159,13 @@ class SlotHeader extends StatelessWidget {
                         (i) => OrderCard(
                           order: slot.orders[i],
                           number: i + 1,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => OrderDetailScreen(
+                                order: slot.orders[i],
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     ),

@@ -12,6 +12,7 @@ const List<OrderItem> sampleOrders = [
     lat: 44.8951,
     lng: 37.3168,
     comment: 'Домофон не работает, звонить по тел.',
+    phone: '+79181234567',
   ),
   OrderItem(
     id: '#4822',
@@ -23,6 +24,7 @@ const List<OrderItem> sampleOrders = [
     bottles: 2,
     lat: 44.8883,
     lng: 37.3082,
+    phone: '+79189876543',
   ),
   OrderItem(
     id: '#4823',
@@ -35,6 +37,7 @@ const List<OrderItem> sampleOrders = [
     lat: 44.8932,
     lng: 37.3195,
     comment: 'Оставить у двери, клиент на работе',
+    phone: '+79615551234',
   ),
   OrderItem(
     id: '#4824',
@@ -47,6 +50,7 @@ const List<OrderItem> sampleOrders = [
     lat: 44.9021,
     lng: 37.3378,
     isDone: true,
+    phone: '+78612223344',
   ),
   OrderItem(
     id: '#4825',
@@ -58,6 +62,7 @@ const List<OrderItem> sampleOrders = [
     bottles: 1,
     lat: 44.8975,
     lng: 37.3298,
+    phone: '+79284445566',
   ),
   OrderItem(
     id: '#4826',
@@ -71,6 +76,7 @@ const List<OrderItem> sampleOrders = [
     lng: 37.3128,
     isDone: true,
     comment: 'Сдача с 1000 ₽',
+    phone: '+79187778899',
   ),
   OrderItem(
     id: '#4827',
@@ -82,5 +88,6 @@ const List<OrderItem> sampleOrders = [
     bottles: 3,
     lat: 44.8965,
     lng: 37.3275,
+    phone: '+79610009988',
   ),
 ];

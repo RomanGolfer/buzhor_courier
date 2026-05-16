@@ -12,6 +12,7 @@ class OrderItem {
   final double lat;
   final double lng;
   final String? comment;
+  final String? phone;
 
   const OrderItem({
     required this.id,
@@ -25,6 +26,7 @@ class OrderItem {
     required this.lng,
     this.isDone = false,
     this.comment,
+    this.phone,
   });
 
   OrderItem copyWith({bool? isDone}) => OrderItem(
@@ -39,5 +41,6 @@ class OrderItem {
     lng: lng,
     isDone: isDone ?? this.isDone,
     comment: comment,
+    phone: phone,
   );
 }

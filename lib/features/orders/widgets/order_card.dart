@@ -7,6 +7,7 @@ class OrderCard extends StatelessWidget {
   final OrderItem order;
   final int number;
   final VoidCallback? onChatTap;
+  final VoidCallback? onTap;
   final bool showRouteButton;
 
   const OrderCard({
@@ -14,13 +15,16 @@ class OrderCard extends StatelessWidget {
     required this.order,
     required this.number,
     this.onChatTap,
+    this.onTap,
     this.showRouteButton = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final borderColor = order.isDone ? AppColors.green : AppColors.blue;
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 14),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -66,8 +70,10 @@ class OrderCard extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
+
 }
 
 class _NumberBadge extends StatelessWidget {
