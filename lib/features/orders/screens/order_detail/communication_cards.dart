@@ -81,7 +81,18 @@ class _DispatcherCard extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => NavigationService.openDialer(_dispatcherPhone),
+                  onTap: () async {
+                    try {
+                      await NavigationService.callPhone(_dispatcherPhone);
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Не удалось открыть звонок'),
+                        ),
+                      );
+                    }
+                  },
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
@@ -114,7 +125,10 @@ class _DispatcherCard extends StatelessWidget {
               Expanded(
                 child: GestureDetector(
                   onTap: () => NavigationService.openMessenger(
-                      phone: _dispatcherPhone, message: 'Заказ ${order.id}'),
+                    context,
+                    phone: _dispatcherPhone,
+                    message: 'Заказ ${order.id}',
+                  ),
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(

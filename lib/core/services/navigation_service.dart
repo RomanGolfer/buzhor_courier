@@ -1,8 +1,11 @@
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class NavigationService {
   NavigationService._();
+
+  static const _maxPackageName = '...'; // TODO: replace with actual MAX package name if known
 
   static Future<void> openExternalRoute(double lat, double lng) async {
     final yandex = Uri.parse(
@@ -18,22 +21,39 @@ class NavigationService {
     }
   }
 
-  static Future<void> openDialer(String phone) async {
-    try {
-      final uri = Uri(scheme: 'tel', path: phone);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri);
-      }
-    } catch (_) {}
+  static Future<void> callPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch phone dialer');
+    }
   }
 
-  static Future<void> openMessenger({required String phone, required String message}) async {
+  static Future<void> openMessenger(
+    BuildContext context, {
+    required String phone,
+    required String message,
+  }) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    try {
+      await Clipboard.setData(ClipboardData(text: message));
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(content: Text('Текст заказа скопирован')),
+      );
+    } catch (_) {}
+
     final encoded = Uri.encodeComponent(message);
-    // Try MAX deep link first (best-effort). If it fails, fallback to SMS.
-    final candidates = [
+    final candidates = <Uri>[
       Uri.parse('max://chat?phone=$phone&text=$encoded'),
       Uri.parse('maxapp://chat?phone=$phone&text=$encoded'),
     ];
+
+    if (_maxPackageName != '...') {
+      candidates.add(
+        Uri.parse(
+          'intent://chat?phone=$phone&text=$encoded#Intent;package=$_maxPackageName;scheme=max;end',
+        ),
+      );
+    }
 
     for (final uri in candidates) {
       try {
@@ -44,18 +64,11 @@ class NavigationService {
       } catch (_) {}
     }
 
-    // Fallback to SMS with prefilled body
     try {
       final sms = Uri(scheme: 'sms', path: phone, queryParameters: {'body': message});
       if (await canLaunchUrl(sms)) {
         await launchUrl(sms);
-        return;
       }
-    } catch (_) {}
-
-    // As a last resort copy message to clipboard so user can paste
-    try {
-      await Clipboard.setData(ClipboardData(text: message));
     } catch (_) {}
   }
 }

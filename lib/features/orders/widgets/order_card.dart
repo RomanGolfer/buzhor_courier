@@ -164,15 +164,6 @@ class _CardContent extends StatelessWidget {
                       ],
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    order.clientName,
-                    style: const TextStyle(
-                      color: AppColors.darkBlue,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -216,14 +207,34 @@ class _CardContent extends StatelessWidget {
           children: [
             const Icon(
               Icons.location_on_outlined,
-              size: 13,
+              size: 14,
               color: AppColors.grayBlueLight,
             ),
-            const SizedBox(width: 3),
+            const SizedBox(width: 4),
             Expanded(
               child: Text(
                 order.address,
-                style: const TextStyle(color: AppColors.grayBlue, fontSize: 12),
+                style: const TextStyle(
+                  color: AppColors.darkBlue,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${order.clientName} · ${order.bottles} бут.',
+                style: const TextStyle(
+                  color: AppColors.grayBlue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
