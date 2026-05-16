@@ -5,8 +5,8 @@ class _BottomButtons extends StatelessWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
-  final ValueChanged<_DeliveryConfirmation> onDelivered;
-  final ValueChanged<_FailureConfirmation> onFailed;
+  final Future<void> Function(_DeliveryConfirmation confirmation) onDelivered;
+  final Future<void> Function(_FailureConfirmation confirmation) onFailed;
 
   const _BottomButtons({
     required this.order,
@@ -112,7 +112,7 @@ class _DeliverySheet extends StatefulWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
-  final ValueChanged<_DeliveryConfirmation> onConfirm;
+  final Future<void> Function(_DeliveryConfirmation confirmation) onConfirm;
 
   const _DeliverySheet({
     required this.order,
@@ -128,6 +128,7 @@ class _DeliverySheet extends StatefulWidget {
 
 class _DeliverySheetState extends State<_DeliverySheet> {
   int _returnedBottles = 0;
+  bool _isSubmitting = false;
   final _commentController = TextEditingController();
 
   @override
@@ -256,17 +257,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
               _buildPaymentSection(widget.paymentType),
               const SizedBox(height: 28),
               GestureDetector(
-                onTap: () {
-                  widget.onConfirm(
-                    _DeliveryConfirmation(
-                      returnedBottles: _returnedBottles,
-                      comment: _commentController.text,
-                    ),
-                  );
-                  final navigator = Navigator.of(context);
-                  navigator.pop();
-                  navigator.pop();
-                },
+                onTap: _isSubmitting ? null : _submit,
                 child: Container(
                   height: 56,
                   decoration: BoxDecoration(
@@ -292,6 +283,20 @@ class _DeliverySheetState extends State<_DeliverySheet> {
         );
       },
     );
+  }
+
+  Future<void> _submit() async {
+    setState(() => _isSubmitting = true);
+    await widget.onConfirm(
+      _DeliveryConfirmation(
+        returnedBottles: _returnedBottles,
+        comment: _commentController.text,
+      ),
+    );
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.pop();
   }
 
   Widget _buildPaymentSection(PaymentType type) {
@@ -370,7 +375,7 @@ class _DeliverySummary extends StatelessWidget {
 }
 
 class _FailureSheet extends StatefulWidget {
-  final ValueChanged<_FailureConfirmation> onConfirm;
+  final Future<void> Function(_FailureConfirmation confirmation) onConfirm;
 
   const _FailureSheet({required this.onConfirm});
 
@@ -380,6 +385,7 @@ class _FailureSheet extends StatefulWidget {
 
 class _FailureSheetState extends State<_FailureSheet> {
   String? _selectedReason;
+  bool _isSubmitting = false;
   final _customController = TextEditingController();
 
   static const _reasons = [
@@ -398,7 +404,8 @@ class _FailureSheetState extends State<_FailureSheet> {
   @override
   Widget build(BuildContext context) {
     final canConfirm =
-        _selectedReason != null || _customController.text.trim().isNotEmpty;
+        !_isSubmitting &&
+        (_selectedReason != null || _customController.text.trim().isNotEmpty);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -489,18 +496,7 @@ class _FailureSheetState extends State<_FailureSheet> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: canConfirm
-                    ? () {
-                        final customReason = _customController.text.trim();
-                        final reason = customReason.isNotEmpty
-                            ? customReason
-                            : _selectedReason!;
-                        widget.onConfirm(_FailureConfirmation(reason: reason));
-                        final navigator = Navigator.of(context);
-                        navigator.pop();
-                        navigator.pop();
-                      }
-                    : null,
+                onPressed: canConfirm ? _submit : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.shade500,
                   disabledBackgroundColor: AppColors.grayBlueLight.withValues(
@@ -524,6 +520,17 @@ class _FailureSheetState extends State<_FailureSheet> {
         ),
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    final customReason = _customController.text.trim();
+    final reason = customReason.isNotEmpty ? customReason : _selectedReason!;
+    setState(() => _isSubmitting = true);
+    await widget.onConfirm(_FailureConfirmation(reason: reason));
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.pop();
   }
 }
 

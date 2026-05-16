@@ -91,8 +91,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
   }
 
-  void _completeOrder(_DeliveryConfirmation confirmation) {
-    ref
+  Future<void> _completeOrder(_DeliveryConfirmation confirmation) {
+    return ref
         .read(ordersProvider.notifier)
         .completeOrder(
           widget.order.id,
@@ -104,8 +104,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         );
   }
 
-  void _failOrder(_FailureConfirmation confirmation) {
-    ref
+  Future<void> _failOrder(_FailureConfirmation confirmation) {
+    return ref
         .read(ordersProvider.notifier)
         .failOrder(widget.order.id, reason: confirmation.reason);
   }

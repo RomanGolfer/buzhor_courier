@@ -3,15 +3,6 @@ import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-class _FakeOrderRepository extends OrderRepository {
-  _FakeOrderRepository(this.orders);
-
-  final List<OrderItem> orders;
-
-  @override
-  Future<List<OrderItem>> fetchOrders() async => orders;
-}
-
 const _activeOrder = OrderItem(
   id: '#1',
   clientName: 'Тестовый клиент',
@@ -28,10 +19,12 @@ void main() {
   test(
     'completeOrder moves active order to completed with delivery details',
     () async {
-      final notifier = OrdersNotifier(_FakeOrderRepository([_activeOrder]));
+      final notifier = OrdersNotifier(
+        OrderRepository(initialOrders: [_activeOrder]),
+      );
       await Future<void>.delayed(Duration.zero);
 
-      notifier.completeOrder(
+      await notifier.completeOrder(
         _activeOrder.id,
         bottles: 3,
         returnedBottles: 1,
@@ -57,10 +50,12 @@ void main() {
   test(
     'failOrder moves active order to completed with failure reason',
     () async {
-      final notifier = OrdersNotifier(_FakeOrderRepository([_activeOrder]));
+      final notifier = OrdersNotifier(
+        OrderRepository(initialOrders: [_activeOrder]),
+      );
       await Future<void>.delayed(Duration.zero);
 
-      notifier.failOrder(_activeOrder.id, reason: 'Клиент не отвечает');
+      await notifier.failOrder(_activeOrder.id, reason: 'Клиент не отвечает');
 
       expect(notifier.state.activeOrders, isEmpty);
       expect(notifier.state.completedOrders, hasLength(1));
@@ -73,12 +68,37 @@ void main() {
   );
 
   test('failOrder ignores blank reasons', () async {
-    final notifier = OrdersNotifier(_FakeOrderRepository([_activeOrder]));
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
     await Future<void>.delayed(Duration.zero);
 
-    notifier.failOrder(_activeOrder.id, reason: '   ');
+    await notifier.failOrder(_activeOrder.id, reason: '   ');
 
     expect(notifier.state.activeOrders, [_activeOrder]);
     expect(notifier.state.completedOrders, isEmpty);
+  });
+
+  test('refreshOrders keeps repository mutations', () async {
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.completeOrder(
+      _activeOrder.id,
+      bottles: 2,
+      returnedBottles: 0,
+      paymentType: PaymentType.cash,
+      extras: const {},
+    );
+    await notifier.refreshOrders();
+
+    expect(notifier.state.activeOrders, isEmpty);
+    expect(notifier.state.completedOrders, hasLength(1));
+    expect(
+      notifier.state.completedOrders.single.effectiveDeliveryState,
+      OrderDeliveryState.delivered,
+    );
   });
 }

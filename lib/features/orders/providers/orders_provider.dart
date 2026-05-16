@@ -84,50 +84,28 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     state = state.copyWith(isBuilding: false, listOpacity: 1.0);
   }
 
-  void completeOrder(
+  Future<void> completeOrder(
     String orderId, {
     required int bottles,
     required int returnedBottles,
     required PaymentType paymentType,
     required Map<String, int> extras,
     String? comment,
-  }) {
-    _updateOrder(
+  }) async {
+    final orders = await _repository.completeOrder(
       orderId,
-      (order) => order.copyWith(
-        isDone: true,
-        deliveryState: OrderDeliveryState.delivered,
-        deliveredBottles: bottles,
-        returnedBottles: returnedBottles,
-        confirmedPayment: paymentType,
-        extras: Map.unmodifiable(extras),
-        deliveryComment: _normalizeOptionalText(comment),
-        failureReason: null,
-      ),
+      bottles: bottles,
+      returnedBottles: returnedBottles,
+      paymentType: paymentType,
+      extras: extras,
+      comment: comment,
     );
+    _setOrders(orders);
   }
 
-  void failOrder(String orderId, {required String reason}) {
-    final normalizedReason = _normalizeOptionalText(reason);
-    if (normalizedReason == null) return;
-
-    _updateOrder(
-      orderId,
-      (order) => order.copyWith(
-        isDone: false,
-        deliveryState: OrderDeliveryState.failed,
-        failureReason: normalizedReason,
-        deliveryComment: null,
-      ),
-    );
-  }
-
-  void _updateOrder(String orderId, OrderItem Function(OrderItem) update) {
-    final orders = [...state.activeOrders, ...state.completedOrders];
-    final updatedOrders = orders
-        .map((order) => order.id == orderId ? update(order) : order)
-        .toList();
-    _setOrders(updatedOrders);
+  Future<void> failOrder(String orderId, {required String reason}) async {
+    final orders = await _repository.failOrder(orderId, reason: reason);
+    _setOrders(orders);
   }
 
   void _setOrders(List<OrderItem> orders) {
@@ -138,12 +116,6 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       completedOrders: completedOrders,
       timeSlots: _buildTimeSlots(activeOrders),
     );
-  }
-
-  String? _normalizeOptionalText(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) return null;
-    return trimmed;
   }
 
   List<TimeSlot> _buildTimeSlots(List<OrderItem> activeOrders) {
