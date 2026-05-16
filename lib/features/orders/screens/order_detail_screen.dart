@@ -31,8 +31,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _bottles = widget.order.bottles;
-    _paymentType = widget.order.payment;
+    _bottles = widget.order.deliveredBottles ?? widget.order.bottles;
+    _paymentType = widget.order.confirmedPayment ?? widget.order.payment;
+    _extras.addAll(widget.order.extras);
   }
 
   @override
@@ -52,6 +53,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   bottles: _bottles,
                   paymentType: _paymentType,
                   extras: _extras,
+                  isReadOnly: order.isClosed,
                   onBottlesChanged: (value) => setState(() => _bottles = value),
                   onPaymentTypeChanged: (value) =>
                       setState(() => _paymentType = value),
@@ -61,6 +63,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                       ..addAll(value);
                   }),
                 ),
+                if (order.isClosed) ...[
+                  const SizedBox(height: 12),
+                  _DeliveryResultCard(order: order),
+                ],
                 if (order.comment != null) ...[
                   const SizedBox(height: 12),
                   _CommentCard(comment: order.comment!),
@@ -110,6 +116,14 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         .failOrder(widget.order.id, reason: confirmation.reason);
   }
 }
+
+String _paymentLabel(PaymentType type) => switch (type) {
+  PaymentType.card => 'Карта',
+  PaymentType.cash => 'Наличные',
+  PaymentType.qr => 'QR-код',
+  PaymentType.online => 'Онлайн',
+  PaymentType.contract => 'Договор',
+};
 
 class _DeliveryConfirmation {
   final int returnedBottles;
