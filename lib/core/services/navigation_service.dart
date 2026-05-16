@@ -5,8 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 class NavigationService {
   NavigationService._();
 
-  static const _maxPackageName = '...'; // TODO: replace with actual MAX package name if known
-
   static Future<void> openExternalRoute(double lat, double lng) async {
     final yandex = Uri.parse(
       'yandexnavi://build_route_on_map?lat_to=$lat&lon_to=$lng&zoom=12',
@@ -47,14 +45,6 @@ class NavigationService {
       Uri.parse('maxapp://chat?phone=$phone&text=$encoded'),
     ];
 
-    if (_maxPackageName != '...') {
-      candidates.add(
-        Uri.parse(
-          'intent://chat?phone=$phone&text=$encoded#Intent;package=$_maxPackageName;scheme=max;end',
-        ),
-      );
-    }
-
     for (final uri in candidates) {
       try {
         if (await canLaunchUrl(uri)) {
@@ -65,7 +55,11 @@ class NavigationService {
     }
 
     try {
-      final sms = Uri(scheme: 'sms', path: phone, queryParameters: {'body': message});
+      final sms = Uri(
+        scheme: 'sms',
+        path: phone,
+        queryParameters: {'body': message},
+      );
       if (await canLaunchUrl(sms)) {
         await launchUrl(sms);
       }

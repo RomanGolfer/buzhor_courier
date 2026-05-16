@@ -30,41 +30,44 @@ void main() {
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(urlLauncherChannel, (call) async {
-      final url = _extractUrl(call.arguments);
-      if (call.method == 'canLaunch' || call.method == 'canLaunchUrl') {
-        if (url != null) canLaunchCalls.add(url);
-        return true;
-      }
+          final url = _extractUrl(call.arguments);
+          if (call.method == 'canLaunch' || call.method == 'canLaunchUrl') {
+            if (url != null) canLaunchCalls.add(url);
+            return true;
+          }
 
-      if (call.method == 'launch' || call.method == 'launchUrl') {
-        if (url != null) launchCalls.add(url);
-        return true;
-      }
+          if (call.method == 'launch' || call.method == 'launchUrl') {
+            if (url != null) launchCalls.add(url);
+            return true;
+          }
 
-      return null;
-    });
+          return null;
+        });
 
-    SystemChannels.platform.setMockMethodCallHandler((call) async {
-      if (call.method == 'Clipboard.setData') {
-        final data = call.arguments as Map<dynamic, dynamic>?;
-        final text = data?['text'] as String?;
-        if (text != null) {
-          clipboardValues.add(text);
-        }
-        return null;
-      }
-      return null;
-    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            final data = call.arguments as Map<dynamic, dynamic>?;
+            final text = data?['text'] as String?;
+            if (text != null) {
+              clipboardValues.add(text);
+            }
+            return null;
+          }
+          return null;
+        });
   });
 
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(urlLauncherChannel, null);
-    SystemChannels.platform.setMockMethodCallHandler(null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   });
 
-  testWidgets('copies text and opens MAX deep link when available',
-      (WidgetTester tester) async {
+  testWidgets('copies text and opens MAX deep link when available', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -90,31 +93,37 @@ void main() {
     expect(clipboardValues, [_testMessage]);
     expect(find.text('Текст заказа скопирован'), findsOneWidget);
     expect(canLaunchCalls, isNotEmpty);
-    expect(launchCalls.any((url) => url.startsWith('max://') || url.startsWith('maxapp://')), isTrue);
+    expect(
+      launchCalls.any(
+        (url) => url.startsWith('max://') || url.startsWith('maxapp://'),
+      ),
+      isTrue,
+    );
   });
 
-  testWidgets('falls back to SMS when MAX deep link cannot be opened',
-      (WidgetTester tester) async {
+  testWidgets('falls back to SMS when MAX deep link cannot be opened', (
+    WidgetTester tester,
+  ) async {
     late List<String> outgoingUrls;
     outgoingUrls = <String>[];
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(urlLauncherChannel, (call) async {
-      final url = _extractUrl(call.arguments);
-      if (call.method == 'canLaunch' || call.method == 'canLaunchUrl') {
-        if (url != null) {
-          canLaunchCalls.add(url);
-          final isSms = url.startsWith('sms:');
-          return isSms;
-        }
-        return false;
-      }
-      if (call.method == 'launch' || call.method == 'launchUrl') {
-        if (url != null) outgoingUrls.add(url);
-        return true;
-      }
-      return null;
-    });
+          final url = _extractUrl(call.arguments);
+          if (call.method == 'canLaunch' || call.method == 'canLaunchUrl') {
+            if (url != null) {
+              canLaunchCalls.add(url);
+              final isSms = url.startsWith('sms:');
+              return isSms;
+            }
+            return false;
+          }
+          if (call.method == 'launch' || call.method == 'launchUrl') {
+            if (url != null) outgoingUrls.add(url);
+            return true;
+          }
+          return null;
+        });
 
     await tester.pumpWidget(
       MaterialApp(
