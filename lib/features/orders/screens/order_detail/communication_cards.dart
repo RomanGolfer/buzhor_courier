@@ -81,7 +81,7 @@ class _DispatcherCard extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => launchUrl(Uri.parse('tel:$_dispatcherPhone')),
+                  onTap: () => NavigationService.openDialer(_dispatcherPhone),
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
@@ -113,7 +113,8 @@ class _DispatcherCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () => NavigationService.openMessenger(
+                      phone: _dispatcherPhone, message: 'Заказ ${order.id}'),
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(

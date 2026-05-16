@@ -284,38 +284,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
       case PaymentType.cash:
         return const _PaymentChip(label: 'Наличные ✓', color: AppColors.green);
       case PaymentType.qr:
-        return GestureDetector(
-          onTap: () {},
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.purple.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppColors.purple.withValues(alpha: 0.3),
-              ),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.qr_code_scanner_rounded,
-                  color: AppColors.purple,
-                  size: 20,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Сканировать QR',
-                  style: TextStyle(
-                    color: AppColors.purple,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return const _PaymentChip(label: 'Картой ✓', color: AppColors.blue);
       case PaymentType.online:
         return const _PaymentChip(
           label: 'Оплачено онлайн ✓',

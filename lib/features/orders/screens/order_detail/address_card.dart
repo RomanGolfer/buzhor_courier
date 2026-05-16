@@ -20,12 +20,6 @@ class _AddressCard extends StatelessWidget {
   });
 
   static const _extraOptions = ['Тара 19л', 'Помпа', 'Кулер', 'Другое'];
-  static const _paymentCycle = [
-    PaymentType.card,
-    PaymentType.cash,
-    PaymentType.online,
-    PaymentType.contract,
-  ];
 
   bool get _isPaid => paymentType == PaymentType.online;
 
@@ -53,14 +47,77 @@ class _AddressCard extends StatelessWidget {
     PaymentType.contract => AppColors.grayBlue,
   };
 
-  void _cyclePayment() {
+
+  void _showPaymentSheet(BuildContext context) {
     if (_isPaid) return;
-    final normalizedType = _paymentCycle.contains(paymentType)
-        ? paymentType
-        : PaymentType.card;
-    final index = _paymentCycle.indexOf(normalizedType);
-    final nextIndex = (index + 1) % _paymentCycle.length;
-    onPaymentTypeChanged(_paymentCycle[nextIndex]);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Выберите способ оплаты',
+                  style: TextStyle(
+                    color: AppColors.darkBlue,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  title: const Text('Наличные'),
+                  leading: Text(_paymentIcon(PaymentType.cash)),
+                  onTap: () {
+                    onPaymentTypeChanged(PaymentType.cash);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  title: const Text('Карта'),
+                  leading: Text(_paymentIcon(PaymentType.card)),
+                  onTap: () {
+                    onPaymentTypeChanged(PaymentType.card);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  title: const Text('Онлайн'),
+                  leading: Text(_paymentIcon(PaymentType.online)),
+                  onTap: () {
+                    onPaymentTypeChanged(PaymentType.online);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  title: const Text('Договор'),
+                  leading: Text(_paymentIcon(PaymentType.contract)),
+                  onTap: () {
+                    onPaymentTypeChanged(PaymentType.contract);
+                    Navigator.of(context).pop();
+                  },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Отмена', style: TextStyle(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+      },
+    );
   }
 
   void _showExtrasSheet(BuildContext context) {
@@ -255,7 +312,7 @@ class _AddressCard extends StatelessWidget {
                             color: AppColors.green,
                           )
                         : GestureDetector(
-                            onTap: _cyclePayment,
+                            onTap: () => _showPaymentSheet(context),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 14,

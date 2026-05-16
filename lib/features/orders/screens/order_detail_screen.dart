@@ -11,7 +11,7 @@ part 'order_detail/order_info_cards.dart';
 part 'order_detail/bottom_sheets.dart';
 part 'order_detail/shared_widgets.dart';
 
-const _dispatcherPhone = '+79001234567';
+const _dispatcherPhone = '+79385358777';
 
 class OrderDetailScreen extends StatefulWidget {
   final OrderItem order;
