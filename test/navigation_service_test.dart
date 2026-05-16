@@ -151,4 +151,62 @@ void main() {
     expect(find.text('Текст заказа скопирован'), findsOneWidget);
     expect(outgoingUrls.any((url) => url.startsWith('sms:')), isTrue);
   });
+
+  test('callPhone normalizes phone before launching dialer', () async {
+    final success = await NavigationService.callPhone('+7 (938) 535-87-77');
+
+    expect(success, isTrue);
+    expect(launchCalls, ['tel:+79385358777']);
+  });
+
+  test('sendSms launches sms url with encoded body', () async {
+    final success = await NavigationService.sendSms(
+      phone: '+7 (938) 535-87-77',
+      message: _testMessage,
+    );
+
+    expect(success, isTrue);
+    expect(launchCalls, hasLength(1));
+    expect(launchCalls.single, startsWith('sms:+79385358777'));
+    expect(launchCalls.single, contains('body='));
+  });
+
+  test('sendSms does not launch without phone', () async {
+    final success = await NavigationService.sendSms(
+      phone: '   ',
+      message: _testMessage,
+    );
+
+    expect(success, isFalse);
+    expect(launchCalls, isEmpty);
+  });
+
+  testWidgets('sendSmsWithFeedback shows snackbar without phone', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => ElevatedButton(
+              onPressed: () {
+                NavigationService.sendSmsWithFeedback(
+                  context,
+                  phone: null,
+                  message: _testMessage,
+                );
+              },
+              child: const Text('Send SMS'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Send SMS'));
+    await tester.pumpAndSettle();
+
+    expect(launchCalls, isEmpty);
+    expect(find.text('Нет номера телефона'), findsOneWidget);
+  });
 }

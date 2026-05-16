@@ -198,7 +198,13 @@ class _CardContent extends StatelessWidget {
             ),
             const SizedBox(width: 4),
             GestureDetector(
-              onTap: onChatTap,
+              onTap:
+                  onChatTap ??
+                  () => NavigationService.openMessenger(
+                    context,
+                    phone: order.phone,
+                    message: 'Заказ ${order.id}',
+                  ),
               child: Container(
                 width: 32,
                 height: 32,
