@@ -53,14 +53,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
 
   Future<void> _loadOrders() async {
     final orders = await _repository.fetchOrders();
-    final activeOrders = orders.where((order) => !order.isDone).toList();
-    final completedOrders = orders.where((order) => order.isDone).toList();
-    final timeSlots = _buildTimeSlots(activeOrders);
-    state = state.copyWith(
-      activeOrders: activeOrders,
-      completedOrders: completedOrders,
-      timeSlots: timeSlots,
-    );
+    _setOrders(orders);
   }
 
   Future<void> refreshOrders() async {
@@ -91,6 +84,68 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     state = state.copyWith(isBuilding: false, listOpacity: 1.0);
   }
 
+  void completeOrder(
+    String orderId, {
+    required int bottles,
+    required int returnedBottles,
+    required PaymentType paymentType,
+    required Map<String, int> extras,
+    String? comment,
+  }) {
+    _updateOrder(
+      orderId,
+      (order) => order.copyWith(
+        isDone: true,
+        deliveryState: OrderDeliveryState.delivered,
+        deliveredBottles: bottles,
+        returnedBottles: returnedBottles,
+        confirmedPayment: paymentType,
+        extras: Map.unmodifiable(extras),
+        deliveryComment: _normalizeOptionalText(comment),
+        failureReason: null,
+      ),
+    );
+  }
+
+  void failOrder(String orderId, {required String reason}) {
+    final normalizedReason = _normalizeOptionalText(reason);
+    if (normalizedReason == null) return;
+
+    _updateOrder(
+      orderId,
+      (order) => order.copyWith(
+        isDone: false,
+        deliveryState: OrderDeliveryState.failed,
+        failureReason: normalizedReason,
+        deliveryComment: null,
+      ),
+    );
+  }
+
+  void _updateOrder(String orderId, OrderItem Function(OrderItem) update) {
+    final orders = [...state.activeOrders, ...state.completedOrders];
+    final updatedOrders = orders
+        .map((order) => order.id == orderId ? update(order) : order)
+        .toList();
+    _setOrders(updatedOrders);
+  }
+
+  void _setOrders(List<OrderItem> orders) {
+    final activeOrders = orders.where((order) => !order.isClosed).toList();
+    final completedOrders = orders.where((order) => order.isClosed).toList();
+    state = state.copyWith(
+      activeOrders: activeOrders,
+      completedOrders: completedOrders,
+      timeSlots: _buildTimeSlots(activeOrders),
+    );
+  }
+
+  String? _normalizeOptionalText(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
   List<TimeSlot> _buildTimeSlots(List<OrderItem> activeOrders) {
     final firstSlot = activeOrders.sublist(0, min(activeOrders.length, 4));
     final secondSlot = activeOrders.sublist(min(activeOrders.length, 4));
@@ -107,8 +162,9 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 }
 
-final ordersProvider =
-    StateNotifierProvider<OrdersNotifier, OrdersState>((ref) {
+final ordersProvider = StateNotifierProvider<OrdersNotifier, OrdersState>((
+  ref,
+) {
   final repository = ref.read(orderRepositoryProvider);
   return OrdersNotifier(repository);
 });

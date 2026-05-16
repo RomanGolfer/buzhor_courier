@@ -5,12 +5,16 @@ class _BottomButtons extends StatelessWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final ValueChanged<_DeliveryConfirmation> onDelivered;
+  final ValueChanged<_FailureConfirmation> onFailed;
 
   const _BottomButtons({
     required this.order,
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.onDelivered,
+    required this.onFailed,
   });
 
   @override
@@ -37,7 +41,7 @@ class _BottomButtons extends StatelessWidget {
                   context: context,
                   isScrollControlled: true,
                   backgroundColor: Colors.transparent,
-                  builder: (_) => _FailureSheet(order: order),
+                  builder: (_) => _FailureSheet(onConfirm: onFailed),
                 ),
                 child: Container(
                   height: 52,
@@ -70,6 +74,7 @@ class _BottomButtons extends StatelessWidget {
                     bottles: bottles,
                     paymentType: paymentType,
                     extras: extras,
+                    onConfirm: onDelivered,
                   ),
                 ),
                 child: Container(
@@ -107,12 +112,14 @@ class _DeliverySheet extends StatefulWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final ValueChanged<_DeliveryConfirmation> onConfirm;
 
   const _DeliverySheet({
     required this.order,
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.onConfirm,
   });
 
   @override
@@ -249,7 +256,17 @@ class _DeliverySheetState extends State<_DeliverySheet> {
               _buildPaymentSection(widget.paymentType),
               const SizedBox(height: 28),
               GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
+                onTap: () {
+                  widget.onConfirm(
+                    _DeliveryConfirmation(
+                      returnedBottles: _returnedBottles,
+                      comment: _commentController.text,
+                    ),
+                  );
+                  final navigator = Navigator.of(context);
+                  navigator.pop();
+                  navigator.pop();
+                },
                 child: Container(
                   height: 56,
                   decoration: BoxDecoration(
@@ -353,8 +370,9 @@ class _DeliverySummary extends StatelessWidget {
 }
 
 class _FailureSheet extends StatefulWidget {
-  final OrderItem order;
-  const _FailureSheet({required this.order});
+  final ValueChanged<_FailureConfirmation> onConfirm;
+
+  const _FailureSheet({required this.onConfirm});
 
   @override
   State<_FailureSheet> createState() => _FailureSheetState();
@@ -379,6 +397,9 @@ class _FailureSheetState extends State<_FailureSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final canConfirm =
+        _selectedReason != null || _customController.text.trim().isNotEmpty;
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -451,6 +472,7 @@ class _FailureSheetState extends State<_FailureSheet> {
             const SizedBox(height: 16),
             TextField(
               controller: _customController,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: 'Другая причина...',
                 border: OutlineInputBorder(
@@ -467,9 +489,23 @@ class _FailureSheetState extends State<_FailureSheet> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: canConfirm
+                    ? () {
+                        final customReason = _customController.text.trim();
+                        final reason = customReason.isNotEmpty
+                            ? customReason
+                            : _selectedReason!;
+                        widget.onConfirm(_FailureConfirmation(reason: reason));
+                        final navigator = Navigator.of(context);
+                        navigator.pop();
+                        navigator.pop();
+                      }
+                    : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red.shade500,
+                  disabledBackgroundColor: AppColors.grayBlueLight.withValues(
+                    alpha: 0.24,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),

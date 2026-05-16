@@ -1,7 +1,9 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 part 'order_detail/header.dart';
@@ -13,16 +15,16 @@ part 'order_detail/shared_widgets.dart';
 
 const _dispatcherPhone = '+79385358777';
 
-class OrderDetailScreen extends StatefulWidget {
+class OrderDetailScreen extends ConsumerStatefulWidget {
   final OrderItem order;
 
   const OrderDetailScreen({super.key, required this.order});
 
   @override
-  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+  ConsumerState<OrderDetailScreen> createState() => _OrderDetailScreenState();
 }
 
-class _OrderDetailScreenState extends State<OrderDetailScreen> {
+class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   late int _bottles;
   late PaymentType _paymentType;
   final Map<String, int> _extras = {};
@@ -77,12 +79,51 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _BottomButtons(
-        order: order,
-        bottles: _bottles,
-        paymentType: _paymentType,
-        extras: _extras,
-      ),
+      bottomNavigationBar: order.isClosed
+          ? null
+          : _BottomButtons(
+              order: order,
+              bottles: _bottles,
+              paymentType: _paymentType,
+              extras: _extras,
+              onDelivered: _completeOrder,
+              onFailed: _failOrder,
+            ),
     );
   }
+
+  void _completeOrder(_DeliveryConfirmation confirmation) {
+    ref
+        .read(ordersProvider.notifier)
+        .completeOrder(
+          widget.order.id,
+          bottles: _bottles,
+          returnedBottles: confirmation.returnedBottles,
+          paymentType: _paymentType,
+          extras: _extras,
+          comment: confirmation.comment,
+        );
+  }
+
+  void _failOrder(_FailureConfirmation confirmation) {
+    ref
+        .read(ordersProvider.notifier)
+        .failOrder(widget.order.id, reason: confirmation.reason);
+  }
+}
+
+class _DeliveryConfirmation {
+  final int returnedBottles;
+  final String? comment;
+
+  const _DeliveryConfirmation({
+    required this.returnedBottles,
+    required this.comment,
+  });
+}
+
+class _FailureConfirmation {
+  final String reason;
+
+  const _FailureConfirmation({required this.reason});
 }

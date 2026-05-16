@@ -21,70 +21,77 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = order.isDone ? AppColors.green : AppColors.blue;
+    final borderColor = order.isFailed
+        ? Colors.red.shade400
+        : order.isClosed
+        ? AppColors.green
+        : AppColors.blue;
     return GestureDetector(
       onTap: onTap,
       child: Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: borderColor.withValues(alpha: 0.10),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 4, color: borderColor),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _NumberBadge(number: number, isDone: order.isDone),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _CardContent(
-                        order: order,
-                        onChatTap: onChatTap,
-                        showRouteButton: showRouteButton,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        margin: const EdgeInsets.only(bottom: 14),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: borderColor.withValues(alpha: 0.10),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 4, color: borderColor),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _NumberBadge(order: order, number: number),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _CardContent(
+                          order: order,
+                          onChatTap: onChatTap,
+                          showRouteButton: showRouteButton,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    ),
     );
   }
-
 }
 
 class _NumberBadge extends StatelessWidget {
+  final OrderItem order;
   final int number;
-  final bool isDone;
 
-  const _NumberBadge({required this.number, required this.isDone});
+  const _NumberBadge({required this.order, required this.number});
 
   @override
   Widget build(BuildContext context) {
-    final color = isDone ? AppColors.green : AppColors.orange;
+    final color = order.isFailed
+        ? Colors.red.shade400
+        : order.isClosed
+        ? AppColors.green
+        : AppColors.orange;
     return Container(
       width: 30,
       height: 30,
@@ -141,7 +148,7 @@ class _CardContent extends StatelessWidget {
                           letterSpacing: 0.3,
                         ),
                       ),
-                      if (order.isDone) ...[
+                      if (order.isClosed) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -149,13 +156,19 @@ class _CardContent extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.green.withValues(alpha: 0.1),
+                            color:
+                                (order.isFailed
+                                        ? Colors.red.shade400
+                                        : AppColors.green)
+                                    .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            'Выполнен',
+                          child: Text(
+                            order.isFailed ? 'Не доставлен' : 'Выполнен',
                             style: TextStyle(
-                              color: AppColors.green,
+                              color: order.isFailed
+                                  ? Colors.red.shade400
+                                  : AppColors.green,
                               fontSize: 10,
                               fontWeight: FontWeight.w600,
                             ),
@@ -300,7 +313,8 @@ class _CardContent extends StatelessWidget {
             if (showRouteButton) ...[
               const Spacer(),
               GestureDetector(
-                onTap: () => NavigationService.openExternalRoute(order.lat, order.lng),
+                onTap: () =>
+                    NavigationService.openExternalRoute(order.lat, order.lng),
                 child: Container(
                   height: 32,
                   padding: const EdgeInsets.symmetric(horizontal: 13),
