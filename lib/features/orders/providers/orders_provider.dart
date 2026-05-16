@@ -53,14 +53,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
 
   Future<void> _loadOrders() async {
     final orders = await _repository.fetchOrders();
-    final activeOrders = orders.where((order) => !order.isDone).toList();
-    final completedOrders = orders.where((order) => order.isDone).toList();
-    final timeSlots = _buildTimeSlots(activeOrders);
-    state = state.copyWith(
-      activeOrders: activeOrders,
-      completedOrders: completedOrders,
-      timeSlots: timeSlots,
-    );
+    _setOrders(orders);
   }
 
   Future<void> refreshOrders() async {
@@ -91,6 +84,40 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     state = state.copyWith(isBuilding: false, listOpacity: 1.0);
   }
 
+  Future<void> completeOrder(
+    String orderId, {
+    required int bottles,
+    required int returnedBottles,
+    required PaymentType paymentType,
+    required Map<String, int> extras,
+    String? comment,
+  }) async {
+    final orders = await _repository.completeOrder(
+      orderId,
+      bottles: bottles,
+      returnedBottles: returnedBottles,
+      paymentType: paymentType,
+      extras: extras,
+      comment: comment,
+    );
+    _setOrders(orders);
+  }
+
+  Future<void> failOrder(String orderId, {required String reason}) async {
+    final orders = await _repository.failOrder(orderId, reason: reason);
+    _setOrders(orders);
+  }
+
+  void _setOrders(List<OrderItem> orders) {
+    final activeOrders = orders.where((order) => !order.isClosed).toList();
+    final completedOrders = orders.where((order) => order.isClosed).toList();
+    state = state.copyWith(
+      activeOrders: activeOrders,
+      completedOrders: completedOrders,
+      timeSlots: _buildTimeSlots(activeOrders),
+    );
+  }
+
   List<TimeSlot> _buildTimeSlots(List<OrderItem> activeOrders) {
     final firstSlot = activeOrders.sublist(0, min(activeOrders.length, 4));
     final secondSlot = activeOrders.sublist(min(activeOrders.length, 4));
@@ -107,8 +134,9 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 }
 
-final ordersProvider =
-    StateNotifierProvider<OrdersNotifier, OrdersState>((ref) {
+final ordersProvider = StateNotifierProvider<OrdersNotifier, OrdersState>((
+  ref,
+) {
   final repository = ref.read(orderRepositoryProvider);
   return OrdersNotifier(repository);
 });

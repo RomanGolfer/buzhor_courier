@@ -1,4 +1,4 @@
-﻿import 'package:buzhor_courier/core/constants/app_colors.dart';
+import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 import 'package:buzhor_courier/features/orders/providers/location_provider.dart';
@@ -91,7 +91,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       children: [
         TileLayer(
-          urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+          urlTemplate:
+              'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c', 'd'],
         ),
         SimpleAttributionWidget(source: const Text('CartoDB')),
@@ -260,7 +261,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildTab(String label, IconData icon, bool active) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => ref.read(ordersProvider.notifier).setMapView(label == 'Карта'),
+        onTap: () =>
+            ref.read(ordersProvider.notifier).setMapView(label == 'Карта'),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),
@@ -345,10 +347,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
           itemCount: ordersState.timeSlots.length,
-          itemBuilder: (context, slotIndex) => _buildTimeSlotGroup(
-            ordersState.timeSlots[slotIndex],
-            slotIndex,
-          ),
+          itemBuilder: (context, slotIndex) =>
+              _buildTimeSlotGroup(ordersState.timeSlots[slotIndex], slotIndex),
         ),
       ),
     );
@@ -357,7 +357,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildTimeSlotGroup(TimeSlot slot, int slotIndex) {
     return SlotHeader(
       slot: slot,
-      onToggle: () => ref.read(ordersProvider.notifier).toggleSlotExpansion(slotIndex),
+      onToggle: () =>
+          ref.read(ordersProvider.notifier).toggleSlotExpansion(slotIndex),
       onBuildRoute: () => _buildRouteForSlot(slot),
     );
   }
@@ -408,8 +409,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
-    final totalPrice = ordersState.completedOrders.fold<double>(0, (sum, order) => sum + order.price);
-    final totalBottles = ordersState.completedOrders.fold<int>(0, (sum, order) => sum + order.bottles);
+    final totalPrice = ordersState.completedOrders.fold<double>(
+      0,
+      (sum, order) => sum + order.price,
+    );
+    final totalBottles = ordersState.completedOrders.fold<int>(
+      0,
+      (sum, order) =>
+          sum + (order.isFailed ? 0 : order.deliveredBottles ?? order.bottles),
+    );
 
     return Column(
       children: [
@@ -418,7 +426,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
-              _buildStatChip('${ordersState.completedOrders.length}', 'заказов', AppColors.green),
+              _buildStatChip(
+                '${ordersState.completedOrders.length}',
+                'заказов',
+                AppColors.green,
+              ),
               const SizedBox(width: 10),
               _buildStatChip('$totalBottles', 'бут.', AppColors.lightBlue),
               const SizedBox(width: 10),
@@ -436,9 +448,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               showRouteButton: false,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => OrderDetailScreen(
-                    order: ordersState.completedOrders[i],
-                  ),
+                  builder: (_) =>
+                      OrderDetailScreen(order: ordersState.completedOrders[i]),
                 ),
               ),
             ),
@@ -501,7 +512,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildBottomNav(OrdersState ordersState) {
     const items = [
       (Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Заказы'),
-      (Icons.check_circle_outline_rounded, Icons.check_circle_rounded, 'Выполнено'),
+      (
+        Icons.check_circle_outline_rounded,
+        Icons.check_circle_rounded,
+        'Выполнено',
+      ),
       (Icons.bar_chart_outlined, Icons.bar_chart_rounded, 'Статистика'),
       (Icons.person_outline_rounded, Icons.person_rounded, 'Профиль'),
     ];
@@ -545,7 +560,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         child: Icon(
                           active ? iconFill : iconOut,
-                          color: active ? AppColors.blue : AppColors.grayBlueLight,
+                          color: active
+                              ? AppColors.blue
+                              : AppColors.grayBlueLight,
                           size: 24,
                         ),
                       ),
@@ -553,7 +570,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Text(
                         label,
                         style: TextStyle(
-                          color: active ? AppColors.blue : AppColors.grayBlueLight,
+                          color: active
+                              ? AppColors.blue
+                              : AppColors.grayBlueLight,
                           fontSize: 11,
                           fontWeight: active
                               ? FontWeight.w700

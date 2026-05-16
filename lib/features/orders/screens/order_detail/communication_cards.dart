@@ -81,7 +81,10 @@ class _DispatcherCard extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => launchUrl(Uri.parse('tel:$_dispatcherPhone')),
+                  onTap: () => NavigationService.callPhoneWithFeedback(
+                    context,
+                    phone: _dispatcherPhone,
+                  ),
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
@@ -113,7 +116,11 @@ class _DispatcherCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () => NavigationService.openMessenger(
+                    context,
+                    phone: _dispatcherPhone,
+                    message: 'Заказ ${order.id}',
+                  ),
                   child: Container(
                     height: 44,
                     decoration: BoxDecoration(
@@ -163,7 +170,7 @@ class _QuickSmsCard extends StatelessWidget {
     '🚪 Доставка у двери',
   ];
 
-  Widget _buildChips() {
+  Widget _buildChips(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Wrap(
@@ -172,17 +179,11 @@ class _QuickSmsCard extends StatelessWidget {
         children: _messages
             .map(
               (msg) => GestureDetector(
-                onTap: () {
-                  final phone = order.phone;
-                  if (phone == null || phone.isEmpty) return;
-                  launchUrl(
-                    Uri(
-                      scheme: 'sms',
-                      path: phone,
-                      queryParameters: {'body': msg},
-                    ),
-                  );
-                },
+                onTap: () => NavigationService.sendSmsWithFeedback(
+                  context,
+                  phone: order.phone,
+                  message: msg,
+                ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -244,7 +245,7 @@ class _QuickSmsCard extends StatelessWidget {
               Icons.expand_more_rounded,
               color: AppColors.blue,
             ),
-            children: [_buildChips()],
+            children: [_buildChips(context)],
           ),
         ),
       ),
@@ -306,7 +307,10 @@ class _ClientCard extends StatelessWidget {
           if (phone != null) ...[
             const SizedBox(height: 14),
             GestureDetector(
-              onTap: () => launchUrl(Uri.parse('tel:$phone')),
+              onTap: () => NavigationService.callPhoneWithFeedback(
+                context,
+                phone: phone,
+              ),
               child: Container(
                 width: double.infinity,
                 height: 48,
