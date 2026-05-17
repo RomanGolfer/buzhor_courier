@@ -39,11 +39,11 @@ class AppStrings {
   static const longPressHint = 'Удерживайте карту для выбора точки старта';
 
   // Payments
-  static const payCard = 'Карта';
-  static const payCash = 'Нал';
-  static const payQr = 'QR';
-  static const payOnline = 'Онлайн';
-  static const payContract = 'Договор';
+  static const payCard = 'Картой курьеру';
+  static const payCash = 'Наличные';
+  static const payQr = 'Онлайн оплата';
+  static const payOnline = 'Оплачено';
+  static const payContract = 'По договору';
 
   // Units
   static const bottlesUnit = 'бут.';

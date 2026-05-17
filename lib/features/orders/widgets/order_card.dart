@@ -372,7 +372,7 @@ class _PaymentBadge extends StatelessWidget {
       case PaymentType.card:
         icon = Icons.credit_card_rounded;
         color = AppColors.blue;
-        label = 'Карта';
+        label = 'Картой';
       case PaymentType.cash:
         icon = Icons.payments_outlined;
         color = AppColors.green;
@@ -380,11 +380,11 @@ class _PaymentBadge extends StatelessWidget {
       case PaymentType.qr:
         icon = Icons.qr_code_rounded;
         color = AppColors.purple;
-        label = 'QR';
-      case PaymentType.online:
-        icon = Icons.smartphone_rounded;
-        color = AppColors.orange;
         label = 'Онлайн';
+      case PaymentType.online:
+        icon = Icons.check_circle_rounded;
+        color = AppColors.green;
+        label = 'Оплачено';
       case PaymentType.contract:
         icon = Icons.description_outlined;
         color = AppColors.grayBlueLight;

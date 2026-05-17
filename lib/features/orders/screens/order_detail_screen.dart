@@ -168,11 +168,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
 }
 
 String _paymentLabel(PaymentType type) => switch (type) {
-  PaymentType.card => 'Карта',
+  PaymentType.card => 'Картой курьеру',
   PaymentType.cash => 'Наличные',
-  PaymentType.qr => 'QR-код',
-  PaymentType.online => 'Онлайн',
-  PaymentType.contract => 'Договор',
+  PaymentType.qr => 'Онлайн оплата',
+  PaymentType.online => 'Оплачено',
+  PaymentType.contract => 'По договору',
 };
 
 class _DeliveryConfirmation {

@@ -385,16 +385,19 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   Widget _buildPaymentSection(PaymentType type) {
     switch (type) {
       case PaymentType.card:
-        return const _PaymentChip(label: 'Картой ✓', color: AppColors.blue);
+        return const _PaymentChip(
+          label: 'Картой курьеру ✓',
+          color: AppColors.blue,
+        );
       case PaymentType.cash:
         return const _PaymentChip(label: 'Наличные ✓', color: AppColors.green);
       case PaymentType.qr:
-        return const _PaymentChip(label: 'Картой ✓', color: AppColors.blue);
-      case PaymentType.online:
         return const _PaymentChip(
-          label: 'Оплачено онлайн ✓',
-          color: AppColors.green,
+          label: 'Онлайн оплата ✓',
+          color: AppColors.blue,
         );
+      case PaymentType.online:
+        return const _PaymentChip(label: 'Оплачено ✓', color: AppColors.green);
       case PaymentType.contract:
         return const _PaymentChip(
           label: 'По договору ✓',

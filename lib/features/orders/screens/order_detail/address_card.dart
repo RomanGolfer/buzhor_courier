@@ -25,13 +25,18 @@ class _AddressCard extends StatelessWidget {
 
   bool get _isPaid => paymentType == PaymentType.online;
 
-  String _shortPaymentLabel(PaymentType t) =>
-      t == PaymentType.cash ? 'Нал' : _paymentLabel(t);
+  String _paymentSheetLabel(PaymentType t) => switch (t) {
+    PaymentType.card => 'Картой курьеру',
+    PaymentType.contract => 'По договору',
+    PaymentType.cash => 'Наличные',
+    PaymentType.qr => 'Онлайн оплата',
+    PaymentType.online => 'Оплачено',
+  };
 
   String _paymentIcon(PaymentType t) => switch (t) {
     PaymentType.card => '💳',
     PaymentType.cash => '💵',
-    PaymentType.qr => '📱',
+    PaymentType.qr => '🔳',
     PaymentType.online => '✅',
     PaymentType.contract => '📄',
   };
@@ -70,15 +75,7 @@ class _AddressCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   ListTile(
-                    title: const Text('Наличные'),
-                    leading: Text(_paymentIcon(PaymentType.cash)),
-                    onTap: () {
-                      onPaymentTypeChanged(PaymentType.cash);
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  ListTile(
-                    title: const Text('Карта'),
+                    title: const Text('Картой курьеру'),
                     leading: Text(_paymentIcon(PaymentType.card)),
                     onTap: () {
                       onPaymentTypeChanged(PaymentType.card);
@@ -86,18 +83,18 @@ class _AddressCard extends StatelessWidget {
                     },
                   ),
                   ListTile(
-                    title: const Text('Онлайн'),
-                    leading: Text(_paymentIcon(PaymentType.online)),
+                    title: const Text('По договору'),
+                    leading: Text(_paymentIcon(PaymentType.contract)),
                     onTap: () {
-                      onPaymentTypeChanged(PaymentType.online);
+                      onPaymentTypeChanged(PaymentType.contract);
                       Navigator.of(context).pop();
                     },
                   ),
                   ListTile(
-                    title: const Text('Договор'),
-                    leading: Text(_paymentIcon(PaymentType.contract)),
+                    title: const Text('Наличные'),
+                    leading: Text(_paymentIcon(PaymentType.cash)),
                     onTap: () {
-                      onPaymentTypeChanged(PaymentType.contract);
+                      onPaymentTypeChanged(PaymentType.cash);
                       Navigator.of(context).pop();
                     },
                   ),
@@ -263,7 +260,10 @@ class _AddressCard extends StatelessWidget {
                     children: [
                       const Text(
                         'Бутылей',
-                        style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
+                        style: TextStyle(
+                          color: AppColors.grayBlue,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -311,14 +311,17 @@ class _AddressCard extends StatelessWidget {
                     children: [
                       const Text(
                         'Оплата',
-                        style: TextStyle(color: AppColors.grayBlue, fontSize: 12),
+                        style: TextStyle(
+                          color: AppColors.grayBlue,
+                          fontSize: 12,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       _isPaid || isReadOnly
                           ? _PaymentChip(
                               label: _isPaid
                                   ? 'Оплачено ✓'
-                                  : _shortPaymentLabel(paymentType),
+                                  : _paymentLabel(paymentType),
                               color: _paymentColor(paymentType),
                             )
                           : GestureDetector(
@@ -351,7 +354,7 @@ class _AddressCard extends StatelessWidget {
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      _shortPaymentLabel(paymentType),
+                                      _paymentSheetLabel(paymentType),
                                       style: TextStyle(
                                         color: _paymentColor(paymentType),
                                         fontWeight: FontWeight.w600,

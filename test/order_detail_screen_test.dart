@@ -37,6 +37,18 @@ const _failedOrder = OrderItem(
   lng: 37.3168,
 );
 
+const _activeOrder = OrderItem(
+  id: '#3',
+  clientName: 'Активный клиент',
+  address: 'ул. Тестовая, 3',
+  district: 'Анапа',
+  price: 840,
+  payment: PaymentType.cash,
+  bottles: 3,
+  lat: 44.8951,
+  lng: 37.3168,
+);
+
 void main() {
   testWidgets('shows delivered order result in read-only mode', (tester) async {
     await tester.pumpWidget(
@@ -50,7 +62,7 @@ void main() {
     expect(find.text('3 бут.'), findsOneWidget);
     expect(find.text('Возврат'), findsOneWidget);
     expect(find.text('1 бут.'), findsOneWidget);
-    expect(find.text('Карта'), findsWidgets);
+    expect(find.text('Картой курьеру'), findsWidgets);
     expect(find.text('Помпа ×1'), findsWidgets);
     expect(find.text('Маркировка'), findsOneWidget);
     expect(find.text('3 отсканировано'), findsOneWidget);
@@ -70,5 +82,25 @@ void main() {
     expect(find.text('Причина'), findsOneWidget);
     expect(find.text('Клиент не отвечает'), findsOneWidget);
     expect(find.text('+ Добавить'), findsNothing);
+  });
+
+  testWidgets('payment selector offers only courier payment methods', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _activeOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Наличные').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Выберите способ оплаты'), findsOneWidget);
+    expect(find.text('Картой курьеру'), findsOneWidget);
+    expect(find.text('По договору'), findsOneWidget);
+    expect(find.text('Наличные'), findsWidgets);
+    expect(find.text('Онлайн оплата'), findsNothing);
+    expect(find.text('Оплачено'), findsNothing);
   });
 }
