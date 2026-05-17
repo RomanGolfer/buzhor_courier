@@ -30,6 +30,7 @@ void main() {
         returnedBottles: 1,
         paymentType: PaymentType.card,
         extras: {'Помпа': 1},
+        scannedItems: {'water': 3},
         comment: 'Оставлено у двери',
       );
 
@@ -43,6 +44,7 @@ void main() {
       expect(completed.returnedBottles, 1);
       expect(completed.confirmedPayment, PaymentType.card);
       expect(completed.extras, {'Помпа': 1});
+      expect(completed.scannedItems, {'water': 3});
       expect(completed.deliveryComment, 'Оставлено у двери');
     },
   );
@@ -91,6 +93,7 @@ void main() {
       returnedBottles: 0,
       paymentType: PaymentType.cash,
       extras: const {},
+      scannedItems: const {'water': 2},
     );
     await notifier.refreshOrders();
 

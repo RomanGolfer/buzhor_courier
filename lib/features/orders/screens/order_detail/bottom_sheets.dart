@@ -129,6 +129,7 @@ class _DeliverySheet extends StatefulWidget {
 class _DeliverySheetState extends State<_DeliverySheet> {
   int _returnedBottles = 0;
   bool _isSubmitting = false;
+  final Map<String, int> _scannedItems = {};
   final _commentController = TextEditingController();
 
   @override
@@ -179,6 +180,8 @@ class _DeliverySheetState extends State<_DeliverySheet> {
               ),
               const SizedBox(height: 24),
               _DeliverySummary(bottles: widget.bottles, extras: widget.extras),
+              const SizedBox(height: 20),
+              _buildMarkingSection(),
               const SizedBox(height: 20),
               TextField(
                 controller: _commentController,
@@ -290,6 +293,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     await widget.onConfirm(
       _DeliveryConfirmation(
         returnedBottles: _returnedBottles,
+        scannedItems: Map.unmodifiable(_scannedItems),
         comment: _commentController.text,
       ),
     );
@@ -297,6 +301,85 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     final navigator = Navigator.of(context);
     navigator.pop();
     navigator.pop();
+  }
+
+  Widget _buildMarkingSection() {
+    final scannedCount = _scannedItems['water'] ?? 0;
+    final isComplete = scannedCount == widget.bottles;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Маркировка товаров',
+          style: TextStyle(
+            color: AppColors.darkBlue,
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Вода "Бужор" 19л',
+                      style: TextStyle(
+                        color: AppColors.darkBlue,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$scannedCount / ${widget.bottles} отсканировано',
+                      style: const TextStyle(
+                        color: AppColors.grayBlue,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: _openWaterScanner,
+                icon: Icon(
+                  isComplete
+                      ? Icons.check_circle_rounded
+                      : Icons.qr_code_scanner_rounded,
+                  color: isComplete ? AppColors.green : AppColors.blue,
+                  size: 32,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openWaterScanner() async {
+    final result = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QrScannerScreen(
+          itemName: 'Вода Бужор 19л',
+          requiredCount: widget.bottles,
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _scannedItems['water'] = result);
   }
 
   Widget _buildPaymentSection(PaymentType type) {

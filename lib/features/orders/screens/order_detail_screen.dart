@@ -2,6 +2,7 @@ import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
+import 'package:buzhor_courier/features/orders/screens/qr_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -108,6 +109,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           returnedBottles: confirmation.returnedBottles,
           paymentType: _paymentType,
           extras: _extras,
+          scannedItems: confirmation.scannedItems,
           comment: confirmation.comment,
         );
   }
@@ -129,10 +131,12 @@ String _paymentLabel(PaymentType type) => switch (type) {
 
 class _DeliveryConfirmation {
   final int returnedBottles;
+  final Map<String, int> scannedItems;
   final String? comment;
 
   const _DeliveryConfirmation({
     required this.returnedBottles,
+    required this.scannedItems,
     required this.comment,
   });
 }

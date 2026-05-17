@@ -160,6 +160,13 @@ class _DeliveryResultCard extends StatelessWidget {
                     .toList(),
               ),
             ],
+            if (order.scannedItems.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _ResultInfoRow(
+                label: 'Маркировка',
+                value: '${order.scannedItems['water'] ?? 0} отсканировано',
+              ),
+            ],
             if (order.deliveryComment != null) ...[
               const SizedBox(height: 12),
               _ResultInfoRow(
