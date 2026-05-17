@@ -209,4 +209,22 @@ void main() {
 
     expect(find.text('Проверка оплаты пока не подключена'), findsWidgets);
   });
+
+  testWidgets('auto polls payment status on QR screen', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть крупно'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Проверка оплаты пока не подключена'), findsNothing);
+
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('Проверка оплаты пока не подключена'), findsOneWidget);
+  });
 }

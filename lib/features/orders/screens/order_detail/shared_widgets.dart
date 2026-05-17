@@ -186,8 +186,24 @@ class _PaymentQrFullScreen extends StatefulWidget {
 }
 
 class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
+  static const _paymentPollingInterval = Duration(seconds: 7);
+
   PaymentStatusCheck? _paymentCheck;
   bool _isCheckingPayment = false;
+  bool _isPaymentCheckInFlight = false;
+  Timer? _paymentPollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startPaymentPolling();
+  }
+
+  @override
+  void dispose() {
+    _paymentPollingTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -321,17 +337,42 @@ class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
     );
   }
 
-  Future<void> _checkPayment() async {
-    setState(() => _isCheckingPayment = true);
+  void _startPaymentPolling() {
+    _paymentPollingTimer?.cancel();
+    _paymentPollingTimer = Timer.periodic(
+      _paymentPollingInterval,
+      (_) => _checkPayment(showFeedback: false, showLoading: false),
+    );
+  }
+
+  Future<void> _checkPayment({
+    bool showFeedback = true,
+    bool showLoading = true,
+  }) async {
+    if (_isPaymentCheckInFlight) return;
+    _isPaymentCheckInFlight = true;
+    if (showLoading) {
+      setState(() => _isCheckingPayment = true);
+    }
+
     final result = await PaymentStatusService.checkPayment(widget.order);
+    _isPaymentCheckInFlight = false;
     if (!mounted) return;
+
+    if (result.status == PaymentCheckStatus.paid) {
+      _paymentPollingTimer?.cancel();
+    }
+
     setState(() {
       _paymentCheck = result;
       _isCheckingPayment = false;
     });
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(result.message)));
+
+    if (showFeedback) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(result.message)));
+    }
   }
 }
 
