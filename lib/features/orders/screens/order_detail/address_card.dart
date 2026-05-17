@@ -25,11 +25,11 @@ class _AddressCard extends StatelessWidget {
 
   bool get _isPaid => paymentType == PaymentType.online;
 
-  String _paymentSheetLabel(PaymentType t) => switch (t) {
-    PaymentType.card => 'Картой курьеру',
-    PaymentType.contract => 'По договору',
+  String _compactPaymentLabel(PaymentType t) => switch (t) {
+    PaymentType.card => 'Картой',
+    PaymentType.contract => 'Договор',
     PaymentType.cash => 'Наличные',
-    PaymentType.qr => 'Онлайн оплата',
+    PaymentType.qr => 'Онлайн',
     PaymentType.online => 'Оплачено',
   };
 
@@ -327,8 +327,9 @@ class _AddressCard extends StatelessWidget {
                           : GestureDetector(
                               onTap: () => _showPaymentSheet(context),
                               child: Container(
+                                width: double.infinity,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
+                                  horizontal: 10,
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
@@ -343,7 +344,6 @@ class _AddressCard extends StatelessWidget {
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       _paymentIcon(paymentType),
@@ -353,12 +353,16 @@ class _AddressCard extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    Text(
-                                      _paymentSheetLabel(paymentType),
-                                      style: TextStyle(
-                                        color: _paymentColor(paymentType),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14,
+                                    Expanded(
+                                      child: Text(
+                                        _compactPaymentLabel(paymentType),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: _paymentColor(paymentType),
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14,
+                                        ),
                                       ),
                                     ),
                                   ],
