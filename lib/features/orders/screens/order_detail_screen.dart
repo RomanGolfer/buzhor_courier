@@ -27,7 +27,7 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
-  static const _dispatcherRevealDistance = 80.0;
+  static const _dispatcherRevealDistance = 180.0;
 
   late int _bottles;
   late PaymentType _paymentType;
@@ -60,55 +60,80 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             children: [
               _Header(order: order),
               Expanded(
-                child: NotificationListener<ScrollNotification>(
-                  onNotification: _handleScrollNotification,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-                    children: [
-                      _AddressCard(
-                        order: order,
-                        bottles: _bottles,
-                        paymentType: _paymentType,
-                        extras: _extras,
-                        isReadOnly: order.isClosed,
-                        onBottlesChanged: (value) =>
-                            setState(() => _bottles = value),
-                        onPaymentTypeChanged: (value) =>
-                            setState(() => _paymentType = value),
-                        onExtrasChanged: (value) => setState(() {
-                          _extras
-                            ..clear()
-                            ..addAll(value);
-                        }),
-                      ),
-                      if (order.isClosed) ...[
-                        const SizedBox(height: 12),
-                        _DeliveryResultCard(order: order),
-                      ],
-                      if (!order.isClosed && order.comment != null) ...[
-                        const SizedBox(height: 12),
-                        _CommentCard(comment: order.comment!),
-                      ],
-                      if (!order.isClosed) ...[
-                        const SizedBox(height: 12),
-                        _QuickSmsCard(order: order),
-                      ],
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  children: [
+                    _AddressCard(
+                      order: order,
+                      bottles: _bottles,
+                      paymentType: _paymentType,
+                      extras: _extras,
+                      isReadOnly: order.isClosed,
+                      onBottlesChanged: (value) =>
+                          setState(() => _bottles = value),
+                      onPaymentTypeChanged: (value) =>
+                          setState(() => _paymentType = value),
+                      onExtrasChanged: (value) => setState(() {
+                        _extras
+                          ..clear()
+                          ..addAll(value);
+                      }),
+                    ),
+                    if (order.isClosed) ...[
                       const SizedBox(height: 12),
-                      _ClientCard(order: order),
-                      const SizedBox(height: 12),
-                      _OrderItemsCard(order: order),
+                      _DeliveryResultCard(order: order),
                     ],
-                  ),
+                    if (!order.isClosed && order.comment != null) ...[
+                      const SizedBox(height: 12),
+                      _CommentCard(comment: order.comment!),
+                    ],
+                    if (!order.isClosed) ...[
+                      const SizedBox(height: 12),
+                      _QuickSmsCard(order: order),
+                    ],
+                    const SizedBox(height: 12),
+                    _ClientCard(order: order),
+                    const SizedBox(height: 12),
+                    _OrderItemsCard(order: order),
+                  ],
                 ),
               ),
             ],
           ),
           if (!order.isClosed)
-            _DispatcherPullPanel(
+            _DispatcherEdgePanel(
               order: order,
               reveal: _dispatcherReveal,
               onAction: _hideDispatcherPanel,
+              onDragUpdate: _handleDispatcherDragUpdate,
+              onDragEnd: _handleDispatcherDragEnd,
+            ),
+          if (!order.isClosed && _dispatcherReveal == 0)
+            Positioned(
+              right: 0,
+              top: MediaQuery.paddingOf(context).top + 112,
+              bottom: 96,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onHorizontalDragUpdate: _handleDispatcherDragUpdate,
+                onHorizontalDragEnd: _handleDispatcherDragEnd,
+                child: SizedBox(
+                  width: 28,
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 4,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: AppColors.blue.withValues(alpha: 0.22),
+                        borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
         ],
       ),
@@ -145,30 +170,24 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         .failOrder(widget.order.id, reason: confirmation.reason);
   }
 
-  bool _handleScrollNotification(ScrollNotification notification) {
-    if (widget.order.isClosed) return false;
-
-    if (notification is OverscrollNotification &&
-        notification.metrics.pixels <= notification.metrics.minScrollExtent &&
-        notification.overscroll < 0) {
-      _dispatcherHideTimer?.cancel();
-      final nextReveal =
-          (_dispatcherReveal +
-                  (-notification.overscroll / _dispatcherRevealDistance))
-              .clamp(0.0, 1.0);
-      if (nextReveal != _dispatcherReveal) {
-        setState(() => _dispatcherReveal = nextReveal);
-      }
-    } else if (notification is ScrollEndNotification && _dispatcherReveal > 0) {
-      if (_dispatcherReveal >= 0.25) {
-        setState(() => _dispatcherReveal = 1);
-        _scheduleDispatcherHide();
-      } else {
-        _hideDispatcherPanel();
-      }
+  void _handleDispatcherDragUpdate(DragUpdateDetails details) {
+    if (widget.order.isClosed) return;
+    _dispatcherHideTimer?.cancel();
+    final nextReveal =
+        (_dispatcherReveal - (details.delta.dx / _dispatcherRevealDistance))
+            .clamp(0.0, 1.0);
+    if (nextReveal != _dispatcherReveal) {
+      setState(() => _dispatcherReveal = nextReveal);
     }
+  }
 
-    return false;
+  void _handleDispatcherDragEnd(DragEndDetails details) {
+    if (_dispatcherReveal >= 0.35) {
+      setState(() => _dispatcherReveal = 1);
+      _scheduleDispatcherHide();
+    } else {
+      _hideDispatcherPanel();
+    }
   }
 
   void _scheduleDispatcherHide() {
