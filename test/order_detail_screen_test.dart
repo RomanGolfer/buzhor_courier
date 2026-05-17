@@ -49,6 +49,18 @@ const _activeOrder = OrderItem(
   lng: 37.3168,
 );
 
+const _qrOrder = OrderItem(
+  id: '#4',
+  clientName: 'Клиент с QR',
+  address: 'ул. Тестовая, 4',
+  district: 'Анапа',
+  price: 840,
+  payment: PaymentType.qr,
+  bottles: 3,
+  lat: 44.8951,
+  lng: 37.3168,
+);
+
 void main() {
   testWidgets('shows delivered order result in read-only mode', (tester) async {
     await tester.pumpWidget(
@@ -102,5 +114,17 @@ void main() {
     expect(find.text('Наличные'), findsWidgets);
     expect(find.text('Онлайн оплата'), findsNothing);
     expect(find.text('Оплачено'), findsNothing);
+  });
+
+  testWidgets('shows payment QR for QR orders', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    expect(find.text('QR для оплаты'), findsOneWidget);
+    expect(find.text('840 ₽'), findsOneWidget);
+    expect(find.text('Заказ #4'), findsOneWidget);
   });
 }

@@ -7,6 +7,7 @@ import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:buzhor_courier/features/orders/screens/qr_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 part 'order_detail/header.dart';
 part 'order_detail/address_card.dart';
@@ -80,6 +81,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                           ..addAll(value);
                       }),
                     ),
+                    if (!order.isClosed && _paymentType == PaymentType.qr) ...[
+                      const SizedBox(height: 12),
+                      _PaymentQrCard(order: order),
+                    ],
                     if (order.isClosed) ...[
                       const SizedBox(height: 12),
                       _DeliveryResultCard(order: order),

@@ -392,9 +392,13 @@ class _DeliverySheetState extends State<_DeliverySheet> {
       case PaymentType.cash:
         return const _PaymentChip(label: 'Наличные ✓', color: AppColors.green);
       case PaymentType.qr:
-        return const _PaymentChip(
-          label: 'Онлайн оплата ✓',
-          color: AppColors.blue,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _PaymentChip(label: 'Онлайн оплата ✓', color: AppColors.blue),
+            const SizedBox(height: 12),
+            _PaymentQrPanel(order: widget.order),
+          ],
         );
       case PaymentType.online:
         return const _PaymentChip(label: 'Оплачено ✓', color: AppColors.green);

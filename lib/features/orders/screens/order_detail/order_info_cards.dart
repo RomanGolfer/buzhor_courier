@@ -84,6 +84,89 @@ class _OrderItemsCard extends StatelessWidget {
   }
 }
 
+class _PaymentQrCard extends StatelessWidget {
+  final OrderItem order;
+
+  const _PaymentQrCard({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final payload = _paymentQrPayload(order);
+
+    return _SectionCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.qr_code_rounded,
+                color: AppColors.blue,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'QR для оплаты',
+                  style: TextStyle(
+                    color: AppColors.darkBlue,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              _PaymentChip(
+                label: '${order.price.toInt()} ₽',
+                color: AppColors.blue,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _PaymentQrView(payload: payload, size: 128),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Покажите клиенту для оплаты заказа.',
+                      style: TextStyle(
+                        color: AppColors.darkBlue,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Заказ ${order.id}',
+                      style: const TextStyle(
+                        color: AppColors.grayBlue,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => _showPaymentQrSheet(context, order),
+                        icon: const Icon(Icons.open_in_full_rounded, size: 18),
+                        label: const Text('Открыть крупно'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DeliveryResultCard extends StatelessWidget {
   final OrderItem order;
 
