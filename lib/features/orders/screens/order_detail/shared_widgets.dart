@@ -204,6 +204,13 @@ class _PaymentQrFullScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Image.asset(
+                      'assets/buzhor_logo_transparent.png',
+                      key: const Key('paymentQrLogo'),
+                      height: 72,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(height: 20),
                     const Text(
                       'QR для оплаты',
                       textAlign: TextAlign.center,

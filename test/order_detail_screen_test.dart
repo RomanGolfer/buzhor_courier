@@ -175,4 +175,17 @@ void main() {
     expect(clipboardWrites, ['#4']);
     expect(find.text('Номер заказа скопирован'), findsOneWidget);
   });
+
+  testWidgets('shows company logo on payment QR screen', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть крупно'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('paymentQrLogo')), findsOneWidget);
+  });
 }
