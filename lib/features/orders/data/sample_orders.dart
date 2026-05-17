@@ -60,8 +60,8 @@ const List<OrderItem> sampleOrders = [
     price: 280,
     payment: PaymentType.online,
     bottles: 1,
-    lat: 44.8234,
-    lng: 37.2956,
+    lat: 44.7891,
+    lng: 37.4234,
     phone: '+79284445566',
   ),
   OrderItem(

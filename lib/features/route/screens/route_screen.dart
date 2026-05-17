@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/route/services/geocoding_service.dart';
 import 'package:buzhor_courier/features/route/services/route_sorting_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 class RouteScreen extends StatefulWidget {
@@ -31,6 +34,9 @@ class _RouteScreenState extends State<RouteScreen> {
   bool _isSearching = false;
   String _searchError = '';
 
+  List<List<LatLng>> _routeSegments = [];
+  bool _isLoadingRoute = false;
+
   @override
   void initState() {
     super.initState();
@@ -46,12 +52,55 @@ class _RouteScreenState extends State<RouteScreen> {
     } else {
       _sortedOrders = _sort();
     }
+    _fetchRoutes();
   }
 
   @override
   void dispose() {
     _mapController.dispose();
     super.dispose();
+  }
+
+  // ─── OSRM ROUTING ───────────────────────────────────────────────────────────
+
+  Future<List<LatLng>> _fetchOsrmSegment(LatLng from, LatLng to) async {
+    final url =
+        'http://router.project-osrm.org/route/v1/driving/'
+        '${from.longitude},${from.latitude};${to.longitude},${to.latitude}'
+        '?overview=full&geometries=geojson';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final coords =
+            data['routes'][0]['geometry']['coordinates'] as List<dynamic>;
+        return coords
+            .map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
+            .toList();
+      }
+    } catch (_) {}
+    return [from, to]; // straight-line fallback
+  }
+
+  Future<void> _fetchRoutes() async {
+    final waypoints = [
+      ?_startPoint,
+      ..._sortedOrders.map((o) => LatLng(o.lat, o.lng)),
+    ];
+    if (waypoints.length < 2) return;
+
+    setState(() => _isLoadingRoute = true);
+
+    final results = await Future.wait([
+      for (int i = 0; i < waypoints.length - 1; i++)
+        _fetchOsrmSegment(waypoints[i], waypoints[i + 1]),
+    ]);
+
+    if (!mounted) return;
+    setState(() {
+      _routeSegments = results;
+      _isLoadingRoute = false;
+    });
   }
 
   // ─── SORTING ────────────────────────────────────────────────────────────────
@@ -78,8 +127,10 @@ class _RouteScreenState extends State<RouteScreen> {
       _startPoint = point;
       _isGpsStart = false;
       _sortedOrders = _sort();
+      _routeSegments = [];
     });
     _mapController.move(point, _mapController.camera.zoom);
+    _fetchRoutes();
   }
 
   // ─── ADDRESS SEARCH ─────────────────────────────────────────────────────────
@@ -332,24 +383,23 @@ class _RouteScreenState extends State<RouteScreen> {
                 subdomains: const ['a', 'b', 'c', 'd'],
               ),
               SimpleAttributionWidget(source: const Text('CartoDB')),
-              // Route polyline — dashed segment from start to first stop
-              if (_startPoint != null)
+              // Road-following route polylines from OSRM
+              if (_routeSegments.isNotEmpty)
                 PolylineLayer(
                   polylines: [
-                    Polyline(
-                      points: [_startPoint!, points.first],
-                      color: AppColors.blue.withValues(alpha: 0.5),
-                      strokeWidth: 2.5,
-                      pattern: StrokePattern.dashed(segments: const [8, 6]),
-                    ),
+                    for (int i = 0; i < _routeSegments.length; i++)
+                      Polyline(
+                        points: _routeSegments[i],
+                        color: (_startPoint != null && i == 0)
+                            ? AppColors.blue.withValues(alpha: 0.5)
+                            : AppColors.orange,
+                        strokeWidth: (_startPoint != null && i == 0) ? 2.5 : 3.5,
+                        pattern: (_startPoint != null && i == 0)
+                            ? StrokePattern.dashed(segments: const [8, 6])
+                            : const StrokePattern.solid(),
+                      ),
                   ],
                 ),
-              // Main route polyline
-              PolylineLayer(
-                polylines: [
-                  Polyline(points: points, color: AppColors.orange, strokeWidth: 3.5),
-                ],
-              ),
               // Start marker
               if (_startPoint != null)
                 MarkerLayer(
@@ -457,6 +507,21 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
             ),
           ),
+
+          // ── Route loading indicator ───────────────────────────────────────
+          if (_isLoadingRoute)
+            const Positioned(
+              top: 80,
+              right: 16,
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  color: AppColors.orange,
+                  strokeWidth: 2.5,
+                ),
+              ),
+            ),
 
           // ── Long-press hint (shown until custom start is set) ──────────────
           if (_startPoint == null)
