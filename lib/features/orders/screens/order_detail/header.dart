@@ -2,7 +2,9 @@ part of '../order_detail_screen.dart';
 
 class _Header extends StatelessWidget {
   final OrderItem order;
-  const _Header({required this.order});
+  final VoidCallback? onDispatcherTap;
+
+  const _Header({required this.order, this.onDispatcherTap});
 
   @override
   Widget build(BuildContext context) {
@@ -55,14 +57,17 @@ class _Header extends StatelessWidget {
               ),
               Align(
                 alignment: Alignment.centerRight,
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                  onPressed: () {},
-                ),
+                child: onDispatcherTap == null
+                    ? const SizedBox(width: 48)
+                    : IconButton(
+                        tooltip: 'Связаться с диспетчером',
+                        icon: const Icon(
+                          Icons.support_agent_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        onPressed: onDispatcherTap,
+                      ),
               ),
             ],
           ),

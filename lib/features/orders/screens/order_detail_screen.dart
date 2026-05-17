@@ -27,8 +27,6 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
-  static const _dispatcherRevealDistance = 180.0;
-
   late int _bottles;
   late PaymentType _paymentType;
   final Map<String, int> _extras = {};
@@ -58,7 +56,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         children: [
           Column(
             children: [
-              _Header(order: order),
+              _Header(
+                order: order,
+                onDispatcherTap: order.isClosed ? null : _toggleDispatcherPanel,
+              ),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
@@ -101,39 +102,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             ],
           ),
           if (!order.isClosed)
-            _DispatcherEdgePanel(
+            _DispatcherHeaderPanel(
               order: order,
               reveal: _dispatcherReveal,
               onAction: _hideDispatcherPanel,
-              onDragUpdate: _handleDispatcherDragUpdate,
-              onDragEnd: _handleDispatcherDragEnd,
-            ),
-          if (!order.isClosed && _dispatcherReveal == 0)
-            Positioned(
-              right: 0,
-              top: MediaQuery.paddingOf(context).top + 112,
-              bottom: 96,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onHorizontalDragUpdate: _handleDispatcherDragUpdate,
-                onHorizontalDragEnd: _handleDispatcherDragEnd,
-                child: SizedBox(
-                  width: 28,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: Container(
-                      width: 4,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: AppColors.blue.withValues(alpha: 0.22),
-                        borderRadius: const BorderRadius.horizontal(
-                          left: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ),
         ],
       ),
@@ -170,24 +142,14 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         .failOrder(widget.order.id, reason: confirmation.reason);
   }
 
-  void _handleDispatcherDragUpdate(DragUpdateDetails details) {
-    if (widget.order.isClosed) return;
-    _dispatcherHideTimer?.cancel();
-    final nextReveal =
-        (_dispatcherReveal - (details.delta.dx / _dispatcherRevealDistance))
-            .clamp(0.0, 1.0);
-    if (nextReveal != _dispatcherReveal) {
-      setState(() => _dispatcherReveal = nextReveal);
-    }
-  }
-
-  void _handleDispatcherDragEnd(DragEndDetails details) {
-    if (_dispatcherReveal >= 0.35) {
-      setState(() => _dispatcherReveal = 1);
-      _scheduleDispatcherHide();
-    } else {
+  void _toggleDispatcherPanel() {
+    if (_dispatcherReveal == 1) {
       _hideDispatcherPanel();
+      return;
     }
+    _dispatcherHideTimer?.cancel();
+    setState(() => _dispatcherReveal = 1);
+    _scheduleDispatcherHide();
   }
 
   void _scheduleDispatcherHide() {
