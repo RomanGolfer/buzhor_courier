@@ -142,6 +142,6 @@ void main() {
     expect(find.text('Заказ #4'), findsOneWidget);
     expect(find.text('К оплате'), findsOneWidget);
     expect(find.text('840 ₽'), findsOneWidget);
-    expect(find.text('Клиент с QR'), findsOneWidget);
+    expect(find.text('Клиент с QR'), findsNothing);
   });
 }

@@ -246,17 +246,6 @@ class _PaymentQrFullScreen extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      order.clientName,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.grayBlue,
-                        fontSize: 14,
-                      ),
-                    ),
                   ],
                 ),
               ),
