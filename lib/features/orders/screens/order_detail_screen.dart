@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
+import 'package:buzhor_courier/features/orders/screens/qr_scanner_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +30,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   late int _bottles;
   late PaymentType _paymentType;
   final Map<String, int> _extras = {};
+  double _dispatcherReveal = 0;
+  Timer? _dispatcherHideTimer;
 
   @override
   void initState() {
@@ -37,53 +42,71 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   @override
+  void dispose() {
+    _dispatcherHideTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final order = widget.order;
     return Scaffold(
       backgroundColor: AppColors.bg,
-      body: Column(
+      body: Stack(
         children: [
-          _Header(order: order),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-              children: [
-                _AddressCard(
-                  order: order,
-                  bottles: _bottles,
-                  paymentType: _paymentType,
-                  extras: _extras,
-                  isReadOnly: order.isClosed,
-                  onBottlesChanged: (value) => setState(() => _bottles = value),
-                  onPaymentTypeChanged: (value) =>
-                      setState(() => _paymentType = value),
-                  onExtrasChanged: (value) => setState(() {
-                    _extras
-                      ..clear()
-                      ..addAll(value);
-                  }),
+          Column(
+            children: [
+              _Header(
+                order: order,
+                onDispatcherTap: order.isClosed ? null : _toggleDispatcherPanel,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                  children: [
+                    _AddressCard(
+                      order: order,
+                      bottles: _bottles,
+                      paymentType: _paymentType,
+                      extras: _extras,
+                      isReadOnly: order.isClosed,
+                      onBottlesChanged: (value) =>
+                          setState(() => _bottles = value),
+                      onPaymentTypeChanged: (value) =>
+                          setState(() => _paymentType = value),
+                      onExtrasChanged: (value) => setState(() {
+                        _extras
+                          ..clear()
+                          ..addAll(value);
+                      }),
+                    ),
+                    if (order.isClosed) ...[
+                      const SizedBox(height: 12),
+                      _DeliveryResultCard(order: order),
+                    ],
+                    if (!order.isClosed && order.comment != null) ...[
+                      const SizedBox(height: 12),
+                      _CommentCard(comment: order.comment!),
+                    ],
+                    if (!order.isClosed) ...[
+                      const SizedBox(height: 12),
+                      _QuickSmsCard(order: order),
+                    ],
+                    const SizedBox(height: 12),
+                    _ClientCard(order: order),
+                    const SizedBox(height: 12),
+                    _OrderItemsCard(order: order),
+                  ],
                 ),
-                if (order.isClosed) ...[
-                  const SizedBox(height: 12),
-                  _DeliveryResultCard(order: order),
-                ],
-                if (!order.isClosed && order.comment != null) ...[
-                  const SizedBox(height: 12),
-                  _CommentCard(comment: order.comment!),
-                ],
-                if (!order.isClosed) ...[
-                  const SizedBox(height: 12),
-                  _DispatcherCard(order: order),
-                  const SizedBox(height: 12),
-                  _QuickSmsCard(order: order),
-                ],
-                const SizedBox(height: 12),
-                _ClientCard(order: order),
-                const SizedBox(height: 12),
-                _OrderItemsCard(order: order),
-              ],
-            ),
+              ),
+            ],
           ),
+          if (!order.isClosed)
+            _DispatcherHeaderPanel(
+              order: order,
+              reveal: _dispatcherReveal,
+              onAction: _hideDispatcherPanel,
+            ),
         ],
       ),
       bottomNavigationBar: order.isClosed
@@ -108,6 +131,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           returnedBottles: confirmation.returnedBottles,
           paymentType: _paymentType,
           extras: _extras,
+          scannedItems: confirmation.scannedItems,
           comment: confirmation.comment,
         );
   }
@@ -116,6 +140,30 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     return ref
         .read(ordersProvider.notifier)
         .failOrder(widget.order.id, reason: confirmation.reason);
+  }
+
+  void _toggleDispatcherPanel() {
+    if (_dispatcherReveal == 1) {
+      _hideDispatcherPanel();
+      return;
+    }
+    _dispatcherHideTimer?.cancel();
+    setState(() => _dispatcherReveal = 1);
+    _scheduleDispatcherHide();
+  }
+
+  void _scheduleDispatcherHide() {
+    _dispatcherHideTimer?.cancel();
+    _dispatcherHideTimer = Timer(
+      const Duration(seconds: 2),
+      _hideDispatcherPanel,
+    );
+  }
+
+  void _hideDispatcherPanel() {
+    _dispatcherHideTimer?.cancel();
+    if (!mounted || _dispatcherReveal == 0) return;
+    setState(() => _dispatcherReveal = 0);
   }
 }
 
@@ -129,10 +177,12 @@ String _paymentLabel(PaymentType type) => switch (type) {
 
 class _DeliveryConfirmation {
   final int returnedBottles;
+  final Map<String, int> scannedItems;
   final String? comment;
 
   const _DeliveryConfirmation({
     required this.returnedBottles,
+    required this.scannedItems,
     required this.comment,
   });
 }

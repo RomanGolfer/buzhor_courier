@@ -17,6 +17,7 @@ const _deliveredOrder = OrderItem(
   returnedBottles: 1,
   confirmedPayment: PaymentType.card,
   extras: {'Помпа': 1},
+  scannedItems: {'water': 3},
   deliveryComment: 'Оставлено у двери',
   lat: 44.8951,
   lng: 37.3168,
@@ -51,6 +52,8 @@ void main() {
     expect(find.text('1 бут.'), findsOneWidget);
     expect(find.text('Карта'), findsWidgets);
     expect(find.text('Помпа ×1'), findsWidgets);
+    expect(find.text('Маркировка'), findsOneWidget);
+    expect(find.text('3 отсканировано'), findsOneWidget);
     expect(find.text('Оставлено у двери'), findsOneWidget);
     expect(find.text('+ Добавить'), findsNothing);
   });

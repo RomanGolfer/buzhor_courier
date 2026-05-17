@@ -18,6 +18,7 @@ class OrderRepository {
     required int returnedBottles,
     required PaymentType paymentType,
     required Map<String, int> extras,
+    required Map<String, int> scannedItems,
     String? comment,
   }) async {
     _replaceOrder(
@@ -29,6 +30,7 @@ class OrderRepository {
         returnedBottles: returnedBottles,
         confirmedPayment: paymentType,
         extras: Map.unmodifiable(extras),
+        scannedItems: Map.unmodifiable(scannedItems),
         deliveryComment: _normalizeOptionalText(comment),
         failureReason: null,
       ),

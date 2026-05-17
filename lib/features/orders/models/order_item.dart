@@ -19,6 +19,7 @@ class OrderItem {
   final int? returnedBottles;
   final PaymentType? confirmedPayment;
   final Map<String, int> extras;
+  final Map<String, int> scannedItems;
   final String? deliveryComment;
   final String? failureReason;
 
@@ -40,6 +41,7 @@ class OrderItem {
     this.returnedBottles,
     this.confirmedPayment,
     this.extras = const {},
+    this.scannedItems = const {},
     this.deliveryComment,
     this.failureReason,
   });
@@ -61,6 +63,7 @@ class OrderItem {
     int? returnedBottles,
     PaymentType? confirmedPayment,
     Map<String, int>? extras,
+    Map<String, int>? scannedItems,
     String? deliveryComment,
     String? failureReason,
   }) => OrderItem(
@@ -81,6 +84,7 @@ class OrderItem {
     returnedBottles: returnedBottles ?? this.returnedBottles,
     confirmedPayment: confirmedPayment ?? this.confirmedPayment,
     extras: extras ?? this.extras,
+    scannedItems: scannedItems ?? this.scannedItems,
     deliveryComment: deliveryComment ?? this.deliveryComment,
     failureReason: failureReason ?? this.failureReason,
   );

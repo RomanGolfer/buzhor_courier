@@ -6,6 +6,8 @@
 	<string>Приложение использует геолокацию для построения оптимального маршрута доставки</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Приложение использует геолокацию для построения оптимального маршрута доставки</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Приложение использует камеру для сканирования маркировки бутылей</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
