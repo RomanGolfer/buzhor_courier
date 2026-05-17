@@ -171,88 +171,111 @@ class _PaymentQrView extends StatelessWidget {
 }
 
 void _showPaymentQrSheet(BuildContext context, OrderItem order) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      final media = MediaQuery.of(context);
-      final maxHeight = media.size.height * 0.9;
-      final qrSize = (media.size.height * 0.32).clamp(210.0, 260.0);
+  Navigator.of(
+    context,
+  ).push(MaterialPageRoute(builder: (_) => _PaymentQrFullScreen(order: order)));
+}
 
-      return SafeArea(
-        top: false,
-        child: Container(
-          width: double.infinity,
-          constraints: BoxConstraints(maxHeight: maxHeight),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.divider,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+class _PaymentQrFullScreen extends StatelessWidget {
+  final OrderItem order;
+
+  const _PaymentQrFullScreen({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final qrSize = (media.size.shortestSide - 48).clamp(280.0, 420.0);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      media.size.height -
+                      media.padding.top -
+                      media.padding.bottom -
+                      64,
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'QR для оплаты',
-                  style: TextStyle(
-                    color: AppColors.darkBlue,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${order.price.toInt()} ₽ · заказ ${order.id}',
-                  style: const TextStyle(
-                    color: AppColors.grayBlue,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _PaymentQrView(
-                  payload: _paymentQrPayload(order),
-                  size: qrSize.toDouble(),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'QR для оплаты',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.darkBlue,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    child: const Text(
-                      'Готово',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
+                    const SizedBox(height: 12),
+                    Text(
+                      'Заказ ${order.id}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.grayBlue,
+                        fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 28),
+                    Center(
+                      child: _PaymentQrView(
+                        payload: _paymentQrPayload(order),
+                        size: qrSize.toDouble(),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
+                    const Text(
+                      'К оплате',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.grayBlue, fontSize: 16),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${order.price.toInt()} ₽',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.darkBlue,
+                        fontSize: 40,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      order.clientName,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.grayBlue,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+                color: AppColors.grayBlue,
+                tooltip: 'Закрыть',
+              ),
+            ),
+          ],
         ),
-      );
-    },
-  );
+      ),
+    );
+  }
 }
 
 String _paymentQrPayload(OrderItem order) {

@@ -127,4 +127,21 @@ void main() {
     expect(find.text('840 ₽'), findsOneWidget);
     expect(find.text('Заказ #4'), findsOneWidget);
   });
+
+  testWidgets('opens screenshot-friendly payment QR screen', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть крупно'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('QR для оплаты'), findsWidgets);
+    expect(find.text('Заказ #4'), findsOneWidget);
+    expect(find.text('К оплате'), findsOneWidget);
+    expect(find.text('840 ₽'), findsOneWidget);
+    expect(find.text('Клиент с QR'), findsOneWidget);
+  });
 }
