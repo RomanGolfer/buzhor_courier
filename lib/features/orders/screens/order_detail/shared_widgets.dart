@@ -214,13 +214,16 @@ class _PaymentQrFullScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Заказ ${order.id}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.grayBlue,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                    GestureDetector(
+                      onLongPress: () => _copyPaymentOrderId(context, order),
+                      child: Text(
+                        'Заказ ${order.id}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.grayBlue,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 28),
@@ -265,6 +268,14 @@ class _PaymentQrFullScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _copyPaymentOrderId(BuildContext context, OrderItem order) async {
+  await Clipboard.setData(ClipboardData(text: order.id));
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(const SnackBar(content: Text('Номер заказа скопирован')));
 }
 
 String _paymentQrPayload(OrderItem order) {

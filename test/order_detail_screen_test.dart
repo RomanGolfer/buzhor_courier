@@ -1,6 +1,7 @@
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -143,5 +144,35 @@ void main() {
     expect(find.text('К оплате'), findsOneWidget);
     expect(find.text('840 ₽'), findsOneWidget);
     expect(find.text('Клиент с QR'), findsNothing);
+  });
+
+  testWidgets('copies order number from payment QR screen', (tester) async {
+    final clipboardWrites = <String>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') {
+            final data = call.arguments as Map<dynamic, dynamic>;
+            clipboardWrites.add(data['text'] as String);
+          }
+          return null;
+        });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть крупно'));
+    await tester.pumpAndSettle();
+    await tester.longPress(find.text('Заказ #4'));
+    await tester.pump();
+
+    expect(clipboardWrites, ['#4']);
+    expect(find.text('Номер заказа скопирован'), findsOneWidget);
   });
 }
