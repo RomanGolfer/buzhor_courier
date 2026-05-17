@@ -176,15 +176,24 @@ void _showPaymentQrSheet(BuildContext context, OrderItem order) {
   ).push(MaterialPageRoute(builder: (_) => _PaymentQrFullScreen(order: order)));
 }
 
-class _PaymentQrFullScreen extends StatelessWidget {
+class _PaymentQrFullScreen extends StatefulWidget {
   final OrderItem order;
 
   const _PaymentQrFullScreen({required this.order});
 
   @override
+  State<_PaymentQrFullScreen> createState() => _PaymentQrFullScreenState();
+}
+
+class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
+  PaymentStatusCheck? _paymentCheck;
+  bool _isCheckingPayment = false;
+
+  @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final qrSize = (media.size.shortestSide - 48).clamp(280.0, 420.0);
+    final order = widget.order;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -256,6 +265,42 @@ class _PaymentQrFullScreen extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _isCheckingPayment ? null : _checkPayment,
+                        icon: Icon(
+                          _isCheckingPayment
+                              ? Icons.hourglass_top_rounded
+                              : Icons.verified_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        label: Text(
+                          _isCheckingPayment
+                              ? 'Проверяем...'
+                              : 'Проверить оплату',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          disabledBackgroundColor: AppColors.grayBlueLight,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_paymentCheck != null) ...[
+                      const SizedBox(height: 12),
+                      _PaymentStatusNotice(check: _paymentCheck!),
+                    ],
                   ],
                 ),
               ),
@@ -272,6 +317,65 @@ class _PaymentQrFullScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _checkPayment() async {
+    setState(() => _isCheckingPayment = true);
+    final result = await PaymentStatusService.checkPayment(widget.order);
+    if (!mounted) return;
+    setState(() {
+      _paymentCheck = result;
+      _isCheckingPayment = false;
+    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(result.message)));
+  }
+}
+
+class _PaymentStatusNotice extends StatelessWidget {
+  final PaymentStatusCheck check;
+
+  const _PaymentStatusNotice({required this.check});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (check.status) {
+      PaymentCheckStatus.paid => AppColors.green,
+      PaymentCheckStatus.pending => AppColors.orange,
+      PaymentCheckStatus.unavailable => AppColors.grayBlue,
+    };
+    final icon = switch (check.status) {
+      PaymentCheckStatus.paid => Icons.check_circle_rounded,
+      PaymentCheckStatus.pending => Icons.schedule_rounded,
+      PaymentCheckStatus.unavailable => Icons.info_outline_rounded,
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              check.message,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

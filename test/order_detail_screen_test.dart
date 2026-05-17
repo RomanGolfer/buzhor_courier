@@ -188,4 +188,25 @@ void main() {
 
     expect(find.byKey(const Key('paymentQrLogo')), findsOneWidget);
   });
+
+  testWidgets('shows payment check placeholder on QR screen', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Открыть крупно'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Проверить оплату'));
+    await tester.tap(find.text('Проверить оплату'));
+    await tester.pump();
+
+    expect(find.text('Проверяем...'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+
+    expect(find.text('Проверка оплаты пока не подключена'), findsWidgets);
+  });
 }
