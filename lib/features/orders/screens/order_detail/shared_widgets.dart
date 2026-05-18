@@ -65,14 +65,16 @@ class _CounterButton extends StatelessWidget {
 class _PaymentChip extends StatelessWidget {
   final String label;
   final Color color;
-  const _PaymentChip({required this.label, required this.color});
+  final Color? bgColor;
+  const _PaymentChip({required this.label, required this.color, this.bgColor});
 
   @override
   Widget build(BuildContext context) {
+    final bg = bgColor ?? color.withValues(alpha: 0.10);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: bg,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),

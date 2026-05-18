@@ -41,12 +41,12 @@ class _AddressCard extends StatelessWidget {
     PaymentType.contract => '📄',
   };
 
-  Widget _paymentIconWidget(PaymentType t) {
+  Widget _paymentIconWidget(BuildContext context, PaymentType t) {
     if (t == PaymentType.online) {
-      return Icon(Icons.contactless, color: AppColors.green, size: 20);
+      return Icon(Icons.contactless, color: _paymentFgColor(context, t), size: 20);
     }
     if (t == PaymentType.qr) {
-      return Icon(Icons.qr_code, color: AppColors.blue, size: 20);
+      return Icon(Icons.qr_code, color: _paymentFgColor(context, t), size: 20);
     }
     return Text(
       _paymentIcon(t),
@@ -54,13 +54,37 @@ class _AddressCard extends StatelessWidget {
     );
   }
 
-  Color _paymentColor(PaymentType t) => switch (t) {
-    PaymentType.card => AppColors.blue,
-    PaymentType.cash => AppColors.green,
-    PaymentType.qr => AppColors.blue,
-    PaymentType.online => AppColors.green,
-    PaymentType.contract => AppColors.grayBlue,
-  };
+  Color _paymentFgColor(BuildContext context, PaymentType t) {
+    if (Theme.of(context).brightness == Brightness.dark) {
+      return switch (t) {
+        PaymentType.card     => const Color(0xFF8AACCC),
+        PaymentType.cash     => const Color(0xFF4CAF50),
+        PaymentType.qr       => const Color(0xFF9C6FD6),
+        PaymentType.online   => const Color(0xFF26A96C),
+        PaymentType.contract => const Color(0xFF888888),
+      };
+    }
+    return switch (t) {
+      PaymentType.card     => AppColors.blue,
+      PaymentType.cash     => AppColors.green,
+      PaymentType.qr       => AppColors.blue,
+      PaymentType.online   => AppColors.green,
+      PaymentType.contract => AppColors.grayBlue,
+    };
+  }
+
+  Color _paymentBgColor(BuildContext context, PaymentType t) {
+    if (Theme.of(context).brightness == Brightness.dark) {
+      return switch (t) {
+        PaymentType.card     => const Color(0xFF2A3A4A),
+        PaymentType.cash     => const Color(0xFF1A3A1A),
+        PaymentType.qr       => const Color(0xFF2D1F4A),
+        PaymentType.online   => const Color(0xFF1A3A2A),
+        PaymentType.contract => const Color(0xFF2A2A2A),
+      };
+    }
+    return _paymentFgColor(context, t).withValues(alpha: 0.10);
+  }
 
   void _showPaymentSheet(BuildContext context) {
     if (_isPaid || isReadOnly) return;
@@ -335,7 +359,8 @@ class _AddressCard extends StatelessWidget {
                               label: _isPaid
                                   ? 'Оплачено ✓'
                                   : _paymentLabel(paymentType),
-                              color: _paymentColor(paymentType),
+                              color: _paymentFgColor(context, paymentType),
+                              bgColor: _paymentBgColor(context, paymentType),
                             )
                           : GestureDetector(
                               onTap: () => _showPaymentSheet(context),
@@ -346,19 +371,18 @@ class _AddressCard extends StatelessWidget {
                                   vertical: 12,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _paymentColor(
-                                    paymentType,
-                                  ).withValues(alpha: 0.10),
+                                  color: _paymentBgColor(context, paymentType),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: _paymentColor(
+                                    color: _paymentFgColor(
+                                      context,
                                       paymentType,
                                     ).withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: Row(
                                   children: [
-                                    _paymentIconWidget(paymentType),
+                                    _paymentIconWidget(context, paymentType),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -366,7 +390,7 @@ class _AddressCard extends StatelessWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: _paymentColor(paymentType),
+                                          color: _paymentFgColor(context, paymentType),
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
                                         ),

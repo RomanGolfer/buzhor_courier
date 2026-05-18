@@ -385,29 +385,56 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   }
 
   Widget _buildPaymentSection(PaymentType type) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    Color fg(PaymentType t) => isDark
+        ? switch (t) {
+            PaymentType.card     => const Color(0xFF8AACCC),
+            PaymentType.cash     => const Color(0xFF4CAF50),
+            PaymentType.qr       => const Color(0xFF9C6FD6),
+            PaymentType.online   => const Color(0xFF26A96C),
+            PaymentType.contract => const Color(0xFF888888),
+          }
+        : switch (t) {
+            PaymentType.card     => AppColors.blue,
+            PaymentType.cash     => AppColors.green,
+            PaymentType.qr       => AppColors.blue,
+            PaymentType.online   => AppColors.green,
+            PaymentType.contract => AppColors.grayBlue,
+          };
+    Color? bg(PaymentType t) => isDark
+        ? switch (t) {
+            PaymentType.card     => const Color(0xFF2A3A4A),
+            PaymentType.cash     => const Color(0xFF1A3A1A),
+            PaymentType.qr       => const Color(0xFF2D1F4A),
+            PaymentType.online   => const Color(0xFF1A3A2A),
+            PaymentType.contract => const Color(0xFF2A2A2A),
+          }
+        : null;
     switch (type) {
       case PaymentType.card:
-        return const _PaymentChip(
+        return _PaymentChip(
           label: 'Картой курьеру ✓',
-          color: AppColors.blue,
+          color: fg(type),
+          bgColor: bg(type),
         );
       case PaymentType.cash:
-        return const _PaymentChip(label: 'Наличные ✓', color: AppColors.green);
+        return _PaymentChip(label: 'Наличные ✓', color: fg(type), bgColor: bg(type));
       case PaymentType.qr:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _PaymentChip(label: 'Онлайн оплата ✓', color: AppColors.blue),
+            _PaymentChip(label: 'Онлайн оплата ✓', color: fg(type), bgColor: bg(type)),
             const SizedBox(height: 12),
             _PaymentQrPanel(order: widget.order),
           ],
         );
       case PaymentType.online:
-        return const _PaymentChip(label: 'Оплачено ✓', color: AppColors.green);
+        return _PaymentChip(label: 'Оплачено ✓', color: fg(type), bgColor: bg(type));
       case PaymentType.contract:
-        return const _PaymentChip(
+        return _PaymentChip(
           label: 'По договору ✓',
-          color: AppColors.grayBlue,
+          color: fg(type),
+          bgColor: bg(type),
         );
     }
   }

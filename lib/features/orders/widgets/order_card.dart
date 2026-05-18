@@ -366,46 +366,53 @@ class _PaymentBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final IconData icon;
-    final Color color;
+    final Color bgColor;
+    final Color fgColor;
     final String label;
     switch (type) {
       case PaymentType.card:
         icon = Icons.credit_card_rounded;
-        color = AppColors.blue;
+        bgColor = isDark ? const Color(0xFF2A3A4A) : AppColors.blue.withValues(alpha: 0.10);
+        fgColor = isDark ? const Color(0xFF8AACCC) : AppColors.blue;
         label = 'Картой';
       case PaymentType.cash:
         icon = Icons.payments_outlined;
-        color = AppColors.green;
+        bgColor = isDark ? const Color(0xFF1A3A1A) : AppColors.green.withValues(alpha: 0.10);
+        fgColor = isDark ? const Color(0xFF4CAF50) : AppColors.green;
         label = 'Нал';
       case PaymentType.qr:
         icon = Icons.qr_code_rounded;
-        color = AppColors.purple;
+        bgColor = isDark ? const Color(0xFF2D1F4A) : AppColors.purple.withValues(alpha: 0.10);
+        fgColor = isDark ? const Color(0xFF9C6FD6) : AppColors.purple;
         label = 'Онлайн';
       case PaymentType.online:
         icon = Icons.contactless;
-        color = AppColors.green;
+        bgColor = isDark ? const Color(0xFF1A3A2A) : AppColors.green.withValues(alpha: 0.10);
+        fgColor = isDark ? const Color(0xFF26A96C) : AppColors.green;
         label = 'Оплачено';
       case PaymentType.contract:
         icon = Icons.description_outlined;
-        color = AppColors.grayBlueLight;
+        bgColor = isDark ? const Color(0xFF2A2A2A) : AppColors.grayBlueLight.withValues(alpha: 0.10);
+        fgColor = isDark ? const Color(0xFF888888) : AppColors.grayBlueLight;
         label = 'Договор';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: bgColor,
         borderRadius: BorderRadius.circular(7),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: color),
+          Icon(icon, size: 13, color: fgColor),
           const SizedBox(width: 3),
           Text(
             label,
             style: TextStyle(
-              color: color,
+              color: fgColor,
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
