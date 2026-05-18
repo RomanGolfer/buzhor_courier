@@ -41,7 +41,9 @@ class _RouteScreenState extends State<RouteScreen> {
   void initState() {
     super.initState();
     _mapController = MapController();
-    if (widget.startLat != null && widget.startLng != null) {
+    if (widget.orders.isEmpty) {
+      _sortedOrders = [];
+    } else if (widget.startLat != null && widget.startLng != null) {
       _startPoint = LatLng(widget.startLat!, widget.startLng!);
       _isGpsStart = true;
       _sortedOrders = RouteSortingService.sortFromLocation(
@@ -75,7 +77,9 @@ class _RouteScreenState extends State<RouteScreen> {
         final coords =
             data['routes'][0]['geometry']['coordinates'] as List<dynamic>;
         return coords
-            .map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()))
+            .map(
+              (c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()),
+            )
             .toList();
       }
     } catch (_) {}
@@ -106,6 +110,8 @@ class _RouteScreenState extends State<RouteScreen> {
   // ─── SORTING ────────────────────────────────────────────────────────────────
 
   List<OrderItem> _sort() {
+    if (widget.orders.isEmpty) return [];
+
     final start = _startPoint;
     if (start != null) {
       return RouteSortingService.sortFromLocation(
@@ -217,7 +223,10 @@ class _RouteScreenState extends State<RouteScreen> {
                       child: TextField(
                         controller: controller,
                         autofocus: true,
-                        style: const TextStyle(color: AppColors.darkBlue, fontSize: 14),
+                        style: const TextStyle(
+                          color: AppColors.darkBlue,
+                          fontSize: 14,
+                        ),
                         decoration: const InputDecoration(
                           hintText: 'ул. Крымская, 45, Анапа',
                           hintStyle: TextStyle(color: Color(0xFF8AACCC)),
@@ -393,7 +402,9 @@ class _RouteScreenState extends State<RouteScreen> {
                         color: (_startPoint != null && i == 0)
                             ? AppColors.blue.withValues(alpha: 0.5)
                             : AppColors.orange,
-                        strokeWidth: (_startPoint != null && i == 0) ? 2.5 : 3.5,
+                        strokeWidth: (_startPoint != null && i == 0)
+                            ? 2.5
+                            : 3.5,
                         pattern: (_startPoint != null && i == 0)
                             ? StrokePattern.dashed(segments: const [8, 6])
                             : const StrokePattern.solid(),
@@ -856,4 +867,3 @@ class _MapBtn extends StatelessWidget {
     );
   }
 }
-
