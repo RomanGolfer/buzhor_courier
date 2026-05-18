@@ -52,7 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         backgroundColor: AppColors.bg,
         body: Column(
           children: [
-            _buildHeader(locationState),
+            _buildHeader(locationState, ordersState),
             if (ordersState.navIndex == 0) _buildTabSwitcher(ordersState),
             Expanded(child: _buildBody(ordersState)),
           ],
@@ -66,7 +66,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     switch (ordersState.navIndex) {
       case 0:
         if (ordersState.isMapView) {
-          return _buildMapWidget(ordersState.activeOrders);
+          return _buildMapWidget(
+            ordersState.activeOrders,
+            ordersState.isLowDataMode,
+          );
         }
         return _buildActiveList(ordersState);
       case 1:
@@ -76,7 +79,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
-  Widget _buildMapWidget(List<OrderItem> activeOrders) {
+  Widget _buildMapWidget(List<OrderItem> activeOrders, bool isLowDataMode) {
     final center = activeOrders.isNotEmpty
         ? ll.LatLng(activeOrders[0].lat, activeOrders[0].lng)
         : ll.LatLng(44.8951, 37.3168);
@@ -90,12 +93,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       children: [
-        TileLayer(
-          urlTemplate:
-              'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c', 'd'],
-        ),
-        SimpleAttributionWidget(source: const Text('CartoDB')),
+        if (!isLowDataMode) ...[
+          TileLayer(
+            urlTemplate:
+                'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            subdomains: const ['a', 'b', 'c', 'd'],
+          ),
+          SimpleAttributionWidget(source: const Text('CartoDB')),
+        ],
         MarkerLayer(
           markers: List.generate(activeOrders.length, (i) {
             final o = activeOrders[i];
@@ -131,7 +136,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildHeader(LocationState locationState) {
+  Widget _buildHeader(LocationState locationState, OrdersState ordersState) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -164,6 +169,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
               const Spacer(),
+              _LowDataToggle(
+                enabled: ordersState.isLowDataMode,
+                onTap: () =>
+                    ref.read(ordersProvider.notifier).toggleLowDataMode(),
+              ),
+              const SizedBox(width: 10),
               _buildGpsIndicator(locationState),
             ],
           ),
@@ -375,6 +386,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           orders: List.from(slot.orders),
           startLat: ref.read(locationProvider).position?.latitude,
           startLng: ref.read(locationProvider).position?.longitude,
+          initialLowDataMode: ref.read(ordersProvider).isLowDataMode,
         ),
       ),
     );
@@ -585,6 +597,54 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             }),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LowDataToggle extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _LowDataToggle({required this.enabled, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: enabled
+              ? Colors.white.withValues(alpha: 0.18)
+              : Colors.white.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: enabled
+                ? Colors.white.withValues(alpha: 0.78)
+                : Colors.white.withValues(alpha: 0.20),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              enabled ? Icons.signal_cellular_alt_1_bar : Icons.speed_rounded,
+              color: enabled ? AppColors.liveGreen : Colors.white,
+              size: 15,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              enabled ? '2G' : '2G',
+              style: TextStyle(
+                color: enabled ? AppColors.liveGreen : Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
         ),
       ),
     );

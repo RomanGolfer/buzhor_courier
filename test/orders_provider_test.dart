@@ -104,4 +104,19 @@ void main() {
       OrderDeliveryState.delivered,
     );
   });
+
+  test('toggleLowDataMode switches global low data mode', () async {
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(notifier.state.isLowDataMode, isFalse);
+
+    notifier.toggleLowDataMode();
+    expect(notifier.state.isLowDataMode, isTrue);
+
+    notifier.toggleLowDataMode();
+    expect(notifier.state.isLowDataMode, isFalse);
+  });
 }

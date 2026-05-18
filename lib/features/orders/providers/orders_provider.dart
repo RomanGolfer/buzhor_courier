@@ -8,6 +8,7 @@ class OrdersState {
   final int navIndex;
   final bool isMapView;
   final bool isBuilding;
+  final bool isLowDataMode;
   final double listOpacity;
   final List<OrderItem> activeOrders;
   final List<OrderItem> completedOrders;
@@ -17,6 +18,7 @@ class OrdersState {
     this.navIndex = 0,
     this.isMapView = false,
     this.isBuilding = false,
+    this.isLowDataMode = false,
     this.listOpacity = 1.0,
     this.activeOrders = const [],
     this.completedOrders = const [],
@@ -27,6 +29,7 @@ class OrdersState {
     int? navIndex,
     bool? isMapView,
     bool? isBuilding,
+    bool? isLowDataMode,
     double? listOpacity,
     List<OrderItem>? activeOrders,
     List<OrderItem>? completedOrders,
@@ -36,6 +39,7 @@ class OrdersState {
       navIndex: navIndex ?? this.navIndex,
       isMapView: isMapView ?? this.isMapView,
       isBuilding: isBuilding ?? this.isBuilding,
+      isLowDataMode: isLowDataMode ?? this.isLowDataMode,
       listOpacity: listOpacity ?? this.listOpacity,
       activeOrders: activeOrders ?? this.activeOrders,
       completedOrders: completedOrders ?? this.completedOrders,
@@ -67,6 +71,10 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
 
   void setMapView(bool value) {
     state = state.copyWith(isMapView: value);
+  }
+
+  void toggleLowDataMode() {
+    state = state.copyWith(isLowDataMode: !state.isLowDataMode);
   }
 
   void toggleSlotExpansion(int slotIndex) {
