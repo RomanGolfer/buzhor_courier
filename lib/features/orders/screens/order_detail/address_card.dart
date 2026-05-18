@@ -41,6 +41,16 @@ class _AddressCard extends StatelessWidget {
     PaymentType.contract => '📄',
   };
 
+  Widget _paymentIconWidget(PaymentType t) {
+    if (t == PaymentType.online) {
+      return Icon(Icons.contactless, color: AppColors.green, size: 20);
+    }
+    return Text(
+      _paymentIcon(t),
+      style: const TextStyle(fontSize: 18),
+    );
+  }
+
   Color _paymentColor(PaymentType t) => switch (t) {
     PaymentType.card => AppColors.blue,
     PaymentType.cash => AppColors.green,
@@ -345,13 +355,7 @@ class _AddressCard extends StatelessWidget {
                                 ),
                                 child: Row(
                                   children: [
-                                    Text(
-                                      _paymentIcon(paymentType),
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: _paymentColor(paymentType),
-                                      ),
-                                    ),
+                                    _paymentIconWidget(paymentType),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
