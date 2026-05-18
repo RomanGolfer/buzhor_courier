@@ -383,7 +383,7 @@ class _PaymentBadge extends StatelessWidget {
         color = AppColors.purple;
         label = 'Онлайн';
       case PaymentType.online:
-        icon = Icons.check_circle_rounded;
+        icon = Icons.contactless;
         color = AppColors.green;
         label = 'Оплачено';
       case PaymentType.contract:

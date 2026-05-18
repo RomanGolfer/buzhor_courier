@@ -45,6 +45,9 @@ class _AddressCard extends StatelessWidget {
     if (t == PaymentType.online) {
       return Icon(Icons.contactless, color: AppColors.green, size: 20);
     }
+    if (t == PaymentType.qr) {
+      return Icon(Icons.qr_code, color: AppColors.blue, size: 20);
+    }
     return Text(
       _paymentIcon(t),
       style: const TextStyle(fontSize: 18),
