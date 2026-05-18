@@ -28,7 +28,7 @@ class AppColors {
       Theme.of(context).colorScheme.onSurfaceVariant;
 
   static Color softSurface(BuildContext context) =>
-      isDark(context) ? const Color(0xFF172B40) : cardBg;
+      isDark(context) ? const Color(0xFF24282D) : cardBg;
 
   static Color dividerColor(BuildContext context) =>
       Theme.of(context).dividerColor;

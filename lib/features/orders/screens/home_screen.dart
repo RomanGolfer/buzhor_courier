@@ -138,18 +138,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildHeader(LocationState locationState, OrdersState ordersState) {
+    final isDark = AppColors.isDark(context);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Color(0xFF063B6F), AppColors.blue],
+          colors: isDark
+              ? const [Color(0xFF22262B), Color(0xFF151719)]
+              : const [Color(0xFF063B6F), AppColors.blue],
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x40000000),
+            color: Colors.black.withValues(alpha: isDark ? 0.42 : 0.25),
             blurRadius: 16,
-            offset: Offset(0, 6),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -323,12 +326,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActiveList(OrdersState ordersState) {
-    if (ordersState.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.blue),
-      );
-    }
-
     if (ordersState.activeOrders.isEmpty) {
       return Center(
         child: Column(
@@ -536,6 +533,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBottomNav(OrdersState ordersState) {
+    final isDark = AppColors.isDark(context);
     const items = [
       (Icons.local_shipping_outlined, Icons.local_shipping_rounded, 'Заказы'),
       (
@@ -548,7 +546,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ];
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface(context),
+        color: isDark ? const Color(0xFF17191C) : AppColors.surface(context),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(
@@ -582,13 +580,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: active
-                              ? AppColors.blue.withValues(alpha: 0.1)
+                              ? isDark
+                                    ? Colors.white.withValues(alpha: 0.14)
+                                    : AppColors.blue.withValues(alpha: 0.1)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
                           active ? iconFill : iconOut,
-                          color: active
+                          color: isDark
+                              ? Colors.white.withValues(
+                                  alpha: active ? 1.0 : 0.66,
+                                )
+                              : active
                               ? AppColors.blue
                               : AppColors.grayBlueLight,
                           size: 24,
@@ -598,7 +602,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Text(
                         label,
                         style: TextStyle(
-                          color: active
+                          color: isDark
+                              ? Colors.white.withValues(
+                                  alpha: active ? 1.0 : 0.66,
+                                )
+                              : active
                               ? AppColors.blue
                               : AppColors.grayBlueLight,
                           fontSize: 11,

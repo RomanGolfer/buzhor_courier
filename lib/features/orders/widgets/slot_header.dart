@@ -18,7 +18,11 @@ class SlotHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalBottles = slot.orders.fold<int>(0, (sum, order) => sum + order.bottles);
+    final isDark = AppColors.isDark(context);
+    final totalBottles = slot.orders.fold<int>(
+      0,
+      (sum, order) => sum + order.bottles,
+    );
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: IntrinsicHeight(
@@ -41,18 +45,25 @@ class SlotHeader extends StatelessWidget {
                     onTap: onToggle,
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: AppColors.surface(context),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.blue.withValues(alpha: 0.10),
-                            blurRadius: 12,
+                            color: isDark
+                                ? Colors.black.withValues(alpha: 0.22)
+                                : AppColors.blue.withValues(alpha: 0.10),
+                            blurRadius: isDark ? 16 : 12,
                             offset: const Offset(0, 3),
                           ),
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.14 : 0.04,
+                            ),
                             blurRadius: 4,
                             offset: const Offset(0, 1),
                           ),
@@ -72,8 +83,8 @@ class SlotHeader extends StatelessWidget {
                                         slot.label,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: AppColors.darkBlue,
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary(context),
                                           fontSize: 15,
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -90,7 +101,9 @@ class SlotHeader extends StatelessWidget {
                                       width: 22,
                                       height: 22,
                                       decoration: BoxDecoration(
-                                        color: AppColors.blue.withValues(alpha: 0.10),
+                                        color: AppColors.blue.withValues(
+                                          alpha: 0.10,
+                                        ),
                                         borderRadius: BorderRadius.circular(7),
                                       ),
                                       child: Center(
@@ -110,7 +123,9 @@ class SlotHeader extends StatelessWidget {
                                 Text(
                                   '${slot.orders.length} заказов',
                                   style: TextStyle(
-                                    color: AppColors.grayBlue.withValues(alpha: 0.7),
+                                    color: AppColors.textSecondary(
+                                      context,
+                                    ).withValues(alpha: 0.74),
                                     fontSize: 12,
                                   ),
                                 ),
@@ -127,7 +142,10 @@ class SlotHeader extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 gradient: const LinearGradient(
-                                  colors: [AppColors.orange, AppColors.orangeLight],
+                                  colors: [
+                                    AppColors.orange,
+                                    AppColors.orangeLight,
+                                  ],
                                 ),
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -161,9 +179,8 @@ class SlotHeader extends StatelessWidget {
                           number: i + 1,
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) => OrderDetailScreen(
-                                order: slot.orders[i],
-                              ),
+                              builder: (_) =>
+                                  OrderDetailScreen(order: slot.orders[i]),
                             ),
                           ),
                         ),

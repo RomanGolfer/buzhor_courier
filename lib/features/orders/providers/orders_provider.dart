@@ -20,7 +20,7 @@ class OrdersState {
     this.isMapView = false,
     this.isBuilding = false,
     this.isLowDataMode = false,
-    this.isLoading = true,
+    this.isLoading = false,
     this.listOpacity = 1.0,
     this.activeOrders = const [],
     this.completedOrders = const [],
@@ -60,8 +60,13 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 
   Future<void> _loadOrders() async {
-    final orders = await _repository.fetchOrders();
-    _setOrders(orders);
+    state = state.copyWith(isLoading: true);
+    try {
+      final orders = await _repository.fetchOrders();
+      _setOrders(orders);
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
   }
 
   Future<void> refreshOrders() async {
