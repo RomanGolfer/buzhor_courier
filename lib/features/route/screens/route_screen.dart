@@ -11,12 +11,14 @@ class RouteScreen extends StatefulWidget {
   final List<OrderItem> orders;
   final double? startLat;
   final double? startLng;
+  final bool initialLowDataMode;
 
   const RouteScreen({
     super.key,
     required this.orders,
     this.startLat,
     this.startLng,
+    this.initialLowDataMode = false,
   });
 
   @override
@@ -34,11 +36,13 @@ class _RouteScreenState extends State<RouteScreen> {
 
   List<List<LatLng>> _routeSegments = [];
   bool _isLoadingRoute = false;
+  bool _isLowDataMode = false;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _isLowDataMode = widget.initialLowDataMode;
     if (widget.orders.isEmpty) {
       _sortedOrders = [];
     } else if (widget.startLat != null && widget.startLng != null) {
@@ -68,7 +72,18 @@ class _RouteScreenState extends State<RouteScreen> {
       ?_startPoint,
       ..._sortedOrders.map((o) => LatLng(o.lat, o.lng)),
     ];
-    if (waypoints.length < 2) return;
+    if (waypoints.length < 2) {
+      if (mounted) setState(() => _routeSegments = []);
+      return;
+    }
+
+    if (_isLowDataMode) {
+      setState(() {
+        _routeSegments = _buildStraightSegments(waypoints);
+        _isLoadingRoute = false;
+      });
+      return;
+    }
 
     setState(() => _isLoadingRoute = true);
 
@@ -82,6 +97,22 @@ class _RouteScreenState extends State<RouteScreen> {
       _routeSegments = results;
       _isLoadingRoute = false;
     });
+  }
+
+  List<List<LatLng>> _buildStraightSegments(List<LatLng> waypoints) {
+    return [
+      for (int i = 0; i < waypoints.length - 1; i++)
+        [waypoints[i], waypoints[i + 1]],
+    ];
+  }
+
+  void _toggleLowDataMode() {
+    setState(() {
+      _isLowDataMode = !_isLowDataMode;
+      _routeSegments = [];
+      _isLoadingRoute = false;
+    });
+    _fetchRoutes();
   }
 
   // ─── SORTING ────────────────────────────────────────────────────────────────
@@ -363,13 +394,15 @@ class _RouteScreenState extends State<RouteScreen> {
               },
             ),
             children: [
-              TileLayer(
-                urlTemplate:
-                    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-                subdomains: const ['a', 'b', 'c', 'd'],
-              ),
-              SimpleAttributionWidget(source: const Text('CartoDB')),
-              // Road-following route polylines from OSRM
+              if (!_isLowDataMode) ...[
+                TileLayer(
+                  urlTemplate:
+                      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+                  subdomains: const ['a', 'b', 'c', 'd'],
+                ),
+                SimpleAttributionWidget(source: const Text('CartoDB')),
+              ],
+              // Road-following route polylines from OSRM, or straight fallback in 2G mode.
               if (_routeSegments.isNotEmpty)
                 PolylineLayer(
                   polylines: [
@@ -493,6 +526,15 @@ class _RouteScreenState extends State<RouteScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 64,
+            right: 16,
+            child: _LowDataModeChip(
+              enabled: _isLowDataMode,
+              onTap: _toggleLowDataMode,
             ),
           ),
 
@@ -726,13 +768,17 @@ class _RouteScreenState extends State<RouteScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${order.bottles} бут.',
-                  style: TextStyle(
-                    color: const Color(0xFF6B8CAE).withValues(alpha: 0.9),
-                    fontSize: 11,
+                Expanded(
+                  child: Text(
+                    '${order.bottles} бут.',
+                    style: TextStyle(
+                      color: const Color(0xFF6B8CAE).withValues(alpha: 0.9),
+                      fontSize: 11,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 4),
                 Text(
                   '${order.price.toInt()} ₽',
                   style: TextStyle(
@@ -840,6 +886,59 @@ class _MapBtn extends StatelessWidget {
           ],
         ),
         child: child,
+      ),
+    );
+  }
+}
+
+class _LowDataModeChip extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _LowDataModeChip({required this.enabled, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: enabled ? AppColors.darkBlue : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: enabled
+                ? AppColors.darkBlue
+                : AppColors.grayBlue.withValues(alpha: 0.24),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              enabled ? Icons.signal_cellular_alt_1_bar : Icons.speed_rounded,
+              size: 16,
+              color: enabled ? Colors.white : AppColors.darkBlue,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              enabled ? '2G включён' : '2G',
+              style: TextStyle(
+                color: enabled ? Colors.white : AppColors.darkBlue,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
