@@ -1,12 +1,10 @@
-import 'dart:convert';
-
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/route/services/geocoding_service.dart';
+import 'package:buzhor_courier/features/route/services/osrm_route_service.dart';
 import 'package:buzhor_courier/features/route/services/route_sorting_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 class RouteScreen extends StatefulWidget {
@@ -65,27 +63,6 @@ class _RouteScreenState extends State<RouteScreen> {
 
   // ─── OSRM ROUTING ───────────────────────────────────────────────────────────
 
-  Future<List<LatLng>> _fetchOsrmSegment(LatLng from, LatLng to) async {
-    final url =
-        'http://router.project-osrm.org/route/v1/driving/'
-        '${from.longitude},${from.latitude};${to.longitude},${to.latitude}'
-        '?overview=full&geometries=geojson';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final coords =
-            data['routes'][0]['geometry']['coordinates'] as List<dynamic>;
-        return coords
-            .map(
-              (c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble()),
-            )
-            .toList();
-      }
-    } catch (_) {}
-    return [from, to]; // straight-line fallback
-  }
-
   Future<void> _fetchRoutes() async {
     final waypoints = [
       ?_startPoint,
@@ -97,7 +74,7 @@ class _RouteScreenState extends State<RouteScreen> {
 
     final results = await Future.wait([
       for (int i = 0; i < waypoints.length - 1; i++)
-        _fetchOsrmSegment(waypoints[i], waypoints[i + 1]),
+        OsrmRouteService.fetchSegment(waypoints[i], waypoints[i + 1]),
     ]);
 
     if (!mounted) return;
