@@ -141,13 +141,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isDark = AppColors.isDark(context);
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: isDark
-              ? const [Color(0xFF22262B), Color(0xFF151719)]
-              : const [Color(0xFF063B6F), AppColors.blue],
-        ),
+        color: isDark ? const Color(0xFF1A1A1A) : null,
+        gradient: isDark
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF063B6F), AppColors.blue],
+              ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.42 : 0.25),

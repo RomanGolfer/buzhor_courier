@@ -10,15 +10,15 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = AppColors.isDark(context);
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? const [Color(0xFF1A1A2E), Color(0xFF0F0F1E)]
-              : const [AppColors.blue, AppColors.darkBlue],
-        ),
-      ),
+      decoration: isDark
+          ? const BoxDecoration(color: Color(0xFF1A1A1A))
+          : const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.blue, AppColors.darkBlue],
+              ),
+            ),
       child: SafeArea(
         bottom: false,
         child: Padding(

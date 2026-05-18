@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 const _seedColor = Color(0xFF1B5FA8);
 const _lightBackground = Color(0xFFF0F5FB);
-const _darkBackground = Color(0xFF111315);
+const _darkBackground = Color(0xFF1A1A1A);
 const _darkSurface = Color(0xFF1A1D20);
 
 final ThemeData lightTheme = _buildTheme(Brightness.light);
@@ -21,6 +21,10 @@ ThemeData _buildTheme(Brightness brightness) {
     brightness: brightness,
     colorScheme: colorScheme,
     scaffoldBackgroundColor: isDark ? _darkBackground : _lightBackground,
+    appBarTheme: AppBarTheme(
+      backgroundColor: isDark ? _darkBackground : null,
+      elevation: 0,
+    ),
     cardColor: colorScheme.surface,
     dividerColor: isDark ? const Color(0xFF30343A) : const Color(0xFFD6E4F0),
     bottomSheetTheme: BottomSheetThemeData(
