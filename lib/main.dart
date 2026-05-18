@@ -7,6 +7,7 @@ import 'package:buzhor_courier/core/theme/theme_mode_provider.dart';
 import 'package:buzhor_courier/core/notifications/push_notification_listener.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

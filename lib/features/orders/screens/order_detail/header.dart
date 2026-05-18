@@ -8,12 +8,15 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppColors.blue, AppColors.darkBlue],
+          colors: isDark
+              ? const [Color(0xFF1A1A2E), Color(0xFF0F0F1E)]
+              : const [AppColors.blue, AppColors.darkBlue],
         ),
       ),
       child: SafeArea(
@@ -62,7 +65,7 @@ class _Header extends StatelessWidget {
                     : IconButton(
                         tooltip: 'Связаться с диспетчером',
                         icon: const Icon(
-                          Icons.support_agent_rounded,
+                          Icons.chat_bubble_outline,
                           color: Colors.white,
                           size: 24,
                         ),

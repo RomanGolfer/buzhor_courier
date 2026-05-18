@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:buzhor_courier/shared/models/bubble.dart';
+import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -187,8 +188,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               left: 0,
               right: 0,
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF1E1E2E)
+                      : Colors.white,
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(28),
                   ),
@@ -211,7 +214,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,15 +224,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0D3D6E),
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white
+                                  : AppColors.darkBlue,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'Войдите в аккаунт курьера',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF6B8CAE),
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white60
+                                  : AppColors.grayBlue,
                             ),
                           ),
                         ],
@@ -335,9 +342,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                     Text(
                       'Бужор · Анапа',
                       style: TextStyle(
-                        color: const Color(
-                          0xFF6B8CAE,
-                        ).withValues(alpha: 0.6),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white.withValues(alpha: 0.38)
+                            : const Color(0xFF6B8CAE).withValues(alpha: 0.6),
                         fontSize: 11,
                         letterSpacing: 1,
                       ),
@@ -368,7 +375,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: focused ? const Color(0xFFE8F1FB) : const Color(0xFFF0F5FB),
+          color: Theme.of(context).brightness == Brightness.dark
+              ? (focused ? const Color(0xFF32324E) : const Color(0xFF2A2A3E))
+              : (focused ? const Color(0xFFE8F1FB) : const Color(0xFFF0F5FB)),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: focused ? const Color(0xFF1B5FA8) : const Color(0xFFE0EDF8),
@@ -379,8 +388,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           controller: controller,
           obscureText: obscure,
           keyboardType: keyboardType,
-          style: const TextStyle(
-            color: Color(0xFF0D3D6E),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : const Color(0xFF0D3D6E),
             fontWeight: FontWeight.w600,
             fontSize: 15,
           ),
@@ -388,19 +399,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             labelText: label,
             hintText: hint,
             hintStyle: TextStyle(
-              color: const Color(0xFF6B8CAE).withValues(alpha: 0.5),
+              color: (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white.withValues(alpha: 0.4)
+                      : const Color(0xFF6B8CAE).withValues(alpha: 0.5))
+                  .withValues(alpha: 0.5),
             ),
             labelStyle: TextStyle(
               color: focused
                   ? const Color(0xFF1B5FA8)
-                  : const Color(0xFF6B8CAE),
+                  : (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white70
+                      : const Color(0xFF6B8CAE)),
               fontWeight: focused ? FontWeight.w600 : FontWeight.normal,
             ),
             prefixIcon: Icon(
               icon,
               color: focused
                   ? const Color(0xFF1B5FA8)
-                  : const Color(0xFF6B8CAE),
+                  : (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white70
+                      : const Color(0xFF6B8CAE)),
               size: 20,
             ),
             suffixIcon: suffix != null
