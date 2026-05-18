@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
+import 'package:buzhor_courier/core/theme/theme_mode_provider.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 import 'package:buzhor_courier/features/orders/providers/location_provider.dart';
@@ -175,6 +176,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ref.read(ordersProvider.notifier).toggleLowDataMode(),
               ),
               const SizedBox(width: 10),
+              _ThemeToggle(
+                isDark: ref.watch(themeModeProvider) == ThemeMode.dark,
+                onTap: () => ref.read(themeModeProvider.notifier).toggle(),
+              ),
+              const SizedBox(width: 10),
               _buildGpsIndicator(locationState),
             ],
           ),
@@ -317,6 +323,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildActiveList(OrdersState ordersState) {
+    if (ordersState.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.blue),
+      );
+    }
+
     if (ordersState.activeOrders.isEmpty) {
       return Center(
         child: Column(
@@ -602,6 +614,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             }),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ThemeToggle extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ThemeToggle({required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: onTap,
+      icon: Icon(
+        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+        color: Colors.white,
+        size: 18,
+      ),
+      tooltip: isDark ? 'Темная тема' : 'Светлая тема',
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.white.withValues(alpha: 0.12),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.24)),
+        fixedSize: const Size(34, 34),
+        minimumSize: const Size(34, 34),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
     );
   }

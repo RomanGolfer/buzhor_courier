@@ -9,6 +9,7 @@ class OrdersState {
   final bool isMapView;
   final bool isBuilding;
   final bool isLowDataMode;
+  final bool isLoading;
   final double listOpacity;
   final List<OrderItem> activeOrders;
   final List<OrderItem> completedOrders;
@@ -19,6 +20,7 @@ class OrdersState {
     this.isMapView = false,
     this.isBuilding = false,
     this.isLowDataMode = false,
+    this.isLoading = true,
     this.listOpacity = 1.0,
     this.activeOrders = const [],
     this.completedOrders = const [],
@@ -30,6 +32,7 @@ class OrdersState {
     bool? isMapView,
     bool? isBuilding,
     bool? isLowDataMode,
+    bool? isLoading,
     double? listOpacity,
     List<OrderItem>? activeOrders,
     List<OrderItem>? completedOrders,
@@ -40,6 +43,7 @@ class OrdersState {
       isMapView: isMapView ?? this.isMapView,
       isBuilding: isBuilding ?? this.isBuilding,
       isLowDataMode: isLowDataMode ?? this.isLowDataMode,
+      isLoading: isLoading ?? this.isLoading,
       listOpacity: listOpacity ?? this.listOpacity,
       activeOrders: activeOrders ?? this.activeOrders,
       completedOrders: completedOrders ?? this.completedOrders,
@@ -130,6 +134,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       activeOrders: activeOrders,
       completedOrders: completedOrders,
       timeSlots: _buildTimeSlots(activeOrders),
+      isLoading: false,
     );
   }
 
