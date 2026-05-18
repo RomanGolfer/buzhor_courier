@@ -56,6 +56,58 @@ class OrderItem {
     return isDone ? OrderDeliveryState.delivered : OrderDeliveryState.active;
   }
 
+  factory OrderItem.fromJson(Map<String, dynamic> json) {
+    return OrderItem(
+      id: json['id'] as String,
+      clientName: json['clientName'] as String,
+      address: json['address'] as String,
+      district: json['district'] as String,
+      price: (json['price'] as num).toDouble(),
+      payment: _paymentTypeFromName(json['payment'] as String),
+      bottles: json['bottles'] as int,
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
+      isDone: json['isDone'] as bool? ?? false,
+      deliveryState: _deliveryStateFromName(
+        json['deliveryState'] as String? ?? OrderDeliveryState.active.name,
+      ),
+      comment: json['comment'] as String?,
+      phone: json['phone'] as String?,
+      deliveredBottles: json['deliveredBottles'] as int?,
+      returnedBottles: json['returnedBottles'] as int?,
+      confirmedPayment: _optionalPaymentTypeFromName(
+        json['confirmedPayment'] as String?,
+      ),
+      extras: _intMapFromJson(json['extras']),
+      scannedItems: _intMapFromJson(json['scannedItems']),
+      deliveryComment: json['deliveryComment'] as String?,
+      failureReason: json['failureReason'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'clientName': clientName,
+    'address': address,
+    'district': district,
+    'price': price,
+    'payment': payment.name,
+    'bottles': bottles,
+    'lat': lat,
+    'lng': lng,
+    'isDone': isDone,
+    'deliveryState': deliveryState.name,
+    'comment': comment,
+    'phone': phone,
+    'deliveredBottles': deliveredBottles,
+    'returnedBottles': returnedBottles,
+    'confirmedPayment': confirmedPayment?.name,
+    'extras': extras,
+    'scannedItems': scannedItems,
+    'deliveryComment': deliveryComment,
+    'failureReason': failureReason,
+  };
+
   OrderItem copyWith({
     bool? isDone,
     OrderDeliveryState? deliveryState,
@@ -88,4 +140,23 @@ class OrderItem {
     deliveryComment: deliveryComment ?? this.deliveryComment,
     failureReason: failureReason ?? this.failureReason,
   );
+}
+
+PaymentType _paymentTypeFromName(String name) {
+  return PaymentType.values.byName(name);
+}
+
+PaymentType? _optionalPaymentTypeFromName(String? name) {
+  if (name == null) return null;
+  return _paymentTypeFromName(name);
+}
+
+OrderDeliveryState _deliveryStateFromName(String name) {
+  return OrderDeliveryState.values.byName(name);
+}
+
+Map<String, int> _intMapFromJson(Object? value) {
+  if (value == null) return const {};
+  final map = value as Map<String, dynamic>;
+  return map.map((key, value) => MapEntry(key, (value as num).toInt()));
 }

@@ -1,14 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
+import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 
 class OrderRepository {
-  OrderRepository({List<OrderItem>? initialOrders})
-    : _orders = List<OrderItem>.of(initialOrders ?? sampleOrders);
+  OrderRepository({List<OrderItem>? initialOrders, OrderStorage? storage})
+    : _fallbackOrders = List<OrderItem>.of(initialOrders ?? sampleOrders),
+      _storage = storage;
 
-  final List<OrderItem> _orders;
+  final List<OrderItem> _fallbackOrders;
+  final OrderStorage? _storage;
+  final List<OrderItem> _orders = [];
+  bool _hasLoaded = false;
 
   Future<List<OrderItem>> fetchOrders() async {
+    await _ensureLoaded();
     return List.unmodifiable(_orders);
   }
 
@@ -21,6 +27,7 @@ class OrderRepository {
     required Map<String, int> scannedItems,
     String? comment,
   }) async {
+    await _ensureLoaded();
     _replaceOrder(
       orderId,
       (order) => order.copyWith(
@@ -35,6 +42,7 @@ class OrderRepository {
         failureReason: null,
       ),
     );
+    await _persist();
     return fetchOrders();
   }
 
@@ -42,6 +50,7 @@ class OrderRepository {
     String orderId, {
     required String reason,
   }) async {
+    await _ensureLoaded();
     final normalizedReason = _normalizeOptionalText(reason);
     if (normalizedReason == null) return fetchOrders();
 
@@ -54,7 +63,21 @@ class OrderRepository {
         deliveryComment: null,
       ),
     );
+    await _persist();
     return fetchOrders();
+  }
+
+  Future<void> _ensureLoaded() async {
+    if (_hasLoaded) return;
+    final savedOrders = await _storage?.loadOrders();
+    _orders
+      ..clear()
+      ..addAll(savedOrders ?? _fallbackOrders);
+    _hasLoaded = true;
+  }
+
+  Future<void> _persist() async {
+    await _storage?.saveOrders(List.unmodifiable(_orders));
   }
 
   void _replaceOrder(String orderId, OrderItem Function(OrderItem) update) {
@@ -71,5 +94,5 @@ class OrderRepository {
 }
 
 final orderRepositoryProvider = Provider<OrderRepository>(
-  (ref) => OrderRepository(),
+  (ref) => OrderRepository(storage: const SharedPreferencesOrderStorage()),
 );

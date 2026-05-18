@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/features/orders/data/order_repository.dart';
+import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -119,4 +120,47 @@ void main() {
     notifier.toggleLowDataMode();
     expect(notifier.state.isLowDataMode, isFalse);
   });
+
+  test('repository restores saved orders from local storage', () async {
+    final storage = _FakeOrderStorage();
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+
+    await repository.completeOrder(
+      _activeOrder.id,
+      bottles: 2,
+      returnedBottles: 0,
+      paymentType: PaymentType.cash,
+      extras: const {},
+      scannedItems: const {'water': 2},
+    );
+
+    final restoredRepository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+    final restored = await restoredRepository.fetchOrders();
+
+    expect(
+      restored.single.effectiveDeliveryState,
+      OrderDeliveryState.delivered,
+    );
+    expect(restored.single.scannedItems, {'water': 2});
+  });
+}
+
+class _FakeOrderStorage implements OrderStorage {
+  List<OrderItem>? savedOrders;
+
+  @override
+  Future<List<OrderItem>?> loadOrders() async {
+    return savedOrders == null ? null : List<OrderItem>.of(savedOrders!);
+  }
+
+  @override
+  Future<void> saveOrders(List<OrderItem> orders) async {
+    savedOrders = List<OrderItem>.of(orders);
+  }
 }
