@@ -125,7 +125,10 @@ class _PaymentQrCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _PaymentQrView(payload: payload, size: 128),
+              _PaymentQrOpenTarget(
+                order: order,
+                child: _PaymentQrView(payload: payload, size: 128),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

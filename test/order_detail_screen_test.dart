@@ -146,6 +146,22 @@ void main() {
     expect(find.text('Клиент с QR'), findsNothing);
   });
 
+  testWidgets('opens payment QR screen when tapping compact QR', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _qrOrder)),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('compactPaymentQrTapTarget')).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('К оплате'), findsOneWidget);
+    expect(find.text('840 ₽'), findsOneWidget);
+  });
+
   testWidgets('copies order number from payment QR screen', (tester) async {
     final clipboardWrites = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

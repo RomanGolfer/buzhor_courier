@@ -106,7 +106,10 @@ class _PaymentQrPanel extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _PaymentQrView(payload: payload, size: 120),
+          _PaymentQrOpenTarget(
+            order: order,
+            child: _PaymentQrView(payload: payload, size: 120),
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -138,6 +141,26 @@ class _PaymentQrPanel extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PaymentQrOpenTarget extends StatelessWidget {
+  final OrderItem order;
+  final Widget child;
+
+  const _PaymentQrOpenTarget({required this.order, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Открыть QR крупно',
+      child: GestureDetector(
+        key: const Key('compactPaymentQrTapTarget'),
+        onTap: () => _showPaymentQrSheet(context, order),
+        child: child,
       ),
     );
   }
