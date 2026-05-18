@@ -14,4 +14,22 @@ class AppColors {
   static const grayBlueLight = Color(0xFF8AACCC);
   static const cardBg = Color(0xFFEEF4FB);
   static const divider = Color(0xFFD6E4F0);
+
+  static bool isDark(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark;
+
+  static Color surface(BuildContext context) =>
+      Theme.of(context).colorScheme.surface;
+
+  static Color textPrimary(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurface;
+
+  static Color textSecondary(BuildContext context) =>
+      Theme.of(context).colorScheme.onSurfaceVariant;
+
+  static Color softSurface(BuildContext context) =>
+      isDark(context) ? const Color(0xFF172B40) : cardBg;
+
+  static Color dividerColor(BuildContext context) =>
+      Theme.of(context).dividerColor;
 }

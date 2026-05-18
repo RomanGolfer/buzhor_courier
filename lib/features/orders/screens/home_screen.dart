@@ -49,7 +49,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.bg,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: Column(
           children: [
             _buildHeader(locationState, ordersState),
@@ -251,12 +251,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildTabSwitcher(OrdersState ordersState) {
     return Container(
-      color: Colors.white,
+      color: AppColors.surface(context),
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
       child: Container(
         height: 40,
         decoration: BoxDecoration(
-          color: AppColors.cardBg,
+          color: AppColors.softSurface(context),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -278,7 +278,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: active ? Colors.white : Colors.transparent,
+            color: active ? AppColors.surface(context) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
             boxShadow: active
                 ? [
@@ -302,7 +302,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 label,
                 style: TextStyle(
-                  color: active ? AppColors.darkBlue : AppColors.grayBlueLight,
+                  color: active
+                      ? AppColors.textPrimary(context)
+                      : AppColors.textSecondary(context),
                   fontSize: 13,
                   fontWeight: active ? FontWeight.w700 : FontWeight.normal,
                 ),
@@ -326,10 +328,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               color: AppColors.lightBlue.withValues(alpha: 0.4),
             ),
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Все заказы выполнены!',
               style: TextStyle(
-                color: AppColors.darkBlue,
+                color: AppColors.textPrimary(context),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -353,7 +355,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       curve: Curves.easeInOut,
       child: RefreshIndicator(
         color: AppColors.blue,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surface(context),
         onRefresh: _refreshOrders,
         child: ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -411,7 +413,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               'Нет выполненных заказов',
               style: TextStyle(
-                color: AppColors.darkBlue.withValues(alpha: 0.6),
+                color: AppColors.textPrimary(context).withValues(alpha: 0.7),
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
               ),
@@ -434,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       children: [
         Container(
-          color: Colors.white,
+          color: AppColors.surface(context),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           child: Row(
             children: [
@@ -511,7 +513,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text(
             labels[index],
             style: TextStyle(
-              color: AppColors.darkBlue.withValues(alpha: 0.5),
+              color: AppColors.textPrimary(context).withValues(alpha: 0.6),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -533,13 +535,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       (Icons.person_outline_rounded, Icons.person_rounded, 'Профиль'),
     ];
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
         boxShadow: [
           BoxShadow(
-            color: Color(0x10000000),
+            color: Colors.black.withValues(
+              alpha: AppColors.isDark(context) ? 0.24 : 0.06,
+            ),
             blurRadius: 8,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),

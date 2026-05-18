@@ -21,6 +21,7 @@ class OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
     final borderColor = order.isFailed
         ? Colors.red.shade400
         : order.isClosed
@@ -32,7 +33,7 @@ class OrderCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 14),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -41,8 +42,8 @@ class OrderCard extends StatelessWidget {
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
+              color: Colors.black.withValues(alpha: isDark ? 0.18 : 0.04),
+              blurRadius: isDark ? 12 : 4,
               offset: const Offset(0, 1),
             ),
           ],
@@ -186,8 +187,8 @@ class _CardContent extends StatelessWidget {
               children: [
                 Text(
                   '${order.price.toInt()} ₽',
-                  style: const TextStyle(
-                    color: AppColors.darkBlue,
+                  style: TextStyle(
+                    color: AppColors.textPrimary(context),
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                   ),
@@ -209,7 +210,7 @@ class _CardContent extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.cardBg,
+                  color: AppColors.softSurface(context),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -233,8 +234,8 @@ class _CardContent extends StatelessWidget {
             Expanded(
               child: Text(
                 order.address,
-                style: const TextStyle(
-                  color: AppColors.darkBlue,
+                style: TextStyle(
+                  color: AppColors.textPrimary(context),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -249,8 +250,8 @@ class _CardContent extends StatelessWidget {
             Expanded(
               child: Text(
                 '${order.clientName} · ${order.bottles} бут.',
-                style: const TextStyle(
-                  color: AppColors.grayBlue,
+                style: TextStyle(
+                  color: AppColors.textSecondary(context),
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
@@ -261,7 +262,7 @@ class _CardContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.cardBg,
+                color: AppColors.softSurface(context),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
@@ -310,8 +311,8 @@ class _CardContent extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '${order.bottles} бут.',
-              style: const TextStyle(
-                color: AppColors.grayBlue,
+              style: TextStyle(
+                color: AppColors.textSecondary(context),
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),

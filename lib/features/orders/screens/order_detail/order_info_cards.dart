@@ -10,10 +10,10 @@ class _OrderItemsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Товары',
             style: TextStyle(
-              color: AppColors.darkBlue,
+              color: AppColors.textPrimary(context),
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -21,10 +21,13 @@ class _OrderItemsCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Вода питьевая 19л',
-                  style: TextStyle(color: AppColors.darkBlue, fontSize: 14),
+                  style: TextStyle(
+                    color: AppColors.textPrimary(context),
+                    fontSize: 14,
+                  ),
                 ),
               ),
               Text(
@@ -34,8 +37,8 @@ class _OrderItemsCard extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 '${order.price.toInt()} ₽',
-                style: const TextStyle(
-                  color: AppColors.darkBlue,
+                style: TextStyle(
+                  color: AppColors.textPrimary(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -52,7 +55,10 @@ class _OrderItemsCard extends StatelessWidget {
               ),
               Text(
                 '${order.price.toInt()} ₽',
-                style: const TextStyle(color: AppColors.darkBlue, fontSize: 14),
+                style: TextStyle(
+                  color: AppColors.textPrimary(context),
+                  fontSize: 14,
+                ),
               ),
             ],
           ),
@@ -60,18 +66,18 @@ class _OrderItemsCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 'К оплате',
                 style: TextStyle(
-                  color: AppColors.darkBlue,
+                  color: AppColors.textPrimary(context),
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               Text(
                 '${order.price.toInt()} ₽',
-                style: const TextStyle(
-                  color: AppColors.darkBlue,
+                style: TextStyle(
+                  color: AppColors.textPrimary(context),
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                 ),
@@ -105,11 +111,11 @@ class _PaymentQrCard extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'QR для оплаты',
                   style: TextStyle(
-                    color: AppColors.darkBlue,
+                    color: AppColors.textPrimary(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -134,10 +140,10 @@ class _PaymentQrCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Покажите клиенту для оплаты заказа.',
                       style: TextStyle(
-                        color: AppColors.darkBlue,
+                        color: AppColors.textPrimary(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -195,10 +201,10 @@ class _DeliveryResultCard extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Результат заказа',
                 style: TextStyle(
-                  color: AppColors.darkBlue,
+                  color: AppColors.textPrimary(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
                 ),
@@ -288,8 +294,8 @@ class _ResultInfoRow extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              color: AppColors.darkBlue,
+            style: TextStyle(
+              color: AppColors.textPrimary(context),
               fontSize: 13,
               fontWeight: FontWeight.w700,
             ),

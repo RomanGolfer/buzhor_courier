@@ -6,15 +6,18 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = AppColors.isDark(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.blue.withValues(alpha: 0.06),
-            blurRadius: 12,
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.22)
+                : AppColors.blue.withValues(alpha: 0.06),
+            blurRadius: isDark ? 18 : 12,
             offset: const Offset(0, 3),
           ),
         ],
@@ -29,9 +32,9 @@ class _RowDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 12),
-      child: Divider(height: 1, color: AppColors.divider),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Divider(height: 1, color: AppColors.dividerColor(context)),
     );
   }
 }
@@ -100,9 +103,9 @@ class _PaymentQrPanel extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: AppColors.softSurface(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.dividerColor(context)),
       ),
       child: Row(
         children: [
@@ -115,10 +118,10 @@ class _PaymentQrPanel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'QR для оплаты',
                   style: TextStyle(
-                    color: AppColors.darkBlue,
+                    color: AppColors.textPrimary(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
@@ -181,7 +184,7 @@ class _PaymentQrView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.dividerColor(context)),
       ),
       child: QrImageView(
         data: payload,

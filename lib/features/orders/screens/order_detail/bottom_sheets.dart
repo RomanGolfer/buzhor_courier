@@ -21,13 +21,15 @@ class _BottomButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.surface(context),
         boxShadow: [
           BoxShadow(
-            color: Color(0x10000000),
+            color: Colors.black.withValues(
+              alpha: AppColors.isDark(context) ? 0.24 : 0.06,
+            ),
             blurRadius: 8,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -147,8 +149,8 @@ class _DeliverySheetState extends State<_DeliverySheet> {
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.surface(context),
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: ListView(
@@ -161,18 +163,18 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.divider,
+                    color: AppColors.dividerColor(context),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
               const Center(child: Text('😊', style: TextStyle(fontSize: 48))),
               const SizedBox(height: 8),
-              const Center(
+              Center(
                 child: Text(
                   'Заказ доставлен',
                   style: TextStyle(
-                    color: AppColors.darkBlue,
+                    color: AppColors.textPrimary(context),
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -202,10 +204,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Возврат бутылей',
                 style: TextStyle(
-                  color: AppColors.darkBlue,
+                  color: AppColors.textPrimary(context),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -228,8 +230,8 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                     child: Center(
                       child: Text(
                         '$_returnedBottles',
-                        style: const TextStyle(
-                          color: AppColors.darkBlue,
+                        style: TextStyle(
+                          color: AppColors.textPrimary(context),
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                         ),
@@ -248,10 +250,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
+              Text(
                 'Оплата получена',
                 style: TextStyle(
-                  color: AppColors.darkBlue,
+                  color: AppColors.textPrimary(context),
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                 ),
@@ -310,10 +312,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Маркировка товаров',
           style: TextStyle(
-            color: AppColors.darkBlue,
+            color: AppColors.textPrimary(context),
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
@@ -322,9 +324,9 @@ class _DeliverySheetState extends State<_DeliverySheet> {
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.cardBg,
+            color: AppColors.softSurface(context),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.divider),
+            border: Border.all(color: AppColors.dividerColor(context)),
           ),
           child: Row(
             children: [
@@ -332,10 +334,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Вода "Бужор" 19л',
                       style: TextStyle(
-                        color: AppColors.darkBlue,
+                        color: AppColors.textPrimary(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
@@ -425,17 +427,17 @@ class _DeliverySummary extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardBg,
+        color: AppColors.softSurface(context),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.dividerColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             '$bottles бут. к доставке',
-            style: const TextStyle(
-              color: AppColors.darkBlue,
+            style: TextStyle(
+              color: AppColors.textPrimary(context),
               fontSize: 14,
               fontWeight: FontWeight.w700,
             ),
@@ -503,8 +505,8 @@ class _FailureSheetState extends State<_FailureSheet> {
       ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-        decoration: const BoxDecoration(
-          color: Colors.white,
+        decoration: BoxDecoration(
+          color: AppColors.surface(context),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -517,15 +519,15 @@ class _FailureSheetState extends State<_FailureSheet> {
                 width: 36,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.divider,
+                  color: AppColors.dividerColor(context),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const Text(
+            Text(
               'Причина недоставки',
               style: TextStyle(
-                color: AppColors.darkBlue,
+                color: AppColors.textPrimary(context),
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
@@ -545,12 +547,14 @@ class _FailureSheetState extends State<_FailureSheet> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: selected ? Colors.red.shade50 : AppColors.cardBg,
+                      color: selected
+                          ? Colors.red.withValues(alpha: 0.12)
+                          : AppColors.softSurface(context),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: selected
                             ? Colors.red.shade400
-                            : AppColors.divider,
+                            : AppColors.dividerColor(context),
                       ),
                     ),
                     child: Text(
@@ -558,7 +562,7 @@ class _FailureSheetState extends State<_FailureSheet> {
                       style: TextStyle(
                         color: selected
                             ? Colors.red.shade600
-                            : AppColors.darkBlue,
+                            : AppColors.textPrimary(context),
                         fontSize: 14,
                       ),
                     ),

@@ -65,10 +65,10 @@ class _AddressCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Выберите способ оплаты',
                     style: TextStyle(
-                      color: AppColors.darkBlue,
+                      color: AppColors.textPrimary(context),
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -134,10 +134,10 @@ class _AddressCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Выберите допы',
                     style: TextStyle(
-                      color: AppColors.darkBlue,
+                      color: AppColors.textPrimary(context),
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -218,8 +218,8 @@ class _AddressCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   order.address,
-                  style: const TextStyle(
-                    color: AppColors.darkBlue,
+                  style: TextStyle(
+                    color: AppColors.textPrimary(context),
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -258,10 +258,10 @@ class _AddressCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Бутылей',
                         style: TextStyle(
-                          color: AppColors.grayBlue,
+                          color: AppColors.textSecondary(context),
                           fontSize: 12,
                         ),
                       ),
@@ -281,8 +281,8 @@ class _AddressCard extends StatelessWidget {
                           ],
                           Text(
                             '$bottles',
-                            style: const TextStyle(
-                              color: AppColors.darkBlue,
+                            style: TextStyle(
+                              color: AppColors.textPrimary(context),
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                             ),
@@ -303,16 +303,16 @@ class _AddressCard extends StatelessWidget {
                   width: 1,
                   height: 76,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
-                  color: AppColors.divider,
+                  color: AppColors.dividerColor(context),
                 ),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Оплата',
                         style: TextStyle(
-                          color: AppColors.grayBlue,
+                          color: AppColors.textSecondary(context),
                           fontSize: 12,
                         ),
                       ),
@@ -378,10 +378,10 @@ class _AddressCard extends StatelessWidget {
           const _RowDivider(),
           Row(
             children: [
-              const Text(
+              Text(
                 'Дополнительно',
                 style: TextStyle(
-                  color: AppColors.darkBlue,
+                  color: AppColors.textPrimary(context),
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
@@ -410,8 +410,8 @@ class _AddressCard extends StatelessWidget {
                 return Chip(
                   label: Text(
                     '${entry.key} ×${entry.value}',
-                    style: const TextStyle(
-                      color: AppColors.darkBlue,
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),

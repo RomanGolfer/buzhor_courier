@@ -54,7 +54,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   Widget build(BuildContext context) {
     final order = widget.order;
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           Column(

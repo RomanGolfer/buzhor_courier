@@ -34,7 +34,7 @@ class _DispatcherHeaderPanel extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.96),
+                  color: AppColors.surface(context).withValues(alpha: 0.96),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                     color: AppColors.blue.withValues(alpha: 0.10),
@@ -85,7 +85,7 @@ class _DispatcherHeaderPanel extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
@@ -95,7 +95,7 @@ class _DispatcherHeaderPanel extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: AppColors.darkBlue,
+                              color: AppColors.textPrimary(context),
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
                             ),
@@ -205,14 +205,14 @@ class _QuickSmsCard extends StatelessWidget {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.cardBg,
+                    color: AppColors.softSurface(context),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.divider),
+                    border: Border.all(color: AppColors.dividerColor(context)),
                   ),
                   child: Text(
                     msg,
-                    style: const TextStyle(
-                      color: AppColors.darkBlue,
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
                       fontSize: 13,
                     ),
                   ),
@@ -228,11 +228,13 @@ class _QuickSmsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.blue.withValues(alpha: 0.06),
+            color: AppColors.isDark(context)
+                ? Colors.black.withValues(alpha: 0.22)
+                : AppColors.blue.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -248,10 +250,10 @@ class _QuickSmsCard extends StatelessWidget {
               vertical: 2,
             ),
             childrenPadding: EdgeInsets.zero,
-            title: const Text(
+            title: Text(
               '💬 Сообщить клиенту',
               style: TextStyle(
-                color: AppColors.darkBlue,
+                color: AppColors.textPrimary(context),
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
               ),
@@ -301,8 +303,8 @@ class _ClientCard extends StatelessWidget {
                 children: [
                   Text(
                     order.clientName,
-                    style: const TextStyle(
-                      color: AppColors.darkBlue,
+                    style: TextStyle(
+                      color: AppColors.textPrimary(context),
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
@@ -310,8 +312,8 @@ class _ClientCard extends StatelessWidget {
                   if (phone != null)
                     Text(
                       phone,
-                      style: const TextStyle(
-                        color: AppColors.grayBlue,
+                      style: TextStyle(
+                        color: AppColors.textSecondary(context),
                         fontSize: 13,
                       ),
                     ),
