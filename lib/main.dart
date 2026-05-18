@@ -23,7 +23,9 @@ class BuzhorApp extends StatelessWidget {
     return MaterialApp(
       title: 'Бужор Доставка',
       debugShowCheckedModeBanner: false,
-      theme: appTheme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: ThemeMode.system,
       home: const PushNotificationListener(child: LoginScreen()),
     );
   }
