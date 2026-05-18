@@ -16,6 +16,18 @@ const _activeOrder = OrderItem(
   lng: 37.3168,
 );
 
+const _incomingOrder = OrderItem(
+  id: '#2',
+  clientName: 'Новый клиент',
+  address: 'ул. Новая, 2',
+  district: 'Анапа',
+  price: 840,
+  payment: PaymentType.cash,
+  bottles: 3,
+  lat: 44.9021,
+  lng: 37.3378,
+);
+
 void main() {
   test(
     'completeOrder moves active order to completed with delivery details',
@@ -148,6 +160,20 @@ void main() {
       OrderDeliveryState.delivered,
     );
     expect(restored.single.scannedItems, {'water': 2});
+  });
+
+  test('upsertIncomingOrder adds new pushed order', () async {
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.upsertIncomingOrder(_incomingOrder);
+
+    expect(notifier.state.activeOrders.map((order) => order.id), [
+      _activeOrder.id,
+      _incomingOrder.id,
+    ]);
   });
 }
 

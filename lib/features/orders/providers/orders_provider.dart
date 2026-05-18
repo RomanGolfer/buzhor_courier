@@ -118,6 +118,11 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     _setOrders(orders);
   }
 
+  Future<void> upsertIncomingOrder(OrderItem order) async {
+    final orders = await _repository.upsertOrder(order);
+    _setOrders(orders);
+  }
+
   void _setOrders(List<OrderItem> orders) {
     final activeOrders = orders.where((order) => !order.isClosed).toList();
     final completedOrders = orders.where((order) => order.isClosed).toList();

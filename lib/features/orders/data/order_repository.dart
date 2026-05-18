@@ -67,6 +67,18 @@ class OrderRepository {
     return fetchOrders();
   }
 
+  Future<List<OrderItem>> upsertOrder(OrderItem incomingOrder) async {
+    await _ensureLoaded();
+    final index = _orders.indexWhere((order) => order.id == incomingOrder.id);
+    if (index == -1) {
+      _orders.add(incomingOrder);
+    } else {
+      _orders[index] = incomingOrder;
+    }
+    await _persist();
+    return fetchOrders();
+  }
+
   Future<void> _ensureLoaded() async {
     if (_hasLoaded) return;
     final savedOrders = await _storage?.loadOrders();

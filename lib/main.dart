@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/auth/screens/login_screen.dart';
 import 'package:buzhor_courier/core/theme/app_theme.dart';
+import 'package:buzhor_courier/core/notifications/push_notification_listener.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(
@@ -23,7 +24,7 @@ class BuzhorApp extends StatelessWidget {
       title: 'Бужор Доставка',
       debugShowCheckedModeBanner: false,
       theme: appTheme,
-      home: const LoginScreen(),
+      home: const PushNotificationListener(child: LoginScreen()),
     );
   }
 }
