@@ -134,7 +134,7 @@ class _CardContent extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                '${order.clientName} · ${order.bottles} бут.',
+                order.clientName,
                 style: TextStyle(
                   color: AppColors.textSecondary(context),
                   fontSize: 12,
@@ -165,7 +165,7 @@ class _CardContent extends StatelessWidget {
             ),
           ],
         ),
-        if (order.comment != null) ...[
+        if (order.comment != null && order.comment!.isNotEmpty) ...[
           const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,10 +179,10 @@ class _CardContent extends StatelessWidget {
               Expanded(
                 child: Text(
                   order.comment!,
-                  style: TextStyle(
-                    color: AppColors.orange.withValues(alpha: 0.85),
+                  style: const TextStyle(
+                    color: AppColors.orange,
                     fontSize: 11.5,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
