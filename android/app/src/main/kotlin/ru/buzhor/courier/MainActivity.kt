@@ -1,4 +1,4 @@
-package com.example.buzhor_courier
+package ru.buzhor.courier
 
 import io.flutter.embedding.android.FlutterActivity
 
