@@ -5,8 +5,10 @@ class _BottomButtons extends StatelessWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final Map<String, int> scannedItems;
   final double totalPrice;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
+  final ValueChanged<Map<String, int>> onScannedItemsChanged;
   final Future<void> Function(_DeliveryConfirmation confirmation) onDelivered;
   final Future<void> Function(_FailureConfirmation confirmation) onFailed;
 
@@ -15,8 +17,10 @@ class _BottomButtons extends StatelessWidget {
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.scannedItems,
     required this.totalPrice,
     required this.onPaymentTypeChanged,
+    required this.onScannedItemsChanged,
     required this.onDelivered,
     required this.onFailed,
   });
@@ -80,8 +84,10 @@ class _BottomButtons extends StatelessWidget {
                     bottles: bottles,
                     paymentType: paymentType,
                     extras: extras,
+                    scannedItems: scannedItems,
                     totalPrice: totalPrice,
                     onPaymentTypeChanged: onPaymentTypeChanged,
+                    onScannedItemsChanged: onScannedItemsChanged,
                     onConfirm: onDelivered,
                   ),
                 ),

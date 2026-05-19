@@ -49,6 +49,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   late int _bottles;
   late PaymentType _paymentType;
   final Map<String, int> _extras = {};
+  final Map<String, int> _scannedItems = {};
   double _dispatcherReveal = 0;
   Timer? _dispatcherHideTimer;
 
@@ -72,6 +73,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     _bottles = initial.deliveredBottles ?? initial.bottles;
     _paymentType = initial.confirmedPayment ?? initial.payment;
     _extras.addAll(initial.extras);
+    _scannedItems.addAll(initial.scannedItems);
   }
 
   @override
@@ -99,16 +101,28 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     _syncToProvider();
   }
 
+  void _onScannedItemsChanged(Map<String, int> value) {
+    setState(() {
+      _scannedItems
+        ..clear()
+        ..addAll(value);
+    });
+    _syncToProvider();
+  }
+
   void _syncToProvider() {
     final current = _resolveOrder(ref.read(ordersProvider));
     if (current.isClosed) return;
-    ref.read(ordersProvider.notifier).updateOrder(
-      current.copyWith(
-        payment: _paymentType,
-        deliveredBottles: _bottles,
-        extras: Map.of(_extras),
-      ),
-    );
+    ref
+        .read(ordersProvider.notifier)
+        .updateOrder(
+          current.copyWith(
+            payment: _paymentType,
+            deliveredBottles: _bottles,
+            extras: Map.of(_extras),
+            scannedItems: Map.of(_scannedItems),
+          ),
+        );
   }
 
   @override
@@ -196,8 +210,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               bottles: _bottles,
               paymentType: _paymentType,
               extras: _extras,
+              scannedItems: _scannedItems,
               totalPrice: _currentTotal,
               onPaymentTypeChanged: _onPaymentTypeChanged,
+              onScannedItemsChanged: _onScannedItemsChanged,
               onDelivered: _completeOrder,
               onFailed: _failOrder,
             ),
@@ -213,7 +229,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           returnedBottles: confirmation.returnedBottles,
           paymentType: confirmation.paymentType,
           extras: _extras,
-          scannedItems: confirmation.scannedItems,
+          scannedItems: _scannedItems,
           comment: confirmation.comment,
         );
   }

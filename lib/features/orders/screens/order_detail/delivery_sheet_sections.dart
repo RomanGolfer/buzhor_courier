@@ -49,8 +49,18 @@ extension _DeliverySheetSections on _DeliverySheetState {
                   ],
                 ),
               ),
+              if (scannedCount > 0) ...[
+                TextButton(
+                  onPressed: _resetWaterScanResult,
+                  child: const Text('Сбросить'),
+                ),
+                const SizedBox(width: 4),
+              ],
               IconButton(
                 onPressed: _openWaterScanner,
+                tooltip: scannedCount > 0
+                    ? 'Пересканировать'
+                    : 'Сканировать маркировку',
                 icon: Icon(
                   isComplete
                       ? Icons.check_circle_rounded

@@ -50,6 +50,19 @@ const _activeOrder = OrderItem(
   lng: 37.3168,
 );
 
+const _activeScannedOrder = OrderItem(
+  id: '#5',
+  clientName: 'Клиент с маркировкой',
+  address: 'ул. Тестовая, 5',
+  district: 'Анапа',
+  price: 900,
+  payment: PaymentType.cash,
+  bottles: 3,
+  scannedItems: {'water': 2},
+  lat: 44.8951,
+  lng: 37.3168,
+);
+
 const _qrOrder = OrderItem(
   id: '#4',
   clientName: 'Клиент с QR',
@@ -192,6 +205,33 @@ void main() {
     expect(find.text('Онлайн'), findsWidgets);
     expect(find.text('Открыть крупно'), findsOneWidget);
   });
+
+  testWidgets(
+    'keeps scanned marking state and allows reset in delivery sheet',
+    (tester) async {
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: OrderDetailScreen(order: _activeScannedOrder),
+          ),
+        ),
+      );
+
+      expect(find.text('2 / 3 отсканировано'), findsOneWidget);
+
+      await tester.tap(find.text('Доставлен'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('2 / 3 отсканировано'), findsWidgets);
+      expect(find.text('Сбросить'), findsOneWidget);
+
+      await tester.tap(find.text('Сбросить'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('0 / 3 отсканировано'), findsOneWidget);
+      expect(find.text('Сбросить'), findsNothing);
+    },
+  );
 
   testWidgets('copies order number from payment QR screen', (tester) async {
     final clipboardWrites = <String>[];

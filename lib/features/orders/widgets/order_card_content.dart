@@ -4,10 +4,7 @@ class _CardContent extends StatelessWidget {
   final OrderItem order;
   final bool showRouteButton;
 
-  const _CardContent({
-    required this.order,
-    this.showRouteButton = true,
-  });
+  const _CardContent({required this.order, this.showRouteButton = true});
 
   @override
   Widget build(BuildContext context) {
@@ -181,6 +178,23 @@ class _CardContent extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
+            if (!order.isClosed && order.scannedItems.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.qr_code_scanner_rounded,
+                size: 15,
+                color: AppColors.green,
+              ),
+              const SizedBox(width: 3),
+              Text(
+                '${order.scannedItems['water'] ?? 0}',
+                style: const TextStyle(
+                  color: AppColors.green,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
             if (showRouteButton) ...[
               const Spacer(),
               GestureDetector(

@@ -5,8 +5,10 @@ class _DeliverySheet extends StatefulWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final Map<String, int> scannedItems;
   final double totalPrice;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
+  final ValueChanged<Map<String, int>> onScannedItemsChanged;
   final Future<void> Function(_DeliveryConfirmation confirmation) onConfirm;
 
   const _DeliverySheet({
@@ -14,8 +16,10 @@ class _DeliverySheet extends StatefulWidget {
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.scannedItems,
     required this.totalPrice,
     required this.onPaymentTypeChanged,
+    required this.onScannedItemsChanged,
     required this.onConfirm,
   });
 
@@ -34,6 +38,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   void initState() {
     super.initState();
     _paymentType = widget.paymentType;
+    _scannedItems.addAll(widget.scannedItems);
   }
 
   @override
@@ -211,7 +216,20 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   }
 
   void _setWaterScanResult(int result) {
-    setState(() => _scannedItems['water'] = result);
+    _setScannedItems({'water': result});
+  }
+
+  void _resetWaterScanResult() {
+    _setScannedItems({});
+  }
+
+  void _setScannedItems(Map<String, int> value) {
+    setState(() {
+      _scannedItems
+        ..clear()
+        ..addAll(value);
+    });
+    widget.onScannedItemsChanged(Map.unmodifiable(_scannedItems));
   }
 
   void _selectQrPaymentAndOpen() {

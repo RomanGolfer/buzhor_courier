@@ -51,6 +51,27 @@ class _OrderItemsCard extends StatelessWidget {
               ),
             ],
           ),
+          if (!order.isClosed && order.scannedItems.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: AppColors.green,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '${order.scannedItems['water'] ?? 0} / $bottles отсканировано',
+                  style: const TextStyle(
+                    color: AppColors.green,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ],
           const _RowDivider(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
