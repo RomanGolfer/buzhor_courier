@@ -2,6 +2,8 @@ enum PaymentType { card, cash, qr, online, contract }
 
 enum OrderDeliveryState { active, delivered, failed }
 
+const Object _copyWithSentinel = Object();
+
 class OrderItem {
   final String id;
   final String clientName;
@@ -113,13 +115,15 @@ class OrderItem {
     OrderDeliveryState? deliveryState,
     double? price,
     PaymentType? payment,
-    int? deliveredBottles,
-    int? returnedBottles,
-    PaymentType? confirmedPayment,
+    Object? comment = _copyWithSentinel,
+    Object? phone = _copyWithSentinel,
+    Object? deliveredBottles = _copyWithSentinel,
+    Object? returnedBottles = _copyWithSentinel,
+    Object? confirmedPayment = _copyWithSentinel,
     Map<String, int>? extras,
     Map<String, int>? scannedItems,
-    String? deliveryComment,
-    String? failureReason,
+    Object? deliveryComment = _copyWithSentinel,
+    Object? failureReason = _copyWithSentinel,
   }) => OrderItem(
     id: id,
     clientName: clientName,
@@ -132,16 +136,21 @@ class OrderItem {
     lng: lng,
     isDone: isDone ?? this.isDone,
     deliveryState: deliveryState ?? this.deliveryState,
-    comment: comment,
-    phone: phone,
-    deliveredBottles: deliveredBottles ?? this.deliveredBottles,
-    returnedBottles: returnedBottles ?? this.returnedBottles,
-    confirmedPayment: confirmedPayment ?? this.confirmedPayment,
+    comment: _copyNullable(comment, this.comment),
+    phone: _copyNullable(phone, this.phone),
+    deliveredBottles: _copyNullable(deliveredBottles, this.deliveredBottles),
+    returnedBottles: _copyNullable(returnedBottles, this.returnedBottles),
+    confirmedPayment: _copyNullable(confirmedPayment, this.confirmedPayment),
     extras: extras ?? this.extras,
     scannedItems: scannedItems ?? this.scannedItems,
-    deliveryComment: deliveryComment ?? this.deliveryComment,
-    failureReason: failureReason ?? this.failureReason,
+    deliveryComment: _copyNullable(deliveryComment, this.deliveryComment),
+    failureReason: _copyNullable(failureReason, this.failureReason),
   );
+}
+
+T? _copyNullable<T>(Object? value, T? fallback) {
+  if (identical(value, _copyWithSentinel)) return fallback;
+  return value as T?;
 }
 
 PaymentType _paymentTypeFromName(String name) {
