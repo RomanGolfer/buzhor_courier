@@ -1,17 +1,18 @@
 # buzhor_courier
 
-A new Flutter project.
+Buzhor Courier is a Flutter courier app for delivery execution, route work,
+payment handoff, and local-first order handling.
 
-## Getting Started
+## Architecture
 
-This project is a starting point for a Flutter application.
+- [Backend and sync architecture](docs/backend_sync_architecture.md)
 
-A few resources to get you started if this is your first Flutter project:
+## Validation
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Before committing production changes, run:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```sh
+dart analyze
+flutter test
+flutter build apk --debug
+```
