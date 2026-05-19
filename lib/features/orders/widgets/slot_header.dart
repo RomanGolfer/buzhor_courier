@@ -4,6 +4,9 @@ import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart'
 import 'package:buzhor_courier/features/orders/widgets/order_card.dart';
 import 'package:flutter/material.dart';
 
+part 'slot_header_summary.dart';
+part 'slot_orders_list.dart';
+
 const double _routeActionColumnWidth = 112;
 
 class SlotHeader extends StatelessWidget {
@@ -20,11 +23,6 @@ class SlotHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = AppColors.isDark(context);
-    final totalBottles = slot.orders.fold<int>(
-      0,
-      (sum, order) => sum + order.bottles,
-    );
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       child: IntrinsicHeight(
@@ -43,157 +41,12 @@ class SlotHeader extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  GestureDetector(
-                    onTap: onToggle,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 4),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface(context),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark
-                                ? Colors.black.withValues(alpha: 0.22)
-                                : AppColors.blue.withValues(alpha: 0.10),
-                            blurRadius: isDark ? 16 : 12,
-                            offset: const Offset(0, 3),
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.14 : 0.04,
-                            ),
-                            blurRadius: 4,
-                            offset: const Offset(0, 1),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        slot.label,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: AppColors.textPrimary(context),
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    const Icon(
-                                      Icons.water_drop_rounded,
-                                      size: 13,
-                                      color: AppColors.lightBlue,
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Container(
-                                      width: 22,
-                                      height: 22,
-                                      decoration: BoxDecoration(
-                                        color: AppColors.blue.withValues(
-                                          alpha: 0.10,
-                                        ),
-                                        borderRadius: BorderRadius.circular(7),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '$totalBottles',
-                                          style: const TextStyle(
-                                            color: AppColors.blue,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${slot.orders.length} заказов',
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary(
-                                      context,
-                                    ).withValues(alpha: 0.74),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            width: _routeActionColumnWidth,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                GestureDetector(
-                                  onTap: onBuildRoute,
-                                  child: Container(
-                                    width: 36,
-                                    height: 32,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.softSurface(context),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: AppColors.orange.withValues(
-                                          alpha: isDark ? 0.42 : 0.30,
-                                        ),
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.route_rounded,
-                                      color: AppColors.orange,
-                                      size: 17,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                AnimatedRotation(
-                                  turns: slot.isExpanded ? 0.5 : 0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: const Icon(
-                                    Icons.expand_less_rounded,
-                                    color: AppColors.blue,
-                                    size: 20,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  _SlotHeaderSummary(
+                    slot: slot,
+                    onToggle: onToggle,
+                    onBuildRoute: onBuildRoute,
                   ),
-                  if (slot.isExpanded)
-                    Column(
-                      children: List.generate(
-                        slot.orders.length,
-                        (i) => OrderCard(
-                          order: slot.orders[i],
-                          number: i + 1,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  OrderDetailScreen(order: slot.orders[i]),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+                  if (slot.isExpanded) _SlotOrdersList(slot: slot),
                 ],
               ),
             ),
