@@ -11,6 +11,7 @@ part 'route_detail/route_map_widget.dart';
 part 'route_detail/route_header.dart';
 part 'route_detail/route_overlay_controls.dart';
 part 'route_detail/route_address_search_sheet.dart';
+part 'route_detail/route_screen_widgets.dart';
 part 'route_detail/route_stops_sheet.dart';
 part 'route_detail/route_stop_card.dart';
 
@@ -185,50 +186,7 @@ class _RouteScreenState extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     if (widget.orders.isEmpty) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.inbox_rounded,
-                size: 56,
-                color: Color(0xFF8AACCC),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Нет активных заказов',
-                style: TextStyle(
-                  color: AppColors.darkBlue,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.blue,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Назад',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _RouteEmptyState(onBack: () => Navigator.pop(context));
     }
 
     final allPoints = [
@@ -287,55 +245,8 @@ class _RouteScreenState extends State<RouteScreen> {
               onTap: _toggleLowDataMode,
             ),
           ),
-          if (_isLoadingRoute)
-            const Positioned(
-              top: 80,
-              right: 16,
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  color: AppColors.orange,
-                  strokeWidth: 2.5,
-                ),
-              ),
-            ),
-          if (_startPoint == null)
-            Positioned(
-              bottom: 220,
-              left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.darkBlue.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.touch_app_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Удерживайте карту для выбора точки старта',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          if (_isLoadingRoute) const _RouteLoadingIndicator(),
+          if (_startPoint == null) const _RouteStartHint(),
           Positioned(
             left: 0,
             right: 0,
