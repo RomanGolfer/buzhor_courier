@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 part 'order_card_badges.dart';
 part 'order_card_content.dart';
+part 'order_card_content_sections.dart';
 
 class OrderCard extends StatelessWidget {
   final OrderItem order;
