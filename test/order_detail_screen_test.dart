@@ -162,6 +162,29 @@ void main() {
     expect(find.text('840 ₽'), findsOneWidget);
   });
 
+  testWidgets('shows payment QR generation action in delivery sheet', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(home: OrderDetailScreen(order: _activeOrder)),
+      ),
+    );
+
+    await tester.tap(find.text('Доставлен'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Маркировка товаров'), findsOneWidget);
+    expect(find.text('Сгенерировать QR для оплаты'), findsOneWidget);
+
+    await tester.tap(find.text('Сгенерировать QR для оплаты'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('QR для оплаты'), findsOneWidget);
+    expect(find.text('Заказ #3'), findsOneWidget);
+    expect(find.text('840 ₽'), findsOneWidget);
+  });
+
   testWidgets('copies order number from payment QR screen', (tester) async {
     final clipboardWrites = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

@@ -136,7 +136,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           widget.order.id,
           bottles: _bottles,
           returnedBottles: confirmation.returnedBottles,
-          paymentType: _paymentType,
+          paymentType: confirmation.paymentType,
           extras: _extras,
           scannedItems: confirmation.scannedItems,
           comment: confirmation.comment,
@@ -185,11 +185,13 @@ String _paymentLabel(PaymentType type) => switch (type) {
 class _DeliveryConfirmation {
   final int returnedBottles;
   final Map<String, int> scannedItems;
+  final PaymentType paymentType;
   final String? comment;
 
   const _DeliveryConfirmation({
     required this.returnedBottles,
     required this.scannedItems,
+    required this.paymentType,
     required this.comment,
   });
 }
