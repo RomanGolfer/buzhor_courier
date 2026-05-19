@@ -24,6 +24,7 @@ part 'order_detail/delivery_sheet_sections.dart';
 part 'order_detail/delivery_summary.dart';
 part 'order_detail/failure_sheet.dart';
 part 'order_detail/shared_widgets.dart';
+part 'order_detail/payment_qr_widgets.dart';
 
 const _dispatcherPhone = '+79385358777';
 
