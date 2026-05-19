@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
@@ -29,22 +30,17 @@ class OrderRepository {
     String? comment,
   }) async {
     await _ensureLoaded();
-    _replaceOrder(
-      orderId,
-      (order) => order.copyWith(
-        isDone: true,
-        deliveryState: OrderDeliveryState.delivered,
-        price: OrderPricingService.orderTotal(bottles: bottles, extras: extras),
-        deliveredBottles: bottles,
+    await _commitAction(
+      OrderActionJournalEntry.complete(
+        orderId,
+        bottles: bottles,
         returnedBottles: returnedBottles,
-        confirmedPayment: paymentType,
-        extras: Map.unmodifiable(extras),
-        scannedItems: Map.unmodifiable(scannedItems),
-        deliveryComment: _normalizeOptionalText(comment),
-        failureReason: null,
+        paymentType: paymentType,
+        extras: extras,
+        scannedItems: scannedItems,
+        comment: comment,
       ),
     );
-    await _persist();
     return fetchOrders();
   }
 
@@ -56,28 +52,15 @@ class OrderRepository {
     final normalizedReason = _normalizeOptionalText(reason);
     if (normalizedReason == null) return fetchOrders();
 
-    _replaceOrder(
-      orderId,
-      (order) => order.copyWith(
-        isDone: false,
-        deliveryState: OrderDeliveryState.failed,
-        failureReason: normalizedReason,
-        deliveryComment: null,
-      ),
+    await _commitAction(
+      OrderActionJournalEntry.fail(orderId, reason: normalizedReason),
     );
-    await _persist();
     return fetchOrders();
   }
 
   Future<List<OrderItem>> upsertOrder(OrderItem incomingOrder) async {
     await _ensureLoaded();
-    final index = _orders.indexWhere((order) => order.id == incomingOrder.id);
-    if (index == -1) {
-      _orders.add(incomingOrder);
-    } else {
-      _orders[index] = incomingOrder;
-    }
-    await _persist();
+    await _commitAction(OrderActionJournalEntry.upsert(incomingOrder));
     return fetchOrders();
   }
 
@@ -88,11 +71,83 @@ class OrderRepository {
     _orders
       ..clear()
       ..addAll(orders.map(_normalizePrice));
+    await _replayActionJournal();
     _hasLoaded = true;
   }
 
   Future<void> _persist() async {
     await _storage?.saveOrders(List.unmodifiable(_orders));
+  }
+
+  Future<void> _commitAction(OrderActionJournalEntry entry) async {
+    await _storage?.appendActionJournalEntry(entry);
+    _applyAction(entry);
+    await _persist();
+    await _storage?.clearActionJournal();
+  }
+
+  Future<void> _replayActionJournal() async {
+    final entries = await _storage?.loadActionJournal() ?? const [];
+    if (entries.isEmpty) return;
+
+    for (final entry in entries) {
+      _applyAction(entry);
+    }
+    await _persist();
+    await _storage?.clearActionJournal();
+  }
+
+  void _applyAction(OrderActionJournalEntry entry) {
+    switch (entry.type) {
+      case OrderActionType.complete:
+        _replaceOrder(entry.orderId, (order) {
+          final bottles = entry.payload['bottles'] as int;
+          final extras = _intMap(entry.payload['extras']);
+          return order.copyWith(
+            isDone: true,
+            deliveryState: OrderDeliveryState.delivered,
+            price: OrderPricingService.orderTotal(
+              bottles: bottles,
+              extras: extras,
+            ),
+            deliveredBottles: bottles,
+            returnedBottles: entry.payload['returnedBottles'] as int,
+            confirmedPayment: _paymentTypeFromName(
+              entry.payload['paymentType'] as String,
+            ),
+            extras: Map.unmodifiable(extras),
+            scannedItems: Map.unmodifiable(
+              _intMap(entry.payload['scannedItems']),
+            ),
+            deliveryComment: _normalizeOptionalText(
+              entry.payload['comment'] as String?,
+            ),
+            failureReason: null,
+          );
+        });
+      case OrderActionType.fail:
+        _replaceOrder(
+          entry.orderId,
+          (order) => order.copyWith(
+            isDone: false,
+            deliveryState: OrderDeliveryState.failed,
+            failureReason: _normalizeOptionalText(
+              entry.payload['reason'] as String?,
+            ),
+            deliveryComment: null,
+          ),
+        );
+      case OrderActionType.upsert:
+        final order = OrderItem.fromJson(
+          entry.payload['order'] as Map<String, dynamic>,
+        );
+        final index = _orders.indexWhere((item) => item.id == order.id);
+        if (index == -1) {
+          _orders.add(order);
+        } else {
+          _orders[index] = order;
+        }
+    }
   }
 
   void _replaceOrder(String orderId, OrderItem Function(OrderItem) update) {
@@ -116,6 +171,18 @@ class OrderRepository {
     if (order.price == currentPrice) return order;
     return order.copyWith(price: currentPrice);
   }
+}
+
+Map<String, int> _intMap(Object? value) {
+  if (value is! Map) return const {};
+  return value.map((key, value) => MapEntry(key as String, value as int));
+}
+
+PaymentType _paymentTypeFromName(String name) {
+  return PaymentType.values.firstWhere(
+    (type) => type.name == name,
+    orElse: () => PaymentType.cash,
+  );
 }
 
 final orderRepositoryProvider = Provider<OrderRepository>(

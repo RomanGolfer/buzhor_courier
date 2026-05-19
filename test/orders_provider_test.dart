@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/features/orders/data/order_repository.dart';
+import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
@@ -166,6 +167,34 @@ void main() {
     expect(restored.single.scannedItems, {'water': 2});
   });
 
+  test('repository replays unfinished local action journal', () async {
+    final storage = _FakeOrderStorage();
+    await storage.appendActionJournalEntry(
+      OrderActionJournalEntry.complete(
+        _activeOrder.id,
+        bottles: 2,
+        returnedBottles: 0,
+        paymentType: PaymentType.cash,
+        extras: const {},
+        scannedItems: const {'water': 2},
+      ),
+    );
+
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+
+    final restored = await repository.fetchOrders();
+
+    expect(
+      restored.single.effectiveDeliveryState,
+      OrderDeliveryState.delivered,
+    );
+    expect(restored.single.scannedItems, {'water': 2});
+    expect(storage.savedActionJournal, isEmpty);
+  });
+
   test('upsertIncomingOrder adds new pushed order', () async {
     final notifier = OrdersNotifier(
       OrderRepository(initialOrders: [_activeOrder]),
@@ -183,6 +212,7 @@ void main() {
 
 class _FakeOrderStorage implements OrderStorage {
   List<OrderItem>? savedOrders;
+  final List<OrderActionJournalEntry> savedActionJournal = [];
 
   @override
   Future<List<OrderItem>?> loadOrders() async {
@@ -192,5 +222,20 @@ class _FakeOrderStorage implements OrderStorage {
   @override
   Future<void> saveOrders(List<OrderItem> orders) async {
     savedOrders = List<OrderItem>.of(orders);
+  }
+
+  @override
+  Future<List<OrderActionJournalEntry>> loadActionJournal() async {
+    return List<OrderActionJournalEntry>.of(savedActionJournal);
+  }
+
+  @override
+  Future<void> appendActionJournalEntry(OrderActionJournalEntry entry) async {
+    savedActionJournal.add(entry);
+  }
+
+  @override
+  Future<void> clearActionJournal() async {
+    savedActionJournal.clear();
   }
 }

@@ -1,15 +1,20 @@
 import 'dart:convert';
 
+import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class OrderStorage {
   Future<List<OrderItem>?> loadOrders();
   Future<void> saveOrders(List<OrderItem> orders);
+  Future<List<OrderActionJournalEntry>> loadActionJournal();
+  Future<void> appendActionJournalEntry(OrderActionJournalEntry entry);
+  Future<void> clearActionJournal();
 }
 
 class SharedPreferencesOrderStorage implements OrderStorage {
   static const _ordersKey = 'orders_cache_v2';
+  static const _actionJournalKey = 'orders_action_journal_v1';
 
   const SharedPreferencesOrderStorage();
 
@@ -34,5 +39,41 @@ class SharedPreferencesOrderStorage implements OrderStorage {
     final prefs = await SharedPreferences.getInstance();
     final raw = jsonEncode(orders.map((order) => order.toJson()).toList());
     await prefs.setString(_ordersKey, raw);
+  }
+
+  @override
+  Future<List<OrderActionJournalEntry>> loadActionJournal() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_actionJournalKey);
+    if (raw == null) return const [];
+
+    try {
+      final data = jsonDecode(raw) as List<dynamic>;
+      return data
+          .map(
+            (item) =>
+                OrderActionJournalEntry.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  @override
+  Future<void> appendActionJournalEntry(OrderActionJournalEntry entry) async {
+    final prefs = await SharedPreferences.getInstance();
+    final entries = await loadActionJournal();
+    final raw = jsonEncode([
+      ...entries.map((entry) => entry.toJson()),
+      entry.toJson(),
+    ]);
+    await prefs.setString(_actionJournalKey, raw);
+  }
+
+  @override
+  Future<void> clearActionJournal() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_actionJournalKey);
   }
 }
