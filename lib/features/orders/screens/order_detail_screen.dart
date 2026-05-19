@@ -33,6 +33,7 @@ part 'order_detail/comment_card.dart';
 part 'order_detail/bottom_buttons.dart';
 part 'order_detail/bottom_sheets.dart';
 part 'order_detail/delivery_sheet_sections.dart';
+part 'order_detail/delivery_sheet_payment_sections.dart';
 part 'order_detail/delivery_summary.dart';
 part 'order_detail/failure_sheet.dart';
 part 'order_detail/shared_widgets.dart';
