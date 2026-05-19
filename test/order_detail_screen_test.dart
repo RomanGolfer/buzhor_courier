@@ -183,6 +183,14 @@ void main() {
     expect(find.text('QR для оплаты'), findsOneWidget);
     expect(find.text('Заказ #3'), findsOneWidget);
     expect(find.text('840 ₽'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Закрыть'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Онлайн'), findsWidgets);
+    expect(find.text('Открыть крупно'), findsOneWidget);
   });
 
   testWidgets('copies order number from payment QR screen', (tester) async {

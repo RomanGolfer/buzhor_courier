@@ -123,6 +123,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               bottles: _bottles,
               paymentType: _paymentType,
               extras: _extras,
+              onPaymentTypeChanged: (value) =>
+                  setState(() => _paymentType = value),
               onDelivered: _completeOrder,
               onFailed: _failOrder,
             ),
