@@ -49,12 +49,23 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   double get _currentTotal =>
       OrderPricingService.orderTotal(bottles: _bottles, extras: _extras);
 
+  OrderItem _resolveOrder(OrdersState state) {
+    return state.activeOrders.firstWhere(
+      (o) => o.id == widget.order.id,
+      orElse: () => state.completedOrders.firstWhere(
+        (o) => o.id == widget.order.id,
+        orElse: () => widget.order,
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
-    _bottles = widget.order.deliveredBottles ?? widget.order.bottles;
-    _paymentType = widget.order.confirmedPayment ?? widget.order.payment;
-    _extras.addAll(widget.order.extras);
+    final initial = _resolveOrder(ref.read(ordersProvider));
+    _bottles = initial.deliveredBottles ?? initial.bottles;
+    _paymentType = initial.confirmedPayment ?? initial.payment;
+    _extras.addAll(initial.extras);
   }
 
   @override
@@ -63,9 +74,53 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     super.dispose();
   }
 
+  void _onBottlesChanged(int value) {
+    setState(() => _bottles = value);
+    _syncToProvider();
+  }
+
+  void _onPaymentTypeChanged(PaymentType value) {
+    setState(() => _paymentType = value);
+    _syncToProvider();
+  }
+
+  void _onExtrasChanged(Map<String, int> value) {
+    setState(() {
+      _extras
+        ..clear()
+        ..addAll(value);
+    });
+    _syncToProvider();
+  }
+
+  void _syncToProvider() {
+    final current = _resolveOrder(ref.read(ordersProvider));
+    if (current.isClosed) return;
+    ref.read(ordersProvider.notifier).updateOrder(
+      current.copyWith(
+        payment: _paymentType,
+        deliveredBottles: _bottles,
+        extras: Map.of(_extras),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
+    final providerState = ref.watch(ordersProvider);
+
+    ref.listen<OrdersState>(ordersProvider, (_, next) {
+      final updated = next.activeOrders.firstWhere(
+        (o) => o.id == widget.order.id,
+        orElse: () => widget.order,
+      );
+      if (!updated.isClosed && updated.payment != _paymentType) {
+        setState(() => _paymentType = updated.payment);
+      }
+    });
+
+    final order = _resolveOrder(providerState);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
@@ -87,15 +142,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                       extras: _extras,
                       totalPrice: _currentTotal,
                       isReadOnly: order.isClosed,
-                      onBottlesChanged: (value) =>
-                          setState(() => _bottles = value),
-                      onPaymentTypeChanged: (value) =>
-                          setState(() => _paymentType = value),
-                      onExtrasChanged: (value) => setState(() {
-                        _extras
-                          ..clear()
-                          ..addAll(value);
-                      }),
+                      onBottlesChanged: _onBottlesChanged,
+                      onPaymentTypeChanged: _onPaymentTypeChanged,
+                      onExtrasChanged: _onExtrasChanged,
                     ),
                     if (!order.isClosed && _paymentType == PaymentType.qr) ...[
                       const SizedBox(height: 12),
@@ -142,8 +191,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               paymentType: _paymentType,
               extras: _extras,
               totalPrice: _currentTotal,
-              onPaymentTypeChanged: (value) =>
-                  setState(() => _paymentType = value),
+              onPaymentTypeChanged: _onPaymentTypeChanged,
               onDelivered: _completeOrder,
               onFailed: _failOrder,
             ),
