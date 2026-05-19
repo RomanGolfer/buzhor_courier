@@ -24,6 +24,7 @@ const List<OrderItem> sampleOrders = [
     bottles: 2,
     lat: 44.9512,
     lng: 37.3421,
+    comment: 'Домофон не работает, звонить по тел.',
     phone: '+79189876543',
   ),
   OrderItem(
@@ -62,6 +63,7 @@ const List<OrderItem> sampleOrders = [
     bottles: 1,
     lat: 44.7891,
     lng: 37.4234,
+    comment: 'Позвонить за 30 минут',
     phone: '+79284445566',
   ),
   OrderItem(
@@ -88,6 +90,7 @@ const List<OrderItem> sampleOrders = [
     bottles: 3,
     lat: 44.9489,
     lng: 37.3398,
+    comment: 'Код домофона #4230',
     phone: '+79610009988',
   ),
 ];
