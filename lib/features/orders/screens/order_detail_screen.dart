@@ -17,6 +17,8 @@ part 'order_detail/address_card.dart';
 part 'order_detail/address_card_payment.dart';
 part 'order_detail/address_card_extras.dart';
 part 'order_detail/communication_cards.dart';
+part 'order_detail/dispatcher_header_panel.dart';
+part 'order_detail/quick_sms_card.dart';
 part 'order_detail/order_info_cards.dart';
 part 'order_detail/bottom_buttons.dart';
 part 'order_detail/bottom_sheets.dart';
