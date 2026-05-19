@@ -32,7 +32,10 @@ part 'order_detail/delivery_sheet_sections.dart';
 part 'order_detail/delivery_summary.dart';
 part 'order_detail/failure_sheet.dart';
 part 'order_detail/shared_widgets.dart';
-part 'order_detail/payment_qr_widgets.dart';
+part 'order_detail/payment_qr_panel.dart';
+part 'order_detail/payment_qr_full_screen.dart';
+part 'order_detail/payment_qr_cards.dart';
+part 'order_detail/payment_qr_payload.dart';
 
 const _dispatcherPhone = '+79385358777';
 
