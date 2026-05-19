@@ -30,6 +30,7 @@ class _PaymentQrPanel extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'QR для оплаты',
@@ -65,7 +66,6 @@ class _PaymentQrPanel extends StatelessWidget {
     );
   }
 }
-
 class _PaymentQrOpenTarget extends StatelessWidget {
   final OrderItem order;
   final double amount;
@@ -148,6 +148,8 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   PaymentStatusCheck? _paymentCheck;
   bool _isCheckingPayment = false;
   bool _isPaymentCheckInFlight = false;
+  bool _isSharing = false;
+  final GlobalKey _paymentQrImageKey = GlobalKey();
   Timer? _paymentPollingTimer;
 
   @override
@@ -164,137 +166,209 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    final qrSize = (media.size.shortestSide - 48).clamp(280.0, 420.0);
     final order = widget.order;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      media.size.height -
-                      media.padding.top -
-                      media.padding.bottom -
-                      64,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final maxHeight = constraints.maxHeight;
+            final maxWidth = constraints.maxWidth;
+            final isCompact = maxHeight < 760 || maxWidth < 360;
+            final buttonHeight = isCompact ? 44.0 : 48.0;
+            final buttonSpacing = isCompact ? 8.0 : 12.0;
+            final reservedHeight = (isCompact ? 320.0 : 340.0) + buttonHeight * 2 + buttonSpacing;
+            final qrSize = math.min(
+              (maxWidth - 40).clamp(260.0, 380.0),
+              (maxHeight - reservedHeight).clamp(260.0, 380.0),
+            );
+
+            return Stack(
+              children: [
+                Column(
                   children: [
-                    Image.asset(
-                      'assets/buzhor_logo_transparent.png',
-                      key: const Key('paymentQrLogo'),
-                      height: 72,
-                      fit: BoxFit.contain,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'QR для оплаты',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.darkBlue,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    GestureDetector(
-                      onLongPress: () => _copyPaymentOrderId(context, order),
-                      child: Text(
-                        'Заказ ${order.id}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: AppColors.grayBlue,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                    Expanded(
+                      child: Center(
+                        child: LayoutBuilder(
+                          builder: (context, cardConstraints) {
+                            final cardHeight = cardConstraints.maxHeight;
+                            final cardCompact = cardHeight < 520 || isCompact;
+                            final reducedQrSize = math.min(
+                              qrSize,
+                              (cardHeight - (cardCompact ? 220.0 : 260.0))
+                                  .clamp(260.0, 340.0),
+                            );
+
+                            return _PaymentQrVisibleCard(
+                              order: order,
+                              amount: widget.amount,
+                              qrSize: reducedQrSize,
+                              compact: cardCompact,
+                            );
+                          },
                         ),
                       ),
                     ),
-                    const SizedBox(height: 28),
-                    Center(
-                      child: _PaymentQrView(
-                        payload: _paymentQrPayload(
-                          order,
-                          amount: widget.amount,
+                    SafeArea(
+                      top: false,
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          20,
+                          0,
+                          20,
+                          isCompact ? 10 : 14,
                         ),
-                        size: qrSize.toDouble(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: double.infinity,
+                              height: buttonHeight,
+                              child: ElevatedButton.icon(
+                                onPressed: _isCheckingPayment ? null : _checkPayment,
+                                icon: Icon(
+                                  _isCheckingPayment
+                                      ? Icons.hourglass_top_rounded
+                                      : Icons.verified_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                label: Text(
+                                  _isCheckingPayment
+                                      ? 'Проверяем...'
+                                      : 'Проверить оплату',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.blue,
+                                  disabledBackgroundColor:
+                                      AppColors.grayBlueLight,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: buttonSpacing),
+                            SizedBox(
+                              width: double.infinity,
+                              height: buttonHeight,
+                              child: OutlinedButton.icon(
+                                onPressed: _isSharing ? null : _sharePaymentQr,
+                                icon: Icon(
+                                  _isSharing
+                                      ? Icons.hourglass_top_rounded
+                                      : Icons.share_rounded,
+                                  size: 20,
+                                ),
+                                label: Text(
+                                  _isSharing ? 'Подготовка...' : 'Отправить QR',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.blue,
+                                  side: BorderSide(color: AppColors.blue),
+                                  disabledForegroundColor: AppColors.grayBlue,
+                                  disabledBackgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (_paymentCheck != null) ...[
+                              const SizedBox(height: 10),
+                              _PaymentStatusNotice(check: _paymentCheck!),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 28),
-                    const Text(
-                      'К оплате',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.grayBlue, fontSize: 16),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${widget.amount.toInt()} ₽',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: AppColors.darkBlue,
-                        fontSize: 40,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 56,
-                      child: ElevatedButton.icon(
-                        onPressed: _isCheckingPayment ? null : _checkPayment,
-                        icon: Icon(
-                          _isCheckingPayment
-                              ? Icons.hourglass_top_rounded
-                              : Icons.verified_rounded,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        label: Text(
-                          _isCheckingPayment
-                              ? 'Проверяем...'
-                              : 'Проверить оплату',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.blue,
-                          disabledBackgroundColor: AppColors.grayBlueLight,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_paymentCheck != null) ...[
-                      const SizedBox(height: 12),
-                      _PaymentStatusNotice(check: _paymentCheck!),
-                    ],
                   ],
                 ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-                color: AppColors.grayBlue,
-                tooltip: 'Закрыть',
-              ),
-            ),
-          ],
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                    color: AppColors.grayBlue,
+                    tooltip: 'Закрыть',
+                  ),
+                ),
+                Offstage(
+                  offstage: true,
+                  child: SizedBox(
+                    width: 360,
+                    child: RepaintBoundary(
+                      key: _paymentQrImageKey,
+                      child: _PaymentQrShareCard(
+                        order: order,
+                        amount: widget.amount,
+                        qrSize: 300,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
+  }
+
+  Future<void> _sharePaymentQr() async {
+    if (_isSharing) return;
+    setState(() => _isSharing = true);
+    try {
+      final imageFile = await _capturePaymentQrImage();
+      if (!mounted || imageFile == null) return;
+
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'QR для оплаты заказа ${widget.order.id} на сумму ${widget.amount.toInt()} ₽',
+          files: [XFile(imageFile.path)],
+        ),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Не удалось подготовить QR для отправки'),
+          ));
+      }
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
+    }
+  }
+
+  Future<File?> _capturePaymentQrImage() async {
+    final renderObject = _paymentQrImageKey.currentContext
+        ?.findRenderObject();
+    if (renderObject is! RenderRepaintBoundary) return null;
+
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio.clamp(3.0, 4.0);
+    final image = await renderObject.toImage(pixelRatio: pixelRatio);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return null;
+
+    final bytes = byteData.buffer.asUint8List();
+    final tempDir = await getTemporaryDirectory();
+    final file = File(
+      '${tempDir.path}/payment_qr_${widget.order.id.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png',
+    );
+    await file.writeAsBytes(bytes);
+    return file;
   }
 
   void _startPaymentPolling() {
@@ -398,6 +472,169 @@ Future<void> _copyPaymentOrderId(BuildContext context, OrderItem order) async {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(const SnackBar(content: Text('Номер заказа скопирован')));
+}
+
+class _PaymentQrVisibleCard extends StatelessWidget {
+  final OrderItem order;
+  final double amount;
+  final double qrSize;
+  final bool compact;
+
+  const _PaymentQrVisibleCard({
+    required this.order,
+    required this.amount,
+    required this.qrSize,
+    required this.compact,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 14 : 18,
+        vertical: compact ? 14 : 18,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.dividerColor(context)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/buzhor_logo_transparent.png',
+            height: compact ? 60 : 72,
+            fit: BoxFit.contain,
+          ),
+          SizedBox(height: compact ? 10 : 14),
+          Text(
+            'QR для оплаты',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.darkBlue,
+              fontSize: compact ? 24 : 28,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: compact ? 8 : 10),
+          GestureDetector(
+            onLongPress: () => _copyPaymentOrderId(context, order),
+            child: Text(
+              'Заказ ${order.id}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppColors.grayBlue,
+                fontSize: compact ? 18 : 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          SizedBox(height: compact ? 16 : 20),
+          _PaymentQrView(
+            payload: _paymentQrPayload(order, amount: amount),
+            size: qrSize,
+          ),
+          SizedBox(height: compact ? 14 : 18),
+          const Text(
+            'К оплате',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.grayBlue, fontSize: 16),
+          ),
+          SizedBox(height: compact ? 6 : 8),
+          Text(
+            '${amount.toInt()} ₽',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.darkBlue,
+              fontSize: compact ? 34 : 40,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentQrShareCard extends StatelessWidget {
+  final OrderItem order;
+  final double amount;
+  final double qrSize;
+
+  const _PaymentQrShareCard({
+    required this.order,
+    required this.amount,
+    required this.qrSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: AppColors.dividerColor(context)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Image.asset(
+            'assets/buzhor_logo_transparent.png',
+            height: 72,
+            fit: BoxFit.contain,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'QR для оплаты',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.darkBlue,
+              fontSize: 28,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 12),
+          GestureDetector(
+            onLongPress: () => _copyPaymentOrderId(context, order),
+            child: Text(
+              'Заказ ${order.id}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.grayBlue,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 28),
+          _PaymentQrView(
+            payload: _paymentQrPayload(order, amount: amount),
+            size: qrSize,
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'К оплате',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: AppColors.grayBlue, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${amount.toInt()} ₽',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.darkBlue,
+              fontSize: 40,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 String _paymentQrPayload(OrderItem order, {double? amount}) {

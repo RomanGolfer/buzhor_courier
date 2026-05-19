@@ -9,7 +9,8 @@
       "Bash(Remove-Item \"c:\\\\Users\\\\icema\\\\buzhor_courier\\\\lib\\\\core\\\\theme\\\\app_colors.dart\" -Force)",
       "Bash(Remove-Item \"c:\\\\Users\\\\icema\\\\buzhor_courier\\\\lib\\\\features\\\\route\\\\services\\\\route_service.dart\" -Force)",
       "Bash(flutter test *)",
-      "Bash(flutter pub *)"
+      "Bash(flutter pub *)",
+      "Bash(git revert *)"
     ]
   }
 }

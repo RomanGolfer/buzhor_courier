@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
@@ -8,9 +11,12 @@ import 'package:buzhor_courier/features/orders/screens/qr_scanner_screen.dart';
 import 'package:buzhor_courier/features/orders/services/order_pricing_service.dart';
 import 'package:buzhor_courier/features/orders/services/payment_status_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
 
 part 'order_detail/header.dart';
 part 'order_detail/address_card.dart';
