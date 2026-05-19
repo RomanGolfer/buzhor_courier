@@ -100,8 +100,20 @@ extension _HomeHeader on _HomeScreenState {
       );
     }
 
+    final isDeniedForever =
+        locationState.error == GpsError.permissionDeniedForever;
+    final isServiceDisabled = locationState.error == GpsError.serviceDisabled;
+
     return GestureDetector(
-      onTap: () => ref.read(locationProvider.notifier).refreshLocation(),
+      onTap: () async {
+        if (isDeniedForever) {
+          await LocationUtils.openSettings();
+        } else if (isServiceDisabled) {
+          await LocationUtils.openLocationSettings();
+        } else {
+          ref.read(locationProvider.notifier).refreshLocation();
+        }
+      },
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -112,7 +124,11 @@ extension _HomeHeader on _HomeScreenState {
           ),
           const SizedBox(width: 4),
           Text(
-            'GPS',
+            isDeniedForever
+                ? 'Нет доступа'
+                : isServiceDisabled
+                ? 'Выкл'
+                : 'GPS',
             style: TextStyle(
               color: Colors.white.withValues(alpha: 0.55),
               fontSize: 11,
