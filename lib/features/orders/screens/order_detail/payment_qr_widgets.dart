@@ -1,3 +1,4 @@
+// ignore_for_file: use_build_context_synchronously
 part of '../order_detail_screen.dart';
 
 class _PaymentQrPanel extends StatelessWidget {
@@ -145,7 +146,7 @@ class _PaymentQrFullScreen extends ConsumerStatefulWidget {
 class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   static const _paymentPollingInterval = Duration(seconds: 7);
 
-  PaymentStatusCheck? _paymentCheck;
+  // Payment status check is temporarily disabled in the UI.
   bool _isCheckingPayment = false;
   bool _isPaymentCheckInFlight = false;
   bool _isSharing = false;
@@ -226,7 +227,7 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                               width: double.infinity,
                               height: buttonHeight,
                               child: ElevatedButton.icon(
-                                onPressed: _isCheckingPayment ? null : _checkPayment,
+                                onPressed: _isCheckingPayment ? null : _onCheckPaymentPressed,
                                 icon: Icon(
                                   _isCheckingPayment
                                       ? Icons.hourglass_top_rounded
@@ -284,10 +285,7 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                                 ),
                               ),
                             ),
-                            if (_paymentCheck != null) ...[
-                              const SizedBox(height: 10),
-                              _PaymentStatusNotice(check: _paymentCheck!),
-                            ],
+                            // Payment status panel intentionally hidden until feature is implemented.
                           ],
                         ),
                       ),
@@ -304,16 +302,24 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                     tooltip: 'Закрыть',
                   ),
                 ),
-                Offstage(
-                  offstage: true,
-                  child: SizedBox(
-                    width: 360,
-                    child: RepaintBoundary(
-                      key: _paymentQrImageKey,
-                      child: _PaymentQrShareCard(
-                        order: order,
-                        amount: widget.amount,
-                        qrSize: 300,
+                // Positioned off-screen (not Offstage) so Flutter still paints
+                // the widget — required for RepaintBoundary.toImage() to work.
+                // Outer ColoredBox ensures the full PNG canvas is solid white
+                // with no transparent pixels (prevents black corners in messengers).
+                Positioned(
+                  left: -9999,
+                  top: -9999,
+                  child: RepaintBoundary(
+                    key: _paymentQrImageKey,
+                    child: ColoredBox(
+                      color: Colors.white,
+                      child: SizedBox(
+                        width: 360,
+                        child: _PaymentQrShareCard(
+                          order: order,
+                          amount: widget.amount,
+                          qrSize: 300,
+                        ),
                       ),
                     ),
                   ),
@@ -329,46 +335,113 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   Future<void> _sharePaymentQr() async {
     if (_isSharing) return;
     setState(() => _isSharing = true);
-    try {
-      final imageFile = await _capturePaymentQrImage();
-      if (!mounted || imageFile == null) return;
 
-      await SharePlus.instance.share(
-        ShareParams(
-          text: 'QR для оплаты заказа ${widget.order.id} на сумму ${widget.amount.toInt()} ₽',
-          files: [XFile(imageFile.path)],
-        ),
-      );
-    } catch (_) {
+    final File? imageFile;
+    try {
+      imageFile = await _capturePaymentQrImage();
+    } catch (e, st) {
+      debugPrint('QR capture error: $e\n$st');
       if (mounted) {
+        setState(() => _isSharing = false);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(const SnackBar(
             content: Text('Не удалось подготовить QR для отправки'),
           ));
       }
-    } finally {
-      if (mounted) setState(() => _isSharing = false);
+      return;
+    }
+
+    if (imageFile == null) {
+      debugPrint('QR share failed: captured image is null');
+      if (mounted) {
+        setState(() => _isSharing = false);
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(const SnackBar(
+            content: Text('Не удалось подготовить QR для отправки'),
+          ));
+      }
+      return;
+    }
+
+    debugPrint('QR share: image ready at ${imageFile.path}');
+
+    // Navigate back to the orders list before opening the share sheet so that
+    // when the courier returns from the messenger, they land on HomeScreen.
+    // HomeScreen is route.isFirst because LoginScreen was pushReplacement'd.
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+
+    // Brief pause for the pop animation to settle before the share sheet opens.
+    await Future.delayed(const Duration(milliseconds: 150));
+
+    try {
+      await SharePlus.instance.share(
+        ShareParams(
+          text: 'QR для оплаты заказа ${widget.order.id} на сумму ${widget.amount.toInt()} ₽',
+          files: [XFile(imageFile.path)],
+        ),
+      );
+      debugPrint('QR share: completed successfully');
+    } catch (e, st) {
+      debugPrint('QR share error after navigation: $e\n$st');
+      // Widget is already disposed at this point; no UI feedback needed.
     }
   }
 
   Future<File?> _capturePaymentQrImage() async {
-    final renderObject = _paymentQrImageKey.currentContext
-        ?.findRenderObject();
-    if (renderObject is! RenderRepaintBoundary) return null;
+    try {
+      // Capture pixel ratio before async operations (avoid using BuildContext across await)
+      final pixelRatio = ui.PlatformDispatcher.instance.views.first.devicePixelRatio.clamp(3.0, 4.0);
+      
+      // Wait for the next frame to ensure the RepaintBoundary is fully laid out
+      await WidgetsBinding.instance.endOfFrame;
+      debugPrint('QR capture: waited for frame');
 
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio.clamp(3.0, 4.0);
-    final image = await renderObject.toImage(pixelRatio: pixelRatio);
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData == null) return null;
+      final boundaryContext = _paymentQrImageKey.currentContext;
+      if (boundaryContext == null) {
+        debugPrint('QR capture: boundary context is null');
+        return null;
+      }
 
-    final bytes = byteData.buffer.asUint8List();
-    final tempDir = await getTemporaryDirectory();
-    final file = File(
-      '${tempDir.path}/payment_qr_${widget.order.id.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png',
-    );
-    await file.writeAsBytes(bytes);
-    return file;
+      final renderObject = boundaryContext.findRenderObject();
+      if (renderObject == null) {
+        debugPrint('QR capture: render object is null');
+        return null;
+      }
+
+      if (renderObject is! RenderRepaintBoundary) {
+        debugPrint('QR capture: render object is not RenderRepaintBoundary, got ${renderObject.runtimeType}');
+        return null;
+      }
+
+      debugPrint('QR capture: capturing image with pixelRatio $pixelRatio');
+      final image = await renderObject.toImage(pixelRatio: pixelRatio);
+      debugPrint('QR capture: image captured');
+
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        debugPrint('QR capture: byteData is null after toByteData');
+        return null;
+      }
+
+      final bytes = byteData.buffer.asUint8List();
+      debugPrint('QR capture: converted to bytes (${bytes.length} bytes)');
+
+      final tempDir = await getTemporaryDirectory();
+      final fileName = 'payment_qr_${widget.order.id.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png';
+      final file = File('${tempDir.path}/$fileName');
+      debugPrint('QR capture: writing to ${file.path}');
+
+      await file.writeAsBytes(bytes, flush: true);
+      debugPrint('QR capture: file written successfully (${file.lengthSync()} bytes)');
+      return file;
+    } catch (e, st) {
+      debugPrint('QR capture error: $e\n$st');
+      return null;
+    }
   }
 
   void _startPaymentPolling() {
@@ -407,10 +480,7 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
       }
     }
 
-    setState(() {
-      _paymentCheck = result;
-      _isCheckingPayment = false;
-    });
+    setState(() => _isCheckingPayment = false);
 
     if (showFeedback) {
       ScaffoldMessenger.of(context)
@@ -418,53 +488,18 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
         ..showSnackBar(SnackBar(content: Text(result.message)));
     }
   }
-}
 
-class _PaymentStatusNotice extends StatelessWidget {
-  final PaymentStatusCheck check;
-
-  const _PaymentStatusNotice({required this.check});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (check.status) {
-      PaymentCheckStatus.paid => AppColors.green,
-      PaymentCheckStatus.pending => AppColors.orange,
-      PaymentCheckStatus.unavailable => AppColors.grayBlue,
-    };
-    final icon = switch (check.status) {
-      PaymentCheckStatus.paid => Icons.check_circle_rounded,
-      PaymentCheckStatus.pending => Icons.schedule_rounded,
-      PaymentCheckStatus.unavailable => Icons.info_outline_rounded,
-    };
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.28)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              check.message,
-              style: TextStyle(
-                color: color,
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+  void _onCheckPaymentPressed() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(
+        content: Text('Проверка оплаты пока недоступна'),
+      ));
   }
 }
+
+// Payment status notice widget removed while feature is disabled.
 
 Future<void> _copyPaymentOrderId(BuildContext context, OrderItem order) async {
   await Clipboard.setData(ClipboardData(text: order.id));
@@ -492,33 +527,32 @@ class _PaymentQrVisibleCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
-        horizontal: compact ? 14 : 18,
-        vertical: compact ? 14 : 18,
+        horizontal: compact ? 12 : 16,
+        vertical: compact ? 10 : 14,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.dividerColor(context)),
+        borderRadius: BorderRadius.all(Radius.circular(18)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Image.asset(
             'assets/buzhor_logo_transparent.png',
-            height: compact ? 60 : 72,
+            height: compact ? 52 : 64,
             fit: BoxFit.contain,
           ),
-          SizedBox(height: compact ? 10 : 14),
+          SizedBox(height: compact ? 6 : 10),
           Text(
             'QR для оплаты',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.darkBlue,
-              fontSize: compact ? 24 : 28,
+              fontSize: compact ? 21 : 24,
               fontWeight: FontWeight.w800,
             ),
           ),
-          SizedBox(height: compact ? 8 : 10),
+          SizedBox(height: compact ? 4 : 6),
           GestureDetector(
             onLongPress: () => _copyPaymentOrderId(context, order),
             child: Text(
@@ -526,29 +560,29 @@ class _PaymentQrVisibleCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.grayBlue,
-                fontSize: compact ? 18 : 20,
+                fontSize: compact ? 16 : 18,
                 fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          SizedBox(height: compact ? 16 : 20),
+          SizedBox(height: compact ? 12 : 16),
           _PaymentQrView(
             payload: _paymentQrPayload(order, amount: amount),
             size: qrSize,
           ),
-          SizedBox(height: compact ? 14 : 18),
+          SizedBox(height: compact ? 10 : 14),
           const Text(
             'К оплате',
             textAlign: TextAlign.center,
             style: TextStyle(color: AppColors.grayBlue, fontSize: 16),
           ),
-          SizedBox(height: compact ? 6 : 8),
+          SizedBox(height: compact ? 2 : 4),
           Text(
             '${amount.toInt()} ₽',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: AppColors.darkBlue,
-              fontSize: compact ? 34 : 40,
+              fontSize: compact ? 30 : 36,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -574,11 +608,9 @@ class _PaymentQrShareCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.dividerColor(context)),
-      ),
+      // No border radius — rectangular white canvas prevents transparent
+      // corner pixels that messengers render as black.
+      decoration: const BoxDecoration(color: Colors.white),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

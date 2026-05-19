@@ -10,7 +10,8 @@
       "Bash(Remove-Item \"c:\\\\Users\\\\icema\\\\buzhor_courier\\\\lib\\\\features\\\\route\\\\services\\\\route_service.dart\" -Force)",
       "Bash(flutter test *)",
       "Bash(flutter pub *)",
-      "Bash(git revert *)"
+      "Bash(git revert *)",
+      "Bash(dart analyze *)"
     ]
   }
 }
