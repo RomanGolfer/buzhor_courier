@@ -9,6 +9,8 @@ import 'package:latlong2/latlong.dart';
 
 part 'route_detail/route_map_widget.dart';
 part 'route_detail/route_header.dart';
+part 'route_detail/route_overlay_controls.dart';
+part 'route_detail/route_address_search_sheet.dart';
 part 'route_detail/route_stops_sheet.dart';
 part 'route_detail/route_stop_card.dart';
 
@@ -188,7 +190,11 @@ class _RouteScreenState extends State<RouteScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.inbox_rounded, size: 56, color: Color(0xFF8AACCC)),
+              const Icon(
+                Icons.inbox_rounded,
+                size: 56,
+                color: Color(0xFF8AACCC),
+              ),
               const SizedBox(height: 12),
               const Text(
                 'Нет активных заказов',
@@ -202,14 +208,20 @@ class _RouteScreenState extends State<RouteScreen> {
               GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.blue,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
                     'Назад',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -219,11 +231,16 @@ class _RouteScreenState extends State<RouteScreen> {
       );
     }
 
-    final allPoints = [?_startPoint, ..._sortedOrders.map((o) => LatLng(o.lat, o.lng))];
+    final allPoints = [
+      ?_startPoint,
+      ..._sortedOrders.map((o) => LatLng(o.lat, o.lng)),
+    ];
     final centerLat =
-        allPoints.map((p) => p.latitude).reduce((a, b) => a + b) / allPoints.length;
+        allPoints.map((p) => p.latitude).reduce((a, b) => a + b) /
+        allPoints.length;
     final centerLng =
-        allPoints.map((p) => p.longitude).reduce((a, b) => a + b) / allPoints.length;
+        allPoints.map((p) => p.longitude).reduce((a, b) => a + b) /
+        allPoints.length;
 
     return Scaffold(
       body: Stack(
@@ -289,7 +306,10 @@ class _RouteScreenState extends State<RouteScreen> {
               left: 16,
               right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.darkBlue.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
@@ -298,7 +318,11 @@ class _RouteScreenState extends State<RouteScreen> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.touch_app_rounded, color: Colors.white, size: 16),
+                    Icon(
+                      Icons.touch_app_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Удерживайте карту для выбора точки старта',
