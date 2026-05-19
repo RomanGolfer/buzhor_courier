@@ -14,6 +14,8 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 part 'order_detail/header.dart';
 part 'order_detail/address_card.dart';
+part 'order_detail/address_card_payment.dart';
+part 'order_detail/address_card_extras.dart';
 part 'order_detail/communication_cards.dart';
 part 'order_detail/order_info_cards.dart';
 part 'order_detail/bottom_buttons.dart';
