@@ -44,11 +44,11 @@ extension _AddressCardPayment on _AddressCard {
       };
     }
     return switch (t) {
-      PaymentType.card => AppColors.blue,
-      PaymentType.cash => AppColors.green,
-      PaymentType.qr => AppColors.blue,
-      PaymentType.online => AppColors.green,
-      PaymentType.contract => AppColors.grayBlue,
+      PaymentType.card => const Color(0xFF1B5FA8),
+      PaymentType.cash => const Color(0xFFB76A00),
+      PaymentType.qr => const Color(0xFF7B35D8),
+      PaymentType.online => const Color(0xFF2F8F3A),
+      PaymentType.contract => const Color(0xFF60758A),
     };
   }
 
@@ -62,7 +62,13 @@ extension _AddressCardPayment on _AddressCard {
         PaymentType.contract => const Color(0xFF2A2A2A),
       };
     }
-    return _paymentFgColor(context, t).withValues(alpha: 0.10);
+    return switch (t) {
+      PaymentType.card => const Color(0xFFEAF3FF),
+      PaymentType.cash => const Color(0xFFFFF3DF),
+      PaymentType.qr => const Color(0xFFF1E8FF),
+      PaymentType.online => const Color(0xFFE6F5E7),
+      PaymentType.contract => const Color(0xFFEEF2F6),
+    };
   }
 
   void _showPaymentSheet(BuildContext context) {

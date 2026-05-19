@@ -49,38 +49,28 @@ class _PaymentBadge extends StatelessWidget {
     switch (type) {
       case PaymentType.card:
         icon = Icons.credit_card_rounded;
-        bgColor = isDark
-            ? const Color(0xFF1A2A3A)
-            : AppColors.blue.withValues(alpha: 0.10);
-        fgColor = isDark ? const Color(0xFF7AADCC) : AppColors.blue;
+        bgColor = isDark ? const Color(0xFF1A2A3A) : const Color(0xFFEAF3FF);
+        fgColor = isDark ? const Color(0xFF7AADCC) : const Color(0xFF1B5FA8);
         label = 'Картой';
       case PaymentType.cash:
         icon = Icons.payments_outlined;
-        bgColor = isDark
-            ? const Color(0xFF3A2E00)
-            : AppColors.green.withValues(alpha: 0.10);
-        fgColor = isDark ? const Color(0xFFFFB300) : AppColors.green;
+        bgColor = isDark ? const Color(0xFF3A2E00) : const Color(0xFFFFF3DF);
+        fgColor = isDark ? const Color(0xFFFFB300) : const Color(0xFFB76A00);
         label = 'Нал';
       case PaymentType.qr:
         icon = Icons.qr_code_rounded;
-        bgColor = isDark
-            ? const Color(0xFF2D1F4A)
-            : AppColors.purple.withValues(alpha: 0.10);
-        fgColor = isDark ? const Color(0xFFB06AE0) : AppColors.purple;
+        bgColor = isDark ? const Color(0xFF2D1F4A) : const Color(0xFFF1E8FF);
+        fgColor = isDark ? const Color(0xFFB06AE0) : const Color(0xFF7B35D8);
         label = 'Онлайн';
       case PaymentType.online:
         icon = Icons.contactless;
-        bgColor = isDark
-            ? const Color(0xFF1A3A1A)
-            : AppColors.green.withValues(alpha: 0.10);
-        fgColor = isDark ? const Color(0xFF4CAF50) : AppColors.green;
+        bgColor = isDark ? const Color(0xFF1A3A1A) : const Color(0xFFE6F5E7);
+        fgColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF2F8F3A);
         label = 'Оплачено';
       case PaymentType.contract:
         icon = Icons.description_outlined;
-        bgColor = isDark
-            ? const Color(0xFF2A2A2A)
-            : AppColors.grayBlueLight.withValues(alpha: 0.10);
-        fgColor = isDark ? const Color(0xFF888888) : AppColors.grayBlueLight;
+        bgColor = isDark ? const Color(0xFF2A2A2A) : const Color(0xFFEEF2F6);
+        fgColor = isDark ? const Color(0xFF888888) : const Color(0xFF60758A);
         label = 'Договор';
     }
     return Container(

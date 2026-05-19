@@ -147,13 +147,17 @@ class _CardContent extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
               decoration: BoxDecoration(
-                color: AppColors.softSurface(context),
+                color: AppColors.isDark(context)
+                    ? AppColors.softSurface(context)
+                    : const Color(0xFFD6E8F8),
                 borderRadius: BorderRadius.circular(5),
               ),
               child: Text(
                 order.district,
-                style: const TextStyle(
-                  color: AppColors.blue,
+                style: TextStyle(
+                  color: AppColors.isDark(context)
+                      ? AppColors.grayBlueLight
+                      : AppColors.blue,
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                 ),
