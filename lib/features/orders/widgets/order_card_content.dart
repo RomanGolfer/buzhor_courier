@@ -2,12 +2,10 @@ part of 'order_card.dart';
 
 class _CardContent extends StatelessWidget {
   final OrderItem order;
-  final VoidCallback? onChatTap;
   final bool showRouteButton;
 
   const _CardContent({
     required this.order,
-    this.onChatTap,
     this.showRouteButton = true,
   });
 
@@ -81,29 +79,6 @@ class _CardContent extends StatelessWidget {
                 const SizedBox(height: 4),
                 _PaymentBadge(type: order.payment),
               ],
-            ),
-            const SizedBox(width: 4),
-            GestureDetector(
-              onTap:
-                  onChatTap ??
-                  () => NavigationService.openMessenger(
-                    context,
-                    phone: order.phone,
-                    message: 'Заказ ${order.id}',
-                  ),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.softSurface(context),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.chat_bubble_outline_rounded,
-                  size: 16,
-                  color: AppColors.blue,
-                ),
-              ),
             ),
           ],
         ),

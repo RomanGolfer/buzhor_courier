@@ -9,7 +9,6 @@ part 'order_card_content.dart';
 class OrderCard extends StatelessWidget {
   final OrderItem order;
   final int number;
-  final VoidCallback? onChatTap;
   final VoidCallback? onTap;
   final bool showRouteButton;
 
@@ -17,7 +16,6 @@ class OrderCard extends StatelessWidget {
     super.key,
     required this.order,
     required this.number,
-    this.onChatTap,
     this.onTap,
     this.showRouteButton = true,
   });
@@ -67,7 +65,6 @@ class OrderCard extends StatelessWidget {
                       Expanded(
                         child: _CardContent(
                           order: order,
-                          onChatTap: onChatTap,
                           showRouteButton: showRouteButton,
                         ),
                       ),
