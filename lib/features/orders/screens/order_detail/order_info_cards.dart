@@ -162,14 +162,33 @@ class _PaymentQrCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton.icon(
-                        onPressed: () =>
-                            _showPaymentQrSheet(context, order, amount: amount),
-                        icon: const Icon(Icons.open_in_full_rounded, size: 18),
-                        label: const Text('Открыть крупно'),
-                      ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () => _showPaymentQrSheet(
+                            context,
+                            order,
+                            amount: amount,
+                          ),
+                          icon: const Icon(
+                            Icons.open_in_full_rounded,
+                            size: 18,
+                          ),
+                          label: const Text('Открыть крупно'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () => _showPaymentQrSheet(
+                            context,
+                            order,
+                            amount: amount,
+                            shareOnOpen: true,
+                          ),
+                          icon: const Icon(Icons.share_rounded, size: 18),
+                          label: const Text('Отправить'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

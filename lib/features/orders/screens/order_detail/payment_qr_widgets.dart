@@ -49,14 +49,30 @@ class _PaymentQrPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                TextButton.icon(
-                  onPressed: () => _showPaymentQrSheet(
-                    context,
-                    order,
-                    amount: paymentAmount,
-                  ),
-                  icon: const Icon(Icons.open_in_full_rounded, size: 18),
-                  label: const Text('Крупно'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _showPaymentQrSheet(
+                        context,
+                        order,
+                        amount: paymentAmount,
+                      ),
+                      icon: const Icon(Icons.open_in_full_rounded, size: 18),
+                      label: const Text('Крупно'),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _showPaymentQrSheet(
+                        context,
+                        order,
+                        amount: paymentAmount,
+                        shareOnOpen: true,
+                      ),
+                      icon: const Icon(Icons.share_rounded, size: 18),
+                      label: const Text('Отправить'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -123,11 +139,15 @@ void _showPaymentQrSheet(
   BuildContext context,
   OrderItem order, {
   double? amount,
+  bool shareOnOpen = false,
 }) {
   Navigator.of(context).push(
     MaterialPageRoute(
-      builder: (_) =>
-          _PaymentQrFullScreen(order: order, amount: amount ?? order.price),
+      builder: (_) => _PaymentQrFullScreen(
+        order: order,
+        amount: amount ?? order.price,
+        shareOnOpen: shareOnOpen,
+      ),
     ),
   );
 }
@@ -135,8 +155,13 @@ void _showPaymentQrSheet(
 class _PaymentQrFullScreen extends ConsumerStatefulWidget {
   final OrderItem order;
   final double amount;
+  final bool shareOnOpen;
 
-  const _PaymentQrFullScreen({required this.order, required this.amount});
+  const _PaymentQrFullScreen({
+    required this.order,
+    required this.amount,
+    this.shareOnOpen = false,
+  });
 
   @override
   ConsumerState<_PaymentQrFullScreen> createState() =>
@@ -157,6 +182,13 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   void initState() {
     super.initState();
     _startPaymentPolling();
+    if (widget.shareOnOpen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _sharePaymentQr();
+        }
+      });
+    }
   }
 
   @override
@@ -275,7 +307,9 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                                   size: 20,
                                 ),
                                 label: Text(
-                                  _isSharing ? 'Подготовка...' : 'Отправить QR',
+                                  _isSharing
+                                      ? 'Подготовка...'
+                                      : 'Отправить в мессенджер',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w800,
