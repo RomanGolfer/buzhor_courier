@@ -131,17 +131,18 @@ void _showPaymentQrSheet(
   );
 }
 
-class _PaymentQrFullScreen extends StatefulWidget {
+class _PaymentQrFullScreen extends ConsumerStatefulWidget {
   final OrderItem order;
   final double amount;
 
   const _PaymentQrFullScreen({required this.order, required this.amount});
 
   @override
-  State<_PaymentQrFullScreen> createState() => _PaymentQrFullScreenState();
+  ConsumerState<_PaymentQrFullScreen> createState() =>
+      _PaymentQrFullScreenState();
 }
 
-class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
+class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   static const _paymentPollingInterval = Duration(seconds: 7);
 
   PaymentStatusCheck? _paymentCheck;
@@ -320,6 +321,16 @@ class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
 
     if (result.status == PaymentCheckStatus.paid) {
       _paymentPollingTimer?.cancel();
+      final state = ref.read(ordersProvider);
+      final current = state.activeOrders.firstWhere(
+        (o) => o.id == widget.order.id,
+        orElse: () => widget.order,
+      );
+      if (!current.isClosed) {
+        ref.read(ordersProvider.notifier).updateOrder(
+          current.copyWith(payment: PaymentType.online),
+        );
+      }
     }
 
     setState(() {
