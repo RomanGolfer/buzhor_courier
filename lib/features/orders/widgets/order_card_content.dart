@@ -1,5 +1,7 @@
 part of 'order_card.dart';
 
+const double _routeActionColumnWidth = 112;
+
 class _CardContent extends StatelessWidget {
   final OrderItem order;
   final bool showRouteButton;
@@ -197,36 +199,44 @@ class _CardContent extends StatelessWidget {
             ],
             if (showRouteButton) ...[
               const Spacer(),
-              GestureDetector(
-                onTap: () =>
-                    NavigationService.openExternalRoute(order.lat, order.lng),
-                child: Container(
-                  height: 32,
-                  padding: const EdgeInsets.symmetric(horizontal: 13),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.orange, AppColors.orangeLight],
+              SizedBox(
+                width: _routeActionColumnWidth,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () => NavigationService.openExternalRoute(
+                      order.lat,
+                      order.lng,
                     ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Маршрут',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
+                    child: Container(
+                      height: 32,
+                      padding: const EdgeInsets.symmetric(horizontal: 13),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.orange, AppColors.orangeLight],
                         ),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      SizedBox(width: 3),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        color: Colors.white,
-                        size: 13,
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Маршрут',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          SizedBox(width: 3),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: Colors.white,
+                            size: 13,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

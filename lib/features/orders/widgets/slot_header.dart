@@ -4,6 +4,8 @@ import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart'
 import 'package:buzhor_courier/features/orders/widgets/order_card.dart';
 import 'package:flutter/material.dart';
 
+const double _routeActionColumnWidth = 112;
+
 class SlotHeader extends StatelessWidget {
   final TimeSlot slot;
   final VoidCallback onToggle;
@@ -133,37 +135,43 @@ class SlotHeader extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          GestureDetector(
-                            onTap: onBuildRoute,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    AppColors.orange,
-                                    AppColors.orangeLight,
-                                  ],
+                          SizedBox(
+                            width: _routeActionColumnWidth,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                GestureDetector(
+                                  onTap: onBuildRoute,
+                                  child: Container(
+                                    width: 36,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.softSurface(context),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: AppColors.orange.withValues(
+                                          alpha: isDark ? 0.42 : 0.30,
+                                        ),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.route_rounded,
+                                      color: AppColors.orange,
+                                      size: 17,
+                                    ),
+                                  ),
                                 ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.route_rounded,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          AnimatedRotation(
-                            turns: slot.isExpanded ? 0.5 : 0,
-                            duration: const Duration(milliseconds: 200),
-                            child: const Icon(
-                              Icons.expand_less_rounded,
-                              color: AppColors.blue,
-                              size: 20,
+                                const SizedBox(width: 6),
+                                AnimatedRotation(
+                                  turns: slot.isExpanded ? 0.5 : 0,
+                                  duration: const Duration(milliseconds: 200),
+                                  child: const Icon(
+                                    Icons.expand_less_rounded,
+                                    color: AppColors.blue,
+                                    size: 20,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
