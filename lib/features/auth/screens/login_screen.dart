@@ -9,6 +9,10 @@ import 'package:buzhor_courier/features/auth/widgets/bubble_painter.dart';
 import 'package:buzhor_courier/features/auth/providers/login_provider.dart';
 import 'package:buzhor_courier/features/orders/screens/home_screen.dart';
 
+part 'login_background.dart';
+part 'login_form_field.dart';
+part 'login_logo_header.dart';
+
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -99,88 +103,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         resizeToAvoidBottomInset: true,
         body: Stack(
           children: [
-            // Full screen gradient + bubbles
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF071E3D),
-                      Color(0xFF0D3D6E),
-                      Color(0xFF1565A8),
-                    ],
-                    stops: [0.0, 0.5, 1.0],
-                  ),
-                ),
-                child: CustomPaint(
-                  painter: BubblePainter(_bubbles),
-                  child: Container(),
-                ),
-              ),
-            ),
+            _buildAnimatedBackground(),
 
-            // Logo in upper 45% of screen
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              height: MediaQuery.of(context).size.height * 0.45,
-              child: SafeArea(
-                bottom: false,
-                child: FadeTransition(
-                  opacity: _logoFade,
-                  child: ScaleTransition(
-                    scale: _logoScale,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 60),
-                      child: Column(
-                        children: [
-                          Image.asset(
-                            'assets/buzhor_logo_transparent.png',
-                            width: 240,
-                            height: 130,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(height: 20),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: 30,
-                                height: 1,
-                                color: const Color(
-                                  0xFF5BB8F5,
-                                ).withValues(alpha: 0.5),
-                              ),
-                              const SizedBox(width: 10),
-                              const Text(
-                                'КУРЬЕРСКОЕ ПРИЛОЖЕНИЕ',
-                                style: TextStyle(
-                                  color: Color(0xFF5BB8F5),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 2.5,
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Container(
-                                width: 30,
-                                height: 1,
-                                color: const Color(
-                                  0xFF5BB8F5,
-                                ).withValues(alpha: 0.5),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            _buildLogoHeader(),
 
             // Fixed white card in bottom 55%
             Positioned(
@@ -192,9 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                   color: Theme.of(context).brightness == Brightness.dark
                       ? const Color(0xFF1E1E2E)
                       : Colors.white,
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(28),
-                  ),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
                   boxShadow: [
                     BoxShadow(
                       color: Color(0x30000000),
@@ -224,7 +147,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.w800,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.white
                                   : AppColors.darkBlue,
                             ),
@@ -234,7 +159,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                             'Войдите в аккаунт курьера',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Theme.of(context).brightness == Brightness.dark
+                              color:
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
                                   ? Colors.white60
                                   : AppColors.grayBlue,
                             ),
@@ -354,85 +281,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    required bool focused,
-    required Function(bool) onFocus,
-    TextInputType? keyboardType,
-    bool obscure = false,
-    Widget? suffix,
-  }) {
-    return Focus(
-      onFocusChange: onFocus,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? (focused ? const Color(0xFF32324E) : const Color(0xFF2A2A3E))
-              : (focused ? const Color(0xFFE8F1FB) : const Color(0xFFF0F5FB)),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: focused ? const Color(0xFF1B5FA8) : const Color(0xFFE0EDF8),
-            width: focused ? 2 : 1.5,
-          ),
-        ),
-        child: TextField(
-          controller: controller,
-          obscureText: obscure,
-          keyboardType: keyboardType,
-          style: TextStyle(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : const Color(0xFF0D3D6E),
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-          ),
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: hint,
-            hintStyle: TextStyle(
-              color: (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white.withValues(alpha: 0.4)
-                      : const Color(0xFF6B8CAE).withValues(alpha: 0.5))
-                  .withValues(alpha: 0.5),
-            ),
-            labelStyle: TextStyle(
-              color: focused
-                  ? const Color(0xFF1B5FA8)
-                  : (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white70
-                      : const Color(0xFF6B8CAE)),
-              fontWeight: focused ? FontWeight.w600 : FontWeight.normal,
-            ),
-            prefixIcon: Icon(
-              icon,
-              color: focused
-                  ? const Color(0xFF1B5FA8)
-                  : (Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white70
-                      : const Color(0xFF6B8CAE)),
-              size: 20,
-            ),
-            suffixIcon: suffix != null
-                ? Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: suffix,
-                  )
-                : null,
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 16,
-            ),
-          ),
         ),
       ),
     );
