@@ -81,33 +81,27 @@ extension _DeliverySheetSections on _DeliverySheetState {
   }
 
   Widget _buildPaymentQrAction() {
-    final isContract = _paymentType == PaymentType.contract;
     final isPaid = _paymentType == PaymentType.online;
-    final isQr = _paymentType == PaymentType.qr;
-    final title = isQr
-        ? 'Открыть QR для оплаты'
-        : 'Сгенерировать QR для оплаты';
-    final subtitle = isContract
-        ? 'Заказ по договору, оплата QR обычно не нужна'
-        : isPaid
+    final title = isPaid ? 'Заказ уже оплачен' : 'Открыть QR для оплаты';
+    final subtitle = isPaid
         ? 'Заказ уже отмечен как оплаченный'
         : '${widget.totalPrice.toInt()} ₽ · заказ ${widget.order.id}';
 
     return InkWell(
-      onTap: isPaid || isContract ? null : _selectQrPaymentAndOpen,
+      onTap: isPaid ? null : _openQrSheet,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isPaid || isContract
+          color: isPaid
               ? AppColors.softSurface(context).withValues(alpha: 0.64)
               : AppColors.blue.withValues(
                   alpha: AppColors.isDark(context) ? 0.18 : 0.10,
                 ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isPaid || isContract
+            color: isPaid
                 ? AppColors.dividerColor(context)
                 : AppColors.blue.withValues(alpha: 0.32),
           ),
@@ -125,9 +119,7 @@ extension _DeliverySheetSections on _DeliverySheetState {
               ),
               child: Icon(
                 Icons.qr_code_2_rounded,
-                color: isPaid || isContract
-                    ? AppColors.textSecondary(context)
-                    : AppColors.blue,
+                color: isPaid ? AppColors.textSecondary(context) : AppColors.blue,
                 size: 24,
               ),
             ),
@@ -139,7 +131,7 @@ extension _DeliverySheetSections on _DeliverySheetState {
                   Text(
                     title,
                     style: TextStyle(
-                      color: isPaid || isContract
+                      color: isPaid
                           ? AppColors.textSecondary(context)
                           : AppColors.textPrimary(context),
                       fontSize: 14,
@@ -160,9 +152,7 @@ extension _DeliverySheetSections on _DeliverySheetState {
             ),
             Icon(
               Icons.open_in_full_rounded,
-              color: isPaid || isContract
-                  ? AppColors.textSecondary(context)
-                  : AppColors.blue,
+              color: isPaid ? AppColors.textSecondary(context) : AppColors.blue,
               size: 20,
             ),
           ],

@@ -86,8 +86,11 @@ class _DeliverySheetState extends State<_DeliverySheet> {
               _DeliverySummary(bottles: widget.bottles, extras: widget.extras),
               const SizedBox(height: 20),
               _buildMarkingSection(),
-              const SizedBox(height: 20),
-              _buildPaymentQrAction(),
+              if (_paymentType == PaymentType.qr ||
+                  _paymentType == PaymentType.online) ...[
+                const SizedBox(height: 20),
+                _buildPaymentQrAction(),
+              ],
               const SizedBox(height: 20),
               TextField(
                 controller: _commentController,
@@ -214,9 +217,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     setState(() => _scannedItems['water'] = result);
   }
 
-  void _selectQrPaymentAndOpen() {
-    setState(() => _paymentType = PaymentType.qr);
-    widget.onPaymentTypeChanged(PaymentType.qr);
+  void _openQrSheet() {
     _showPaymentQrSheet(context, widget.order, amount: widget.totalPrice);
   }
 }
