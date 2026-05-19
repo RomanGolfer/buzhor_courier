@@ -1,4 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
 part of '../order_detail_screen.dart';
 
 class _PaymentQrPanel extends StatelessWidget {
@@ -67,6 +66,7 @@ class _PaymentQrPanel extends StatelessWidget {
     );
   }
 }
+
 class _PaymentQrOpenTarget extends StatelessWidget {
   final OrderItem order;
   final double amount;
@@ -146,7 +146,7 @@ class _PaymentQrFullScreen extends ConsumerStatefulWidget {
 class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   static const _paymentPollingInterval = Duration(seconds: 7);
 
-  // Payment status check is temporarily disabled in the UI.
+  PaymentStatusCheck? _paymentCheck;
   bool _isCheckingPayment = false;
   bool _isPaymentCheckInFlight = false;
   bool _isSharing = false;
@@ -179,10 +179,15 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
             final isCompact = maxHeight < 760 || maxWidth < 360;
             final buttonHeight = isCompact ? 44.0 : 48.0;
             final buttonSpacing = isCompact ? 8.0 : 12.0;
-            final reservedHeight = (isCompact ? 320.0 : 340.0) + buttonHeight * 2 + buttonSpacing;
+            final statusHeight = _paymentCheck == null ? 0.0 : 76.0;
+            final reservedHeight =
+                (isCompact ? 320.0 : 340.0) +
+                buttonHeight * 2 +
+                buttonSpacing +
+                statusHeight;
             final qrSize = math.min(
-              (maxWidth - 40).clamp(260.0, 380.0),
-              (maxHeight - reservedHeight).clamp(260.0, 380.0),
+              (maxWidth - 40).clamp(180.0, 380.0),
+              (maxHeight - reservedHeight).clamp(180.0, 380.0),
             );
 
             return Stack(
@@ -198,7 +203,7 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                             final reducedQrSize = math.min(
                               qrSize,
                               (cardHeight - (cardCompact ? 220.0 : 260.0))
-                                  .clamp(260.0, 340.0),
+                                  .clamp(180.0, 340.0),
                             );
 
                             return _PaymentQrVisibleCard(
@@ -227,7 +232,9 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                               width: double.infinity,
                               height: buttonHeight,
                               child: ElevatedButton.icon(
-                                onPressed: _isCheckingPayment ? null : _onCheckPaymentPressed,
+                                onPressed: _isCheckingPayment
+                                    ? null
+                                    : _checkPayment,
                                 icon: Icon(
                                   _isCheckingPayment
                                       ? Icons.hourglass_top_rounded
@@ -285,7 +292,10 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                                 ),
                               ),
                             ),
-                            // Payment status panel intentionally hidden until feature is implemented.
+                            if (_paymentCheck != null) ...[
+                              SizedBox(height: buttonSpacing),
+                              _PaymentStatusNotice(check: _paymentCheck!),
+                            ],
                           ],
                         ),
                       ),
@@ -306,24 +316,25 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                 // the widget — required for RepaintBoundary.toImage() to work.
                 // Outer ColoredBox ensures the full PNG canvas is solid white
                 // with no transparent pixels (prevents black corners in messengers).
-                Positioned(
-                  left: -9999,
-                  top: -9999,
-                  child: RepaintBoundary(
-                    key: _paymentQrImageKey,
-                    child: ColoredBox(
-                      color: Colors.white,
-                      child: SizedBox(
-                        width: 360,
-                        child: _PaymentQrShareCard(
-                          order: order,
-                          amount: widget.amount,
-                          qrSize: 300,
+                if (_isSharing)
+                  Positioned(
+                    left: -9999,
+                    top: -9999,
+                    child: RepaintBoundary(
+                      key: _paymentQrImageKey,
+                      child: ColoredBox(
+                        color: Colors.white,
+                        child: SizedBox(
+                          width: 360,
+                          child: _PaymentQrShareCard(
+                            order: order,
+                            amount: widget.amount,
+                            qrSize: 300,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
               ],
             );
           },
@@ -345,9 +356,11 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
         setState(() => _isSharing = false);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(const SnackBar(
-            content: Text('Не удалось подготовить QR для отправки'),
-          ));
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Не удалось подготовить QR для отправки'),
+            ),
+          );
       }
       return;
     }
@@ -358,9 +371,11 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
         setState(() => _isSharing = false);
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(const SnackBar(
-            content: Text('Не удалось подготовить QR для отправки'),
-          ));
+          ..showSnackBar(
+            const SnackBar(
+              content: Text('Не удалось подготовить QR для отправки'),
+            ),
+          );
       }
       return;
     }
@@ -380,7 +395,8 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
     try {
       await SharePlus.instance.share(
         ShareParams(
-          text: 'QR для оплаты заказа ${widget.order.id} на сумму ${widget.amount.toInt()} ₽',
+          text:
+              'QR для оплаты заказа ${widget.order.id} на сумму ${widget.amount.toInt()} ₽',
           files: [XFile(imageFile.path)],
         ),
       );
@@ -394,17 +410,25 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
   Future<File?> _capturePaymentQrImage() async {
     try {
       // Capture pixel ratio before async operations (avoid using BuildContext across await)
-      final pixelRatio = ui.PlatformDispatcher.instance.views.first.devicePixelRatio.clamp(3.0, 4.0);
-      
+      final pixelRatio = ui
+          .PlatformDispatcher
+          .instance
+          .views
+          .first
+          .devicePixelRatio
+          .clamp(3.0, 4.0);
+
       // Wait for the next frame to ensure the RepaintBoundary is fully laid out
       await WidgetsBinding.instance.endOfFrame;
       debugPrint('QR capture: waited for frame');
+      if (!mounted) return null;
 
       final boundaryContext = _paymentQrImageKey.currentContext;
       if (boundaryContext == null) {
         debugPrint('QR capture: boundary context is null');
         return null;
       }
+      if (!boundaryContext.mounted) return null;
 
       final renderObject = boundaryContext.findRenderObject();
       if (renderObject == null) {
@@ -413,7 +437,9 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
       }
 
       if (renderObject is! RenderRepaintBoundary) {
-        debugPrint('QR capture: render object is not RenderRepaintBoundary, got ${renderObject.runtimeType}');
+        debugPrint(
+          'QR capture: render object is not RenderRepaintBoundary, got ${renderObject.runtimeType}',
+        );
         return null;
       }
 
@@ -431,12 +457,15 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
       debugPrint('QR capture: converted to bytes (${bytes.length} bytes)');
 
       final tempDir = await getTemporaryDirectory();
-      final fileName = 'payment_qr_${widget.order.id.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png';
+      final fileName =
+          'payment_qr_${widget.order.id.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File('${tempDir.path}/$fileName');
       debugPrint('QR capture: writing to ${file.path}');
 
       await file.writeAsBytes(bytes, flush: true);
-      debugPrint('QR capture: file written successfully (${file.lengthSync()} bytes)');
+      debugPrint(
+        'QR capture: file written successfully (${file.lengthSync()} bytes)',
+      );
       return file;
     } catch (e, st) {
       debugPrint('QR capture error: $e\n$st');
@@ -474,13 +503,16 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
         orElse: () => widget.order,
       );
       if (!current.isClosed) {
-        ref.read(ordersProvider.notifier).updateOrder(
-          current.copyWith(payment: PaymentType.online),
-        );
+        ref
+            .read(ordersProvider.notifier)
+            .updateOrder(current.copyWith(payment: PaymentType.online));
       }
     }
 
-    setState(() => _isCheckingPayment = false);
+    setState(() {
+      _paymentCheck = result;
+      _isCheckingPayment = false;
+    });
 
     if (showFeedback) {
       ScaffoldMessenger.of(context)
@@ -488,18 +520,53 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
         ..showSnackBar(SnackBar(content: Text(result.message)));
     }
   }
-
-  void _onCheckPaymentPressed() {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(
-        content: Text('Проверка оплаты пока недоступна'),
-      ));
-  }
 }
 
-// Payment status notice widget removed while feature is disabled.
+class _PaymentStatusNotice extends StatelessWidget {
+  final PaymentStatusCheck check;
+
+  const _PaymentStatusNotice({required this.check});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (check.status) {
+      PaymentCheckStatus.paid => AppColors.green,
+      PaymentCheckStatus.pending => AppColors.orange,
+      PaymentCheckStatus.unavailable => AppColors.grayBlue,
+    };
+    final icon = switch (check.status) {
+      PaymentCheckStatus.paid => Icons.check_circle_rounded,
+      PaymentCheckStatus.pending => Icons.schedule_rounded,
+      PaymentCheckStatus.unavailable => Icons.info_outline_rounded,
+    };
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              check.message,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 Future<void> _copyPaymentOrderId(BuildContext context, OrderItem order) async {
   await Clipboard.setData(ClipboardData(text: order.id));
@@ -539,6 +606,7 @@ class _PaymentQrVisibleCard extends StatelessWidget {
         children: [
           Image.asset(
             'assets/buzhor_logo_transparent.png',
+            key: const Key('paymentQrLogo'),
             height: compact ? 52 : 64,
             fit: BoxFit.contain,
           ),
