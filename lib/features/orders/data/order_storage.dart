@@ -9,7 +9,7 @@ abstract class OrderStorage {
 }
 
 class SharedPreferencesOrderStorage implements OrderStorage {
-  static const _ordersKey = 'orders_cache_v1';
+  static const _ordersKey = 'orders_cache_v2';
 
   const SharedPreferencesOrderStorage();
 
