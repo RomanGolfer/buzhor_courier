@@ -96,91 +96,15 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                         ),
                       ),
                     ),
-                    SafeArea(
-                      top: false,
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          20,
-                          0,
-                          20,
-                          isCompact ? 10 : 14,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: double.infinity,
-                              height: buttonHeight,
-                              child: ElevatedButton.icon(
-                                onPressed: _isCheckingPayment
-                                    ? null
-                                    : _checkPayment,
-                                icon: Icon(
-                                  _isCheckingPayment
-                                      ? Icons.hourglass_top_rounded
-                                      : Icons.verified_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                                label: Text(
-                                  _isCheckingPayment
-                                      ? 'Проверяем...'
-                                      : 'Проверить оплату',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.blue,
-                                  disabledBackgroundColor:
-                                      AppColors.grayBlueLight,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(height: buttonSpacing),
-                            SizedBox(
-                              width: double.infinity,
-                              height: buttonHeight,
-                              child: OutlinedButton.icon(
-                                onPressed: _isSharing ? null : _sharePaymentQr,
-                                icon: Icon(
-                                  _isSharing
-                                      ? Icons.hourglass_top_rounded
-                                      : Icons.share_rounded,
-                                  size: 20,
-                                ),
-                                label: Text(
-                                  _isSharing
-                                      ? 'Подготовка...'
-                                      : 'Отправить в мессенджер',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.blue,
-                                  side: BorderSide(color: AppColors.blue),
-                                  disabledForegroundColor: AppColors.grayBlue,
-                                  disabledBackgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (_paymentCheck != null) ...[
-                              SizedBox(height: buttonSpacing),
-                              _PaymentStatusNotice(check: _paymentCheck!),
-                            ],
-                          ],
-                        ),
-                      ),
+                    _PaymentQrFullScreenControls(
+                      bottomPadding: isCompact ? 10 : 14,
+                      buttonHeight: buttonHeight,
+                      buttonSpacing: buttonSpacing,
+                      isCheckingPayment: _isCheckingPayment,
+                      isSharing: _isSharing,
+                      paymentCheck: _paymentCheck,
+                      onCheckPayment: () => _checkPayment(),
+                      onSharePaymentQr: () => _sharePaymentQr(),
                     ),
                   ],
                 ),
@@ -194,28 +118,11 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
                     tooltip: 'Закрыть',
                   ),
                 ),
-                // Positioned off-screen (not Offstage) so Flutter still paints
-                // the widget — required for RepaintBoundary.toImage() to work.
-                // Outer ColoredBox ensures the full PNG canvas is solid white
-                // with no transparent pixels (prevents black corners in messengers).
                 if (_isSharing)
-                  Positioned(
-                    left: -9999,
-                    top: -9999,
-                    child: RepaintBoundary(
-                      key: _paymentQrImageKey,
-                      child: ColoredBox(
-                        color: Colors.white,
-                        child: SizedBox(
-                          width: 360,
-                          child: _PaymentQrShareCard(
-                            order: order,
-                            amount: widget.amount,
-                            qrSize: 300,
-                          ),
-                        ),
-                      ),
-                    ),
+                  _PaymentQrShareCaptureLayer(
+                    qrImageKey: _paymentQrImageKey,
+                    order: order,
+                    amount: widget.amount,
                   ),
               ],
             );
