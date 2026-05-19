@@ -5,6 +5,7 @@ class _AddressCard extends StatelessWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final double totalPrice;
   final bool isReadOnly;
   final ValueChanged<int> onBottlesChanged;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
@@ -15,13 +16,19 @@ class _AddressCard extends StatelessWidget {
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.totalPrice,
     required this.isReadOnly,
     required this.onBottlesChanged,
     required this.onPaymentTypeChanged,
     required this.onExtrasChanged,
   });
 
-  static const _extraOptions = ['Тара 19л', 'Помпа', 'Кулер', 'Другое'];
+  static const _extraOptions = [
+    OrderPricingService.petBottleDepositName,
+    OrderPricingService.mechanicalPumpName,
+    'Кулер',
+    'Другое',
+  ];
 
   bool get _isPaid => paymentType == PaymentType.online;
 
@@ -43,32 +50,33 @@ class _AddressCard extends StatelessWidget {
 
   Widget _paymentIconWidget(BuildContext context, PaymentType t) {
     if (t == PaymentType.online) {
-      return Icon(Icons.contactless, color: _paymentFgColor(context, t), size: 20);
+      return Icon(
+        Icons.contactless,
+        color: _paymentFgColor(context, t),
+        size: 20,
+      );
     }
     if (t == PaymentType.qr) {
       return Icon(Icons.qr_code, color: _paymentFgColor(context, t), size: 20);
     }
-    return Text(
-      _paymentIcon(t),
-      style: const TextStyle(fontSize: 18),
-    );
+    return Text(_paymentIcon(t), style: const TextStyle(fontSize: 18));
   }
 
   Color _paymentFgColor(BuildContext context, PaymentType t) {
     if (Theme.of(context).brightness == Brightness.dark) {
       return switch (t) {
-        PaymentType.card     => const Color(0xFF8AACCC),
-        PaymentType.cash     => const Color(0xFF4CAF50),
-        PaymentType.qr       => const Color(0xFF9C6FD6),
-        PaymentType.online   => const Color(0xFF26A96C),
+        PaymentType.card => const Color(0xFF8AACCC),
+        PaymentType.cash => const Color(0xFF4CAF50),
+        PaymentType.qr => const Color(0xFF9C6FD6),
+        PaymentType.online => const Color(0xFF26A96C),
         PaymentType.contract => const Color(0xFF888888),
       };
     }
     return switch (t) {
-      PaymentType.card     => AppColors.blue,
-      PaymentType.cash     => AppColors.green,
-      PaymentType.qr       => AppColors.blue,
-      PaymentType.online   => AppColors.green,
+      PaymentType.card => AppColors.blue,
+      PaymentType.cash => AppColors.green,
+      PaymentType.qr => AppColors.blue,
+      PaymentType.online => AppColors.green,
       PaymentType.contract => AppColors.grayBlue,
     };
   }
@@ -76,10 +84,10 @@ class _AddressCard extends StatelessWidget {
   Color _paymentBgColor(BuildContext context, PaymentType t) {
     if (Theme.of(context).brightness == Brightness.dark) {
       return switch (t) {
-        PaymentType.card     => const Color(0xFF2A3A4A),
-        PaymentType.cash     => const Color(0xFF1A3A1A),
-        PaymentType.qr       => const Color(0xFF2D1F4A),
-        PaymentType.online   => const Color(0xFF1A3A2A),
+        PaymentType.card => const Color(0xFF2A3A4A),
+        PaymentType.cash => const Color(0xFF1A3A1A),
+        PaymentType.qr => const Color(0xFF2D1F4A),
+        PaymentType.online => const Color(0xFF1A3A2A),
         PaymentType.contract => const Color(0xFF2A2A2A),
       };
     }
@@ -182,6 +190,9 @@ class _AddressCard extends StatelessWidget {
                   const SizedBox(height: 16),
                   ..._extraOptions.map((option) {
                     final count = sheetExtras[option] ?? 0;
+                    final unitPrice = OrderPricingService.extraUnitPrice(
+                      option,
+                    );
                     return ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text(
@@ -191,6 +202,9 @@ class _AddressCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
+                      subtitle: unitPrice > 0
+                          ? Text('$unitPrice ₽')
+                          : const Text('Цена уточняется'),
                       trailing: count > 0
                           ? Container(
                               padding: const EdgeInsets.symmetric(
@@ -390,7 +404,10 @@ class _AddressCard extends StatelessWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: _paymentFgColor(context, paymentType),
+                                          color: _paymentFgColor(
+                                            context,
+                                            paymentType,
+                                          ),
                                           fontWeight: FontWeight.w600,
                                           fontSize: 14,
                                         ),

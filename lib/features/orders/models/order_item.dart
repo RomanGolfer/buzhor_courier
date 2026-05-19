@@ -111,6 +111,7 @@ class OrderItem {
   OrderItem copyWith({
     bool? isDone,
     OrderDeliveryState? deliveryState,
+    double? price,
     int? deliveredBottles,
     int? returnedBottles,
     PaymentType? confirmedPayment,
@@ -123,7 +124,7 @@ class OrderItem {
     clientName: clientName,
     address: address,
     district: district,
-    price: price,
+    price: price ?? this.price,
     payment: payment,
     bottles: bottles,
     lat: lat,

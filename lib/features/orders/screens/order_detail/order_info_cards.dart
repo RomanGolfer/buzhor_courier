@@ -2,7 +2,13 @@ part of '../order_detail_screen.dart';
 
 class _OrderItemsCard extends StatelessWidget {
   final OrderItem order;
-  const _OrderItemsCard({required this.order});
+  final int bottles;
+  final double totalPrice;
+  const _OrderItemsCard({
+    required this.order,
+    required this.bottles,
+    required this.totalPrice,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +37,12 @@ class _OrderItemsCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '× ${order.bottles}',
+                '× $bottles',
                 style: const TextStyle(color: AppColors.grayBlue, fontSize: 14),
               ),
               const SizedBox(width: 12),
               Text(
-                '${order.price.toInt()} ₽',
+                '${OrderPricingService.waterTotal(bottles).toInt()} ₽',
                 style: TextStyle(
                   color: AppColors.textPrimary(context),
                   fontSize: 14,
@@ -54,7 +60,7 @@ class _OrderItemsCard extends StatelessWidget {
                 style: TextStyle(color: AppColors.grayBlue, fontSize: 14),
               ),
               Text(
-                '${order.price.toInt()} ₽',
+                '${totalPrice.toInt()} ₽',
                 style: TextStyle(
                   color: AppColors.textPrimary(context),
                   fontSize: 14,
@@ -75,7 +81,7 @@ class _OrderItemsCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '${order.price.toInt()} ₽',
+                '${totalPrice.toInt()} ₽',
                 style: TextStyle(
                   color: AppColors.textPrimary(context),
                   fontSize: 15,
@@ -92,12 +98,13 @@ class _OrderItemsCard extends StatelessWidget {
 
 class _PaymentQrCard extends StatelessWidget {
   final OrderItem order;
+  final double amount;
 
-  const _PaymentQrCard({required this.order});
+  const _PaymentQrCard({required this.order, required this.amount});
 
   @override
   Widget build(BuildContext context) {
-    final payload = _paymentQrPayload(order);
+    final payload = _paymentQrPayload(order, amount: amount);
 
     return _SectionCard(
       child: Column(
@@ -121,10 +128,7 @@ class _PaymentQrCard extends StatelessWidget {
                   ),
                 ),
               ),
-              _PaymentChip(
-                label: '${order.price.toInt()} ₽',
-                color: AppColors.blue,
-              ),
+              _PaymentChip(label: '${amount.toInt()} ₽', color: AppColors.blue),
             ],
           ),
           const SizedBox(height: 14),
@@ -133,6 +137,7 @@ class _PaymentQrCard extends StatelessWidget {
             children: [
               _PaymentQrOpenTarget(
                 order: order,
+                amount: amount,
                 child: _PaymentQrView(payload: payload, size: 128),
               ),
               const SizedBox(width: 14),
@@ -160,7 +165,8 @@ class _PaymentQrCard extends StatelessWidget {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: TextButton.icon(
-                        onPressed: () => _showPaymentQrSheet(context, order),
+                        onPressed: () =>
+                            _showPaymentQrSheet(context, order, amount: amount),
                         icon: const Icon(Icons.open_in_full_rounded, size: 18),
                         label: const Text('Открыть крупно'),
                       ),

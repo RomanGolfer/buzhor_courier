@@ -5,6 +5,7 @@ import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:buzhor_courier/features/orders/screens/qr_scanner_screen.dart';
+import 'package:buzhor_courier/features/orders/services/order_pricing_service.dart';
 import 'package:buzhor_courier/features/orders/services/payment_status_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +36,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   final Map<String, int> _extras = {};
   double _dispatcherReveal = 0;
   Timer? _dispatcherHideTimer;
+
+  double get _currentTotal =>
+      OrderPricingService.orderTotal(bottles: _bottles, extras: _extras);
 
   @override
   void initState() {
@@ -72,6 +76,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                       bottles: _bottles,
                       paymentType: _paymentType,
                       extras: _extras,
+                      totalPrice: _currentTotal,
                       isReadOnly: order.isClosed,
                       onBottlesChanged: (value) =>
                           setState(() => _bottles = value),
@@ -85,7 +90,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                     ),
                     if (!order.isClosed && _paymentType == PaymentType.qr) ...[
                       const SizedBox(height: 12),
-                      _PaymentQrCard(order: order),
+                      _PaymentQrCard(order: order, amount: _currentTotal),
                     ],
                     if (order.isClosed) ...[
                       const SizedBox(height: 12),
@@ -102,7 +107,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                     const SizedBox(height: 12),
                     _ClientCard(order: order),
                     const SizedBox(height: 12),
-                    _OrderItemsCard(order: order),
+                    _OrderItemsCard(
+                      order: order,
+                      bottles: _bottles,
+                      totalPrice: _currentTotal,
+                    ),
                   ],
                 ),
               ),
@@ -123,6 +132,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               bottles: _bottles,
               paymentType: _paymentType,
               extras: _extras,
+              totalPrice: _currentTotal,
               onPaymentTypeChanged: (value) =>
                   setState(() => _paymentType = value),
               onDelivered: _completeOrder,

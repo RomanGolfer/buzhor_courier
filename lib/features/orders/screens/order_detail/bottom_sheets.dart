@@ -5,6 +5,7 @@ class _BottomButtons extends StatelessWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final double totalPrice;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final Future<void> Function(_DeliveryConfirmation confirmation) onDelivered;
   final Future<void> Function(_FailureConfirmation confirmation) onFailed;
@@ -14,6 +15,7 @@ class _BottomButtons extends StatelessWidget {
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.totalPrice,
     required this.onPaymentTypeChanged,
     required this.onDelivered,
     required this.onFailed,
@@ -78,6 +80,7 @@ class _BottomButtons extends StatelessWidget {
                     bottles: bottles,
                     paymentType: paymentType,
                     extras: extras,
+                    totalPrice: totalPrice,
                     onPaymentTypeChanged: onPaymentTypeChanged,
                     onConfirm: onDelivered,
                   ),
@@ -117,6 +120,7 @@ class _DeliverySheet extends StatefulWidget {
   final int bottles;
   final PaymentType paymentType;
   final Map<String, int> extras;
+  final double totalPrice;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final Future<void> Function(_DeliveryConfirmation confirmation) onConfirm;
 
@@ -125,6 +129,7 @@ class _DeliverySheet extends StatefulWidget {
     required this.bottles,
     required this.paymentType,
     required this.extras,
+    required this.totalPrice,
     required this.onPaymentTypeChanged,
     required this.onConfirm,
   });
@@ -410,7 +415,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
         ? 'Заказ по договору, оплата QR обычно не нужна'
         : isPaid
         ? 'Заказ уже отмечен как оплаченный'
-        : '${widget.order.price.toInt()} ₽ · заказ ${widget.order.id}';
+        : '${widget.totalPrice.toInt()} ₽ · заказ ${widget.order.id}';
 
     return InkWell(
       onTap: isPaid || isContract
@@ -418,7 +423,11 @@ class _DeliverySheetState extends State<_DeliverySheet> {
           : () {
               setState(() => _paymentType = PaymentType.qr);
               widget.onPaymentTypeChanged(PaymentType.qr);
-              _showPaymentQrSheet(context, widget.order);
+              _showPaymentQrSheet(
+                context,
+                widget.order,
+                amount: widget.totalPrice,
+              );
             },
       borderRadius: BorderRadius.circular(14),
       child: Container(
@@ -545,7 +554,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
               bgColor: bg(type),
             ),
             const SizedBox(height: 12),
-            _PaymentQrPanel(order: widget.order),
+            _PaymentQrPanel(order: widget.order, amount: widget.totalPrice),
           ],
         );
       case PaymentType.online:

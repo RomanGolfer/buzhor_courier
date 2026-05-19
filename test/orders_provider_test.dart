@@ -90,7 +90,11 @@ void main() {
 
     await notifier.failOrder(_activeOrder.id, reason: '   ');
 
-    expect(notifier.state.activeOrders, [_activeOrder]);
+    expect(notifier.state.activeOrders.single.id, _activeOrder.id);
+    expect(
+      notifier.state.activeOrders.single.effectiveDeliveryState,
+      OrderDeliveryState.active,
+    );
     expect(notifier.state.completedOrders, isEmpty);
   });
 

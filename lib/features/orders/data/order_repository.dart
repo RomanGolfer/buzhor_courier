@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:buzhor_courier/features/orders/services/order_pricing_service.dart';
 
 class OrderRepository {
   OrderRepository({List<OrderItem>? initialOrders, OrderStorage? storage})
@@ -33,6 +34,7 @@ class OrderRepository {
       (order) => order.copyWith(
         isDone: true,
         deliveryState: OrderDeliveryState.delivered,
+        price: OrderPricingService.orderTotal(bottles: bottles, extras: extras),
         deliveredBottles: bottles,
         returnedBottles: returnedBottles,
         confirmedPayment: paymentType,
@@ -82,9 +84,10 @@ class OrderRepository {
   Future<void> _ensureLoaded() async {
     if (_hasLoaded) return;
     final savedOrders = await _storage?.loadOrders();
+    final orders = savedOrders ?? _fallbackOrders;
     _orders
       ..clear()
-      ..addAll(savedOrders ?? _fallbackOrders);
+      ..addAll(orders.map(_normalizePrice));
     _hasLoaded = true;
   }
 
@@ -102,6 +105,16 @@ class OrderRepository {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
     return trimmed;
+  }
+
+  OrderItem _normalizePrice(OrderItem order) {
+    final pricedBottles = order.deliveredBottles ?? order.bottles;
+    final currentPrice = OrderPricingService.orderTotal(
+      bottles: pricedBottles,
+      extras: order.extras,
+    );
+    if (order.price == currentPrice) return order;
+    return order.copyWith(price: currentPrice);
   }
 }
 

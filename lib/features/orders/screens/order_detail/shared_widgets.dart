@@ -94,12 +94,14 @@ class _PaymentChip extends StatelessWidget {
 
 class _PaymentQrPanel extends StatelessWidget {
   final OrderItem order;
+  final double? amount;
 
-  const _PaymentQrPanel({required this.order});
+  const _PaymentQrPanel({required this.order, this.amount});
 
   @override
   Widget build(BuildContext context) {
-    final payload = _paymentQrPayload(order);
+    final paymentAmount = amount ?? order.price;
+    final payload = _paymentQrPayload(order, amount: paymentAmount);
 
     return Container(
       width: double.infinity,
@@ -113,6 +115,7 @@ class _PaymentQrPanel extends StatelessWidget {
         children: [
           _PaymentQrOpenTarget(
             order: order,
+            amount: paymentAmount,
             child: _PaymentQrView(payload: payload, size: 120),
           ),
           const SizedBox(width: 14),
@@ -130,7 +133,7 @@ class _PaymentQrPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${order.price.toInt()} ₽ · заказ ${order.id}',
+                  '${paymentAmount.toInt()} ₽ · заказ ${order.id}',
                   style: const TextStyle(
                     color: AppColors.grayBlue,
                     fontSize: 12,
@@ -138,7 +141,11 @@ class _PaymentQrPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 TextButton.icon(
-                  onPressed: () => _showPaymentQrSheet(context, order),
+                  onPressed: () => _showPaymentQrSheet(
+                    context,
+                    order,
+                    amount: paymentAmount,
+                  ),
                   icon: const Icon(Icons.open_in_full_rounded, size: 18),
                   label: const Text('Крупно'),
                 ),
@@ -153,9 +160,14 @@ class _PaymentQrPanel extends StatelessWidget {
 
 class _PaymentQrOpenTarget extends StatelessWidget {
   final OrderItem order;
+  final double amount;
   final Widget child;
 
-  const _PaymentQrOpenTarget({required this.order, required this.child});
+  const _PaymentQrOpenTarget({
+    required this.order,
+    required this.amount,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +176,7 @@ class _PaymentQrOpenTarget extends StatelessWidget {
       label: 'Открыть QR крупно',
       child: GestureDetector(
         key: const Key('compactPaymentQrTapTarget'),
-        onTap: () => _showPaymentQrSheet(context, order),
+        onTap: () => _showPaymentQrSheet(context, order, amount: amount),
         child: child,
       ),
     );
@@ -198,16 +210,24 @@ class _PaymentQrView extends StatelessWidget {
   }
 }
 
-void _showPaymentQrSheet(BuildContext context, OrderItem order) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute(builder: (_) => _PaymentQrFullScreen(order: order)));
+void _showPaymentQrSheet(
+  BuildContext context,
+  OrderItem order, {
+  double? amount,
+}) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) =>
+          _PaymentQrFullScreen(order: order, amount: amount ?? order.price),
+    ),
+  );
 }
 
 class _PaymentQrFullScreen extends StatefulWidget {
   final OrderItem order;
+  final double amount;
 
-  const _PaymentQrFullScreen({required this.order});
+  const _PaymentQrFullScreen({required this.order, required this.amount});
 
   @override
   State<_PaymentQrFullScreen> createState() => _PaymentQrFullScreenState();
@@ -289,7 +309,10 @@ class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
                     const SizedBox(height: 28),
                     Center(
                       child: _PaymentQrView(
-                        payload: _paymentQrPayload(order),
+                        payload: _paymentQrPayload(
+                          order,
+                          amount: widget.amount,
+                        ),
                         size: qrSize.toDouble(),
                       ),
                     ),
@@ -301,7 +324,7 @@ class _PaymentQrFullScreenState extends State<_PaymentQrFullScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${order.price.toInt()} ₽',
+                      '${widget.amount.toInt()} ₽',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: AppColors.darkBlue,
@@ -458,14 +481,15 @@ Future<void> _copyPaymentOrderId(BuildContext context, OrderItem order) async {
     ..showSnackBar(const SnackBar(content: Text('Номер заказа скопирован')));
 }
 
-String _paymentQrPayload(OrderItem order) {
+String _paymentQrPayload(OrderItem order, {double? amount}) {
+  final paymentAmount = amount ?? order.price;
   return Uri(
     scheme: 'https',
     host: 'pay.buzhor.ru',
     path: '/order',
     queryParameters: {
       'order': order.id.replaceAll('#', ''),
-      'amount': order.price.toStringAsFixed(2),
+      'amount': paymentAmount.toStringAsFixed(2),
     },
   ).toString();
 }

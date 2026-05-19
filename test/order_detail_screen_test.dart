@@ -43,7 +43,7 @@ const _activeOrder = OrderItem(
   clientName: 'Активный клиент',
   address: 'ул. Тестовая, 3',
   district: 'Анапа',
-  price: 840,
+  price: 900,
   payment: PaymentType.cash,
   bottles: 3,
   lat: 44.8951,
@@ -55,7 +55,7 @@ const _qrOrder = OrderItem(
   clientName: 'Клиент с QR',
   address: 'ул. Тестовая, 4',
   district: 'Анапа',
-  price: 840,
+  price: 900,
   payment: PaymentType.qr,
   bottles: 3,
   lat: 44.8951,
@@ -125,7 +125,7 @@ void main() {
     );
 
     expect(find.text('QR для оплаты'), findsOneWidget);
-    expect(find.text('840 ₽'), findsOneWidget);
+    expect(find.text('900 ₽'), findsOneWidget);
     expect(find.text('Заказ #4'), findsOneWidget);
   });
 
@@ -142,7 +142,7 @@ void main() {
     expect(find.text('QR для оплаты'), findsWidgets);
     expect(find.text('Заказ #4'), findsOneWidget);
     expect(find.text('К оплате'), findsOneWidget);
-    expect(find.text('840 ₽'), findsOneWidget);
+    expect(find.text('900 ₽'), findsOneWidget);
     expect(find.text('Клиент с QR'), findsNothing);
   });
 
@@ -159,7 +159,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('К оплате'), findsOneWidget);
-    expect(find.text('840 ₽'), findsOneWidget);
+    expect(find.text('900 ₽'), findsOneWidget);
   });
 
   testWidgets('shows payment QR generation action in delivery sheet', (
@@ -182,7 +182,7 @@ void main() {
 
     expect(find.text('QR для оплаты'), findsOneWidget);
     expect(find.text('Заказ #3'), findsOneWidget);
-    expect(find.text('840 ₽'), findsOneWidget);
+    expect(find.text('900 ₽'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Закрыть'));
     await tester.pumpAndSettle();
