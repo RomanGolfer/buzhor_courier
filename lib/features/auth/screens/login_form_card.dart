@@ -99,10 +99,27 @@ extension _LoginFormCard on _LoginScreenState {
               onTap: state.isLoading
                   ? null
                   : () async {
-                      ref.read(loginStateProvider.notifier).setLoading(true);
+                      final loginNotifier = ref.read(
+                        loginStateProvider.notifier,
+                      );
+                      loginNotifier.setLoading(true);
                       final nav = Navigator.of(context);
-                      await Future.delayed(const Duration(milliseconds: 1500));
+                      final messenger = ScaffoldMessenger.of(context);
+                      final result = await ref
+                          .read(authRepositoryProvider)
+                          .signIn(
+                            phone: _phoneController.text,
+                            password: _passwordController.text,
+                          );
                       if (!mounted) return;
+                      loginNotifier.setLoading(false);
+                      if (!result.isSuccess) {
+                        messenger.showSnackBar(
+                          SnackBar(content: Text(result.errorMessage!)),
+                        );
+                        return;
+                      }
+                      ref.invalidate(backendAppConfigProvider);
                       nav.pushReplacement(
                         MaterialPageRoute(builder: (_) => const HomeScreen()),
                       );

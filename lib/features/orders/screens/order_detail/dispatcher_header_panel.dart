@@ -2,11 +2,13 @@ part of '../order_detail_screen.dart';
 
 class _DispatcherHeaderPanel extends StatelessWidget {
   final OrderItem order;
+  final String dispatcherPhone;
   final double reveal;
   final VoidCallback onAction;
 
   const _DispatcherHeaderPanel({
     required this.order,
+    required this.dispatcherPhone,
     required this.reveal,
     required this.onAction,
   });
@@ -119,7 +121,7 @@ class _DispatcherHeaderPanel extends StatelessWidget {
                         onAction();
                         NavigationService.callPhoneWithFeedback(
                           context,
-                          phone: _dispatcherPhone,
+                          phone: dispatcherPhone,
                         );
                       },
                     ),
@@ -131,7 +133,7 @@ class _DispatcherHeaderPanel extends StatelessWidget {
                         onAction();
                         NavigationService.openMessenger(
                           context,
-                          phone: _dispatcherPhone,
+                          phone: dispatcherPhone,
                           message: 'Заказ ${order.id}',
                         );
                       },

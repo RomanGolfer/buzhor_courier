@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:buzhor_courier/core/config/backend_app_config.dart';
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
@@ -42,8 +43,6 @@ part 'order_detail/payment_qr_full_screen.dart';
 part 'order_detail/payment_qr_full_screen_widgets.dart';
 part 'order_detail/payment_qr_cards.dart';
 part 'order_detail/payment_qr_payload.dart';
-
-const _dispatcherPhone = '+79385358777';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final OrderItem order;
@@ -137,6 +136,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final providerState = ref.watch(ordersProvider);
+    final appConfig =
+        ref.watch(backendAppConfigProvider).valueOrNull ??
+        BackendAppConfig.fallback;
 
     ref.listen<OrdersState>(ordersProvider, (_, next) {
       final updated = next.activeOrders.firstWhere(
@@ -207,6 +209,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           if (!order.isClosed)
             _DispatcherHeaderPanel(
               order: order,
+              dispatcherPhone: appConfig.dispatcherPhone,
               reveal: _dispatcherReveal,
               onAction: _hideDispatcherPanel,
             ),
