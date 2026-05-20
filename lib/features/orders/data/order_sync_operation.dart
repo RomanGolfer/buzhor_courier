@@ -37,6 +37,13 @@ class OrderSyncOperation {
     this.ackedAt,
   });
 
+  String get backendType {
+    return switch (type) {
+      OrderSyncOperationType.complete => 'complete',
+      OrderSyncOperationType.fail => 'fail',
+    };
+  }
+
   factory OrderSyncOperation.complete(
     String orderId, {
     required int bottles,
