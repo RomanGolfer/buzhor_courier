@@ -34,7 +34,8 @@ class BuzhorApp extends ConsumerWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: themeMode,
-      home: const PushNotificationListener(child: LoginScreen()),
-    );
-  }
-}
+      home: const PushNotificationListener(
+  child: RealtimeOrderListener(
+    child: LoginScreen(),
+  ),
+),
