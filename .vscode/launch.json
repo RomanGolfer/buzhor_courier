@@ -1,7 +1,13 @@
 {
   "version": "0.2.0",
   "configurations": [
-    
+    {
+      "name": "dispatcher_web",
+      "request": "launch",
+      "type": "node-terminal",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/dispatcher_web"
+    },
     {
       "name": "buzhor_supabase",
       "request": "launch",
