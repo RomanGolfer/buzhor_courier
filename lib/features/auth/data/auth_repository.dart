@@ -19,7 +19,7 @@ class AuthResult {
 
 abstract class AuthRepository {
   bool get isBackendEnabled;
-  Future<AuthResult> signIn({required String phone, required String password});
+  Future<AuthResult> signIn({required String email, required String password});
 }
 
 class DemoAuthRepository implements AuthRepository {
@@ -30,7 +30,7 @@ class DemoAuthRepository implements AuthRepository {
 
   @override
   Future<AuthResult> signIn({
-    required String phone,
+    required String email,
     required String password,
   }) async {
     await Future.delayed(const Duration(milliseconds: 900));
@@ -48,17 +48,17 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<AuthResult> signIn({
-    required String phone,
+    required String email,
     required String password,
   }) async {
-    final normalizedPhone = phone.replaceAll(RegExp(r'[^+\d]'), '');
-    if (normalizedPhone.isEmpty || password.isEmpty) {
-      return const AuthResult.failure('Введите телефон и пароль');
+    final normalizedEmail = email.trim();
+    if (normalizedEmail.isEmpty || password.isEmpty) {
+      return const AuthResult.failure('Введите email и пароль');
     }
 
     try {
       final response = await _client.auth.signInWithPassword(
-        phone: normalizedPhone,
+        email: normalizedEmail,
         password: password,
       );
       if (response.session == null) {

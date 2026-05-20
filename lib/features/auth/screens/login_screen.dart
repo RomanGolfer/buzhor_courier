@@ -25,7 +25,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen>
     with TickerProviderStateMixin {
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   late AnimationController _logoController;
@@ -88,7 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   void dispose() {
     _logoController.dispose();
     _bubbleController.dispose();
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

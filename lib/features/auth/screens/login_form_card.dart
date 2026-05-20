@@ -62,11 +62,11 @@ extension _LoginFormCard on _LoginScreenState {
             ),
             const SizedBox(height: 24),
             _buildField(
-              controller: _phoneController,
-              label: 'Номер телефона',
-              hint: '+7 900 000 00 00',
-              icon: Icons.phone_outlined,
-              keyboardType: TextInputType.phone,
+              controller: _emailController,
+              label: 'Email',
+              hint: 'courier@buzhor.ru',
+              icon: Icons.email_outlined,
+              keyboardType: TextInputType.emailAddress,
               focused: state.phoneFocused,
               onFocus: (v) =>
                   ref.read(loginStateProvider.notifier).setPhoneFocused(v),
@@ -108,7 +108,7 @@ extension _LoginFormCard on _LoginScreenState {
                       final result = await ref
                           .read(authRepositoryProvider)
                           .signIn(
-                            phone: _phoneController.text,
+                            email: _emailController.text,
                             password: _passwordController.text,
                           );
                       if (!mounted) return;
