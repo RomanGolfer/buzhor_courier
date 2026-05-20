@@ -2,6 +2,7 @@ import 'package:buzhor_courier/features/orders/data/order_repository.dart';
 import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/data/order_backend_api.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
+import 'package:buzhor_courier/features/orders/data/order_sync_operation.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -196,6 +197,58 @@ void main() {
     expect(storage.savedActionJournal, isEmpty);
   });
 
+  test('completeOrder stores pending sync operation', () async {
+    final storage = _FakeOrderStorage();
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+
+    await repository.completeOrder(
+      _activeOrder.id,
+      bottles: 2,
+      returnedBottles: 0,
+      paymentType: PaymentType.cash,
+      extras: const {},
+      scannedItems: const {'water': 2},
+    );
+
+    final operation = storage.savedSyncOperations.single;
+    expect(operation.type, OrderSyncOperationType.complete);
+    expect(operation.status, OrderSyncOperationStatus.pending);
+    expect(operation.orderId, _activeOrder.id);
+    expect(operation.payload['bottles'], 2);
+    expect(operation.payload['paymentType'], PaymentType.cash.name);
+  });
+
+  test('failOrder stores pending sync operation for nonblank reason', () async {
+    final storage = _FakeOrderStorage();
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+
+    await repository.failOrder(_activeOrder.id, reason: ' No answer ');
+
+    final operation = storage.savedSyncOperations.single;
+    expect(operation.type, OrderSyncOperationType.fail);
+    expect(operation.status, OrderSyncOperationStatus.pending);
+    expect(operation.orderId, _activeOrder.id);
+    expect(operation.payload['reason'], 'No answer');
+  });
+
+  test('failOrder does not queue blank reason', () async {
+    final storage = _FakeOrderStorage();
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+
+    await repository.failOrder(_activeOrder.id, reason: '   ');
+
+    expect(storage.savedSyncOperations, isEmpty);
+  });
+
   test('repository prefers backend orders and caches them locally', () async {
     final storage = _FakeOrderStorage();
     final backendOrder = _incomingOrder.copyWith(orderNumber: '#4822');
@@ -241,6 +294,7 @@ class _FakeOrderBackendApi implements OrderBackendApi {
 class _FakeOrderStorage implements OrderStorage {
   List<OrderItem>? savedOrders;
   final List<OrderActionJournalEntry> savedActionJournal = [];
+  final List<OrderSyncOperation> savedSyncOperations = [];
 
   @override
   Future<List<OrderItem>?> loadOrders() async {
@@ -265,5 +319,15 @@ class _FakeOrderStorage implements OrderStorage {
   @override
   Future<void> clearActionJournal() async {
     savedActionJournal.clear();
+  }
+
+  @override
+  Future<List<OrderSyncOperation>> loadSyncOperations() async {
+    return List<OrderSyncOperation>.of(savedSyncOperations);
+  }
+
+  @override
+  Future<void> appendSyncOperation(OrderSyncOperation operation) async {
+    savedSyncOperations.add(operation);
   }
 }

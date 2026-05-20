@@ -3,6 +3,7 @@ import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/data/order_backend_api.dart';
 import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
+import 'package:buzhor_courier/features/orders/data/order_sync_operation.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/services/order_pricing_service.dart';
 
@@ -36,6 +37,17 @@ class OrderRepository {
     String? comment,
   }) async {
     await _ensureLoaded();
+    await _storage?.appendSyncOperation(
+      OrderSyncOperation.complete(
+        orderId,
+        bottles: bottles,
+        returnedBottles: returnedBottles,
+        paymentType: paymentType,
+        extras: extras,
+        scannedItems: scannedItems,
+        comment: comment,
+      ),
+    );
     await _commitAction(
       OrderActionJournalEntry.complete(
         orderId,
@@ -58,6 +70,9 @@ class OrderRepository {
     final normalizedReason = _normalizeOptionalText(reason);
     if (normalizedReason == null) return fetchOrders();
 
+    await _storage?.appendSyncOperation(
+      OrderSyncOperation.fail(orderId, reason: normalizedReason),
+    );
     await _commitAction(
       OrderActionJournalEntry.fail(orderId, reason: normalizedReason),
     );
