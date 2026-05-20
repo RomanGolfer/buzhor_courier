@@ -4,9 +4,10 @@
     {
       "name": "dispatcher_web",
       "request": "launch",
-      "type": "node-terminal",
-      "command": "npm run dev",
-      "cwd": "${workspaceFolder}/dispatcher_web"
+      "type": "chrome",
+      "url": "http://localhost:3000",
+      "preLaunchTask": "dispatcher_web: dev",
+      "webRoot": "${workspaceFolder}/dispatcher_web"
     },
     {
       "name": "buzhor_supabase",
