@@ -7,6 +7,7 @@ import 'package:buzhor_courier/features/auth/screens/login_screen.dart';
 import 'package:buzhor_courier/core/theme/app_theme.dart';
 import 'package:buzhor_courier/core/theme/theme_mode_provider.dart';
 import 'package:buzhor_courier/core/notifications/push_notification_listener.dart';
+import 'package:buzhor_courier/features/orders/realtime/realtime_order_listener.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,7 +36,10 @@ class BuzhorApp extends ConsumerWidget {
       darkTheme: darkTheme,
       themeMode: themeMode,
       home: const PushNotificationListener(
-  child: RealtimeOrderListener(
-    child: LoginScreen(),
-  ),
-),
+        child: RealtimeOrderListener(
+          child: LoginScreen(),
+        ),
+      ),
+    );
+  }
+}
