@@ -11,7 +11,7 @@ type AppShellProps = {
 export function AppShell({ profile, children }: AppShellProps) {
   async function signOut() {
     "use server";
-    const supabase = createServerSupabaseClient();
+    const supabase = await createServerSupabaseClient();
     await supabase.auth.signOut();
     redirect("/login");
   }

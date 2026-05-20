@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export function createServerSupabaseClient() {
+export async function createServerSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -9,7 +9,7 @@ export function createServerSupabaseClient() {
     throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
 
   return createServerClient(url, anonKey, {
     cookies: {
@@ -20,14 +20,14 @@ export function createServerSupabaseClient() {
         try {
           cookieStore.set({ name, value, ...options });
         } catch {
-          // Server Components cannot always set cookies; middleware/login actions handle writes.
+          // Server Components cannot always set cookies; proxy/login actions handle writes.
         }
       },
       remove(name: string, options: CookieOptions) {
         try {
           cookieStore.set({ name, value: "", ...options });
         } catch {
-          // Server Components cannot always set cookies; middleware/login actions handle writes.
+          // Server Components cannot always set cookies; proxy/login actions handle writes.
         }
       }
     }

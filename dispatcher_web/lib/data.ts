@@ -10,7 +10,7 @@ export function todayRange() {
 }
 
 export async function getCouriers() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("couriers")
     .select("id, profile_id, display_name, phone, region, is_active")
@@ -22,7 +22,7 @@ export async function getCouriers() {
 }
 
 export async function getTodayOrders() {
-  const supabase = createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient();
   const { start, end } = todayRange();
 
   const { data, error } = await supabase
