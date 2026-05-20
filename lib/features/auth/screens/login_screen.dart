@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
+import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/core/config/backend_app_config.dart';
+import 'package:buzhor_courier/features/auth/data/auth_credentials_storage.dart';
 import 'package:buzhor_courier/features/auth/data/auth_repository.dart';
 import 'package:buzhor_courier/shared/models/bubble.dart';
 import 'package:buzhor_courier/core/constants/app_colors.dart';
@@ -35,10 +37,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   final List<Bubble> _bubbles = [];
   final _random = math.Random();
+  bool _isAutoLoggingIn = false;
 
   @override
   void initState() {
     super.initState();
+    Future.microtask(_tryAutoLogin);
 
     for (int i = 0; i < 18; i++) {
       _bubbles.add(
@@ -93,6 +97,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     super.dispose();
   }
 
+  Future<void> _tryAutoLogin() async {
+    final client = SupabaseBackend.client;
+    if (client != null && client.auth.currentSession != null) {
+      if (mounted) _navigateToHome();
+      return;
+    }
+
+    final credentials =
+        await ref.read(authCredentialsStorageProvider).load();
+    if (credentials == null || !mounted) return;
+
+    setState(() => _isAutoLoggingIn = true);
+
+    final result = await ref.read(authRepositoryProvider).signIn(
+          email: credentials.email,
+          password: credentials.password,
+        );
+
+    if (!mounted) return;
+
+    if (result.isSuccess) {
+      ref.invalidate(backendAppConfigProvider);
+      _navigateToHome();
+    } else {
+      await ref.read(authCredentialsStorageProvider).clear();
+      if (mounted) setState(() => _isAutoLoggingIn = false);
+    }
+  }
+
+  void _navigateToHome() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(loginStateProvider);
@@ -107,10 +146,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         body: Stack(
           children: [
             _buildAnimatedBackground(),
-
             _buildLogoHeader(),
-
-            _buildLoginCard(state),
+            if (_isAutoLoggingIn)
+              const Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SizedBox(
+                  height: 200,
+                  child: Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                ),
+              )
+            else
+              _buildLoginCard(state),
           ],
         ),
       ),

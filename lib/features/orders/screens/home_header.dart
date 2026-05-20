@@ -50,10 +50,57 @@ extension _HomeHeader on _HomeScreenState {
               ),
               const SizedBox(width: 10),
               _buildGpsIndicator(locationState),
+              const SizedBox(width: 10),
+              _buildLogoutButton(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLogoutButton() {
+    return IconButton(
+      onPressed: _logout,
+      icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 18),
+      tooltip: 'Выйти',
+      style: IconButton.styleFrom(
+        backgroundColor: Colors.white.withValues(alpha: 0.12),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.24)),
+        fixedSize: const Size(34, 34),
+        minimumSize: const Size(34, 34),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+    );
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Выйти из аккаунта?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Выйти'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    await ref.read(authCredentialsStorageProvider).clear();
+    await SupabaseBackend.client?.auth.signOut();
+
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
     );
   }
 
