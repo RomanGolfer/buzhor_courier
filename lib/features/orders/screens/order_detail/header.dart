@@ -41,7 +41,7 @@ class _Header extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    order.id,
+                    order.displayId,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 20,

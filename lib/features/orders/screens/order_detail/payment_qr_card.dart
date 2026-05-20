@@ -59,7 +59,7 @@ class _PaymentQrCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Заказ ${order.id}',
+                      'Заказ ${order.displayId}',
                       style: const TextStyle(
                         color: AppColors.grayBlue,
                         fontSize: 12,

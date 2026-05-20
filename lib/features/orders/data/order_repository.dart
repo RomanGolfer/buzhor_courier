@@ -1,17 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
+import 'package:buzhor_courier/features/orders/data/order_backend_api.dart';
 import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/services/order_pricing_service.dart';
 
 class OrderRepository {
-  OrderRepository({List<OrderItem>? initialOrders, OrderStorage? storage})
-    : _fallbackOrders = List<OrderItem>.of(initialOrders ?? sampleOrders),
-      _storage = storage;
+  OrderRepository({
+    List<OrderItem>? initialOrders,
+    OrderStorage? storage,
+    OrderBackendApi? backendApi,
+  }) : _fallbackOrders = List<OrderItem>.of(initialOrders ?? sampleOrders),
+       _storage = storage,
+       _backendApi = backendApi;
 
   final List<OrderItem> _fallbackOrders;
   final OrderStorage? _storage;
+  final OrderBackendApi? _backendApi;
   final List<OrderItem> _orders = [];
   bool _hasLoaded = false;
 
@@ -66,11 +72,15 @@ class OrderRepository {
 
   Future<void> _ensureLoaded() async {
     if (_hasLoaded) return;
-    final savedOrders = await _storage?.loadOrders();
-    final orders = savedOrders ?? _fallbackOrders;
+    final backendOrders = await _backendApi?.fetchAssignedOrders();
+    final savedOrders = backendOrders == null
+        ? await _storage?.loadOrders()
+        : null;
+    final orders = backendOrders ?? savedOrders ?? _fallbackOrders;
     _orders
       ..clear()
       ..addAll(orders.map(_normalizePrice));
+    if (backendOrders != null) await _persist();
     await _replayActionJournal();
     _hasLoaded = true;
   }
@@ -186,5 +196,8 @@ PaymentType _paymentTypeFromName(String name) {
 }
 
 final orderRepositoryProvider = Provider<OrderRepository>(
-  (ref) => OrderRepository(storage: const SharedPreferencesOrderStorage()),
+  (ref) => OrderRepository(
+    storage: const SharedPreferencesOrderStorage(),
+    backendApi: const SupabaseOrderBackendApi(),
+  ),
 );

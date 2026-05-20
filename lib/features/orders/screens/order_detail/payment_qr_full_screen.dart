@@ -185,7 +185,7 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
       await SharePlus.instance.share(
         ShareParams(
           text:
-              'QR для оплаты заказа ${widget.order.id} на сумму ${widget.amount.toInt()} ₽',
+              'QR для оплаты заказа ${widget.order.displayId} на сумму ${widget.amount.toInt()} ₽',
           files: [XFile(imageFile.path)],
         ),
       );
@@ -247,7 +247,7 @@ class _PaymentQrFullScreenState extends ConsumerState<_PaymentQrFullScreen> {
 
       final tempDir = await getTemporaryDirectory();
       final fileName =
-          'payment_qr_${widget.order.id.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png';
+          'payment_qr_${widget.order.displayId.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File('${tempDir.path}/$fileName');
       debugPrint('QR capture: writing to ${file.path}');
 

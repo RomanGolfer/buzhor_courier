@@ -42,7 +42,7 @@ class _PaymentQrPanel extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${paymentAmount.toInt()} ₽ · заказ ${order.id}',
+                  '${paymentAmount.toInt()} ₽ · заказ ${order.displayId}',
                   style: const TextStyle(
                     color: AppColors.grayBlue,
                     fontSize: 12,

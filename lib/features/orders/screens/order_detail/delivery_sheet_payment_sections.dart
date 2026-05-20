@@ -12,7 +12,7 @@ extension _DeliverySheetPaymentSections on _DeliverySheetState {
         ? 'Заказ по договору, оплата QR обычно не нужна'
         : isPaid
         ? 'Заказ уже отмечен как оплаченный'
-        : '${widget.totalPrice.toInt()} ₽ · заказ ${widget.order.id}';
+        : '${widget.totalPrice.toInt()} ₽ · заказ ${widget.order.displayId}';
 
     return InkWell(
       onTap: isPaid || isContract ? null : _selectQrPaymentAndOpen,

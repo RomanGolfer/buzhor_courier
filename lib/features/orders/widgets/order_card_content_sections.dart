@@ -14,7 +14,7 @@ class _OrderCardHeaderRow extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                order.id,
+                order.displayId,
                 style: const TextStyle(
                   color: AppColors.blue,
                   fontSize: 12,

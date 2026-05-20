@@ -26,6 +26,7 @@ void main() {
     final restored = OrderItem.fromJson(order.toJson());
 
     expect(restored.id, order.id);
+    expect(restored.displayId, order.id);
     expect(restored.payment, PaymentType.qr);
     expect(restored.effectiveDeliveryState, OrderDeliveryState.delivered);
     expect(restored.confirmedPayment, PaymentType.online);
@@ -70,5 +71,58 @@ void main() {
     expect(updated.confirmedPayment, isNull);
     expect(updated.deliveryComment, isNull);
     expect(updated.failureReason, isNull);
+  });
+
+  test('uses order number for display while keeping backend id', () {
+    const order = OrderItem(
+      id: '7ee65d46-1a38-4eb1-9d21-b491c61e04544',
+      orderNumber: '#4821',
+      clientName: 'Client',
+      address: 'Address',
+      district: 'District',
+      price: 400,
+      payment: PaymentType.cash,
+      bottles: 1,
+      lat: 44.8951,
+      lng: 37.3168,
+    );
+
+    final restored = OrderItem.fromJson(order.toJson());
+
+    expect(restored.id, '7ee65d46-1a38-4eb1-9d21-b491c61e04544');
+    expect(restored.orderNumber, '#4821');
+    expect(restored.displayId, '#4821');
+  });
+
+  test('maps backend order rows to app model', () {
+    final order = OrderItem.fromBackendJson({
+      'id': '7ee65d46-1a38-4eb1-9d21-b491c61e04544',
+      'order_number': '#4821',
+      'client_name': 'Client',
+      'client_phone': '+79990000000',
+      'address': 'Address',
+      'district': 'District',
+      'lat': 44.8951,
+      'lng': 37.3168,
+      'payment_method': 'qr',
+      'price': 900,
+      'bottles': 3,
+      'state': 'delivered',
+      'extras': {'pump': 1},
+      'scanned_items': {'water': 3},
+      'delivered_bottles': 3,
+      'returned_bottles': 0,
+      'confirmed_payment': 'online',
+      'delivery_comment': 'Done',
+      'failure_reason': null,
+    });
+
+    expect(order.id, '7ee65d46-1a38-4eb1-9d21-b491c61e04544');
+    expect(order.displayId, '#4821');
+    expect(order.payment, PaymentType.qr);
+    expect(order.effectiveDeliveryState, OrderDeliveryState.delivered);
+    expect(order.confirmedPayment, PaymentType.online);
+    expect(order.extras, {'pump': 1});
+    expect(order.scannedItems, {'water': 3});
   });
 }

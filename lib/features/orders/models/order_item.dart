@@ -6,6 +6,7 @@ const Object _copyWithSentinel = Object();
 
 class OrderItem {
   final String id;
+  final String? orderNumber;
   final String clientName;
   final String address;
   final String district;
@@ -27,6 +28,7 @@ class OrderItem {
 
   const OrderItem({
     required this.id,
+    this.orderNumber,
     required this.clientName,
     required this.address,
     required this.district,
@@ -50,6 +52,8 @@ class OrderItem {
 
   final bool isDone;
 
+  String get displayId => orderNumber ?? id;
+
   bool get isClosed => effectiveDeliveryState != OrderDeliveryState.active;
   bool get isFailed => effectiveDeliveryState == OrderDeliveryState.failed;
 
@@ -61,6 +65,7 @@ class OrderItem {
   factory OrderItem.fromJson(Map<String, dynamic> json) {
     return OrderItem(
       id: json['id'] as String,
+      orderNumber: json['orderNumber'] as String?,
       clientName: json['clientName'] as String,
       address: json['address'] as String,
       district: json['district'] as String,
@@ -87,8 +92,43 @@ class OrderItem {
     );
   }
 
+  factory OrderItem.fromBackendJson(Map<String, dynamic> json) {
+    final state = _deliveryStateFromBackend(json['state'] as String?);
+    final deliveredBottles = json['delivered_bottles'] as int?;
+    final returnedBottles = json['returned_bottles'] as int?;
+
+    return OrderItem(
+      id: json['id'] as String,
+      orderNumber: json['order_number'] as String?,
+      clientName: json['client_name'] as String,
+      address: json['address'] as String,
+      district: json['district'] as String? ?? '',
+      price: (json['price'] as num).toDouble(),
+      payment: _paymentTypeFromName(
+        json['payment_method'] as String? ?? PaymentType.cash.name,
+      ),
+      bottles: json['bottles'] as int? ?? 0,
+      lat: (json['lat'] as num?)?.toDouble() ?? 0,
+      lng: (json['lng'] as num?)?.toDouble() ?? 0,
+      isDone: state == OrderDeliveryState.delivered,
+      deliveryState: state,
+      comment: json['comment'] as String?,
+      phone: json['client_phone'] as String?,
+      deliveredBottles: deliveredBottles,
+      returnedBottles: returnedBottles,
+      confirmedPayment: _optionalPaymentTypeFromName(
+        json['confirmed_payment'] as String?,
+      ),
+      extras: _intMapFromJson(json['extras']),
+      scannedItems: _intMapFromJson(json['scanned_items']),
+      deliveryComment: json['delivery_comment'] as String?,
+      failureReason: json['failure_reason'] as String?,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
+    'orderNumber': orderNumber,
     'clientName': clientName,
     'address': address,
     'district': district,
@@ -115,6 +155,7 @@ class OrderItem {
     OrderDeliveryState? deliveryState,
     double? price,
     PaymentType? payment,
+    Object? orderNumber = _copyWithSentinel,
     Object? comment = _copyWithSentinel,
     Object? phone = _copyWithSentinel,
     Object? deliveredBottles = _copyWithSentinel,
@@ -126,6 +167,7 @@ class OrderItem {
     Object? failureReason = _copyWithSentinel,
   }) => OrderItem(
     id: id,
+    orderNumber: _copyNullable(orderNumber, this.orderNumber),
     clientName: clientName,
     address: address,
     district: district,
@@ -164,6 +206,14 @@ PaymentType? _optionalPaymentTypeFromName(String? name) {
 
 OrderDeliveryState _deliveryStateFromName(String name) {
   return OrderDeliveryState.values.byName(name);
+}
+
+OrderDeliveryState _deliveryStateFromBackend(String? name) {
+  return switch (name) {
+    'delivered' => OrderDeliveryState.delivered,
+    'failed' || 'cancelled' => OrderDeliveryState.failed,
+    _ => OrderDeliveryState.active,
+  };
 }
 
 Map<String, int> _intMapFromJson(Object? value) {

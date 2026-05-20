@@ -7,7 +7,7 @@ String _paymentQrPayload(OrderItem order, {double? amount}) {
     host: 'pay.buzhor.ru',
     path: '/order',
     queryParameters: {
-      'order': order.id.replaceAll('#', ''),
+      'order': order.displayId.replaceAll('#', ''),
       'amount': paymentAmount.toStringAsFixed(2),
     },
   ).toString();

@@ -47,7 +47,7 @@ class _PaymentStatusNotice extends StatelessWidget {
 }
 
 Future<void> _copyPaymentOrderId(BuildContext context, OrderItem order) async {
-  await Clipboard.setData(ClipboardData(text: order.id));
+  await Clipboard.setData(ClipboardData(text: order.displayId));
   if (!context.mounted) return;
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -102,7 +102,7 @@ class _PaymentQrVisibleCard extends StatelessWidget {
           GestureDetector(
             onLongPress: () => _copyPaymentOrderId(context, order),
             child: Text(
-              'Заказ ${order.id}',
+              'Заказ ${order.displayId}',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: AppColors.grayBlue,
@@ -179,7 +179,7 @@ class _PaymentQrShareCard extends StatelessWidget {
           GestureDetector(
             onLongPress: () => _copyPaymentOrderId(context, order),
             child: Text(
-              'Заказ ${order.id}',
+              'Заказ ${order.displayId}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: AppColors.grayBlue,

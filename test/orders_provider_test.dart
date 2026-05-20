@@ -1,5 +1,6 @@
 import 'package:buzhor_courier/features/orders/data/order_repository.dart';
 import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
+import 'package:buzhor_courier/features/orders/data/order_backend_api.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
@@ -195,6 +196,22 @@ void main() {
     expect(storage.savedActionJournal, isEmpty);
   });
 
+  test('repository prefers backend orders and caches them locally', () async {
+    final storage = _FakeOrderStorage();
+    final backendOrder = _incomingOrder.copyWith(orderNumber: '#4822');
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+      backendApi: _FakeOrderBackendApi([backendOrder]),
+    );
+
+    final orders = await repository.fetchOrders();
+
+    expect(orders.single.id, _incomingOrder.id);
+    expect(orders.single.displayId, '#4822');
+    expect(storage.savedOrders?.single.id, _incomingOrder.id);
+  });
+
   test('upsertIncomingOrder adds new pushed order', () async {
     final notifier = OrdersNotifier(
       OrderRepository(initialOrders: [_activeOrder]),
@@ -208,6 +225,17 @@ void main() {
       _incomingOrder.id,
     ]);
   });
+}
+
+class _FakeOrderBackendApi implements OrderBackendApi {
+  final List<OrderItem>? orders;
+
+  const _FakeOrderBackendApi(this.orders);
+
+  @override
+  Future<List<OrderItem>?> fetchAssignedOrders() async {
+    return orders == null ? null : List<OrderItem>.of(orders!);
+  }
 }
 
 class _FakeOrderStorage implements OrderStorage {

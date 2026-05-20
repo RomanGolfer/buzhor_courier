@@ -134,7 +134,7 @@ class _DispatcherHeaderPanel extends StatelessWidget {
                         NavigationService.openMessenger(
                           context,
                           phone: dispatcherPhone,
-                          message: 'Заказ ${order.id}',
+                          message: 'Заказ ${order.displayId}',
                         );
                       },
                     ),

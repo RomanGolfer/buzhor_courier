@@ -56,7 +56,7 @@ class _RouteStopCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    order.id,
+                    order.displayId,
                     style: const TextStyle(
                       color: AppColors.blue,
                       fontSize: 12,

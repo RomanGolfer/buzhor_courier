@@ -49,7 +49,9 @@ class _PushNotificationListenerState
         if (!mounted) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('Новый заказ ${order.id}')));
+          ..showSnackBar(
+            SnackBar(content: Text('Новый заказ ${order.displayId}')),
+          );
     }
   }
 }
