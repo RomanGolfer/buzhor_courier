@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
+import 'package:buzhor_courier/features/orders/data/order_sync_worker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import 'package:buzhor_courier/core/notifications/push_notification_listener.dar
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseBackend.initialize();
+  OrderSyncWorker.instance.start();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

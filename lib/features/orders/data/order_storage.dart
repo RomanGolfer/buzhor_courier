@@ -13,6 +13,7 @@ abstract class OrderStorage {
   Future<void> clearActionJournal();
   Future<List<OrderSyncOperation>> loadSyncOperations();
   Future<void> appendSyncOperation(OrderSyncOperation operation);
+  Future<void> saveSyncOperations(List<OrderSyncOperation> operations);
 }
 
 class SharedPreferencesOrderStorage implements OrderStorage {
@@ -107,6 +108,13 @@ class SharedPreferencesOrderStorage implements OrderStorage {
       ...operations.map((operation) => operation.toJson()),
       operation.toJson(),
     ]);
+    await prefs.setString(_syncOperationsKey, raw);
+  }
+
+  @override
+  Future<void> saveSyncOperations(List<OrderSyncOperation> operations) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = jsonEncode(operations.map((op) => op.toJson()).toList());
     await prefs.setString(_syncOperationsKey, raw);
   }
 }

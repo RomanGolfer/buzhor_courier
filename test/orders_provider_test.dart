@@ -330,4 +330,11 @@ class _FakeOrderStorage implements OrderStorage {
   Future<void> appendSyncOperation(OrderSyncOperation operation) async {
     savedSyncOperations.add(operation);
   }
+
+  @override
+  Future<void> saveSyncOperations(List<OrderSyncOperation> operations) async {
+    savedSyncOperations
+      ..clear()
+      ..addAll(operations);
+  }
 }

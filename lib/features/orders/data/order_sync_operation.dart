@@ -99,6 +99,28 @@ class OrderSyncOperation {
     );
   }
 
+  OrderSyncOperation copyWith({
+    OrderSyncOperationStatus? status,
+    int? attemptCount,
+    DateTime? nextAttemptAt,
+    String? lastError,
+    DateTime? ackedAt,
+  }) {
+    return OrderSyncOperation(
+      operationId: operationId,
+      type: type,
+      status: status ?? this.status,
+      orderId: orderId,
+      orderVersion: orderVersion,
+      createdAt: createdAt,
+      payload: payload,
+      attemptCount: attemptCount ?? this.attemptCount,
+      nextAttemptAt: nextAttemptAt ?? this.nextAttemptAt,
+      lastError: lastError ?? this.lastError,
+      ackedAt: ackedAt ?? this.ackedAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     return {
       'operationId': operationId,
