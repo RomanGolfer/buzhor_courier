@@ -3,7 +3,7 @@
   "configurations": [
     
     {
-      "name": "Buzhor (Supabase)",
+      "name": "buzhor_supabase",
       "request": "launch",
       "type": "dart",
       "args": [
