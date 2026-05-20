@@ -100,10 +100,10 @@ class OrderItem {
     return OrderItem(
       id: json['id'] as String,
       orderNumber: json['order_number'] as String?,
-      clientName: json['client_name'] as String,
-      address: json['address'] as String,
+      clientName: json['client_name'] as String? ?? '',
+      address: json['address'] as String? ?? '',
       district: json['district'] as String? ?? '',
-      price: (json['price'] as num).toDouble(),
+      price: (json['price'] as num?)?.toDouble() ?? 0,
       payment: _paymentTypeFromName(
         json['payment_method'] as String? ?? PaymentType.cash.name,
       ),

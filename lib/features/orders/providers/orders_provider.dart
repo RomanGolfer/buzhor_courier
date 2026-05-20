@@ -71,7 +71,13 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
 
   Future<void> refreshOrders() async {
     await Future.delayed(const Duration(milliseconds: 300));
-    await _loadOrders();
+    state = state.copyWith(isLoading: true);
+    try {
+      final orders = await _repository.reloadOrders();
+      _setOrders(orders);
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+    }
   }
 
   void setNavIndex(int index) {
