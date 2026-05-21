@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/data/order_backend_api.dart';
@@ -93,14 +92,15 @@ class OrderRepository {
 
   Future<void> _ensureLoaded() async {
     if (_hasLoaded) return;
-    debugPrint('_ensureLoaded: fetching from backend...');
+    final currentOrders = List<OrderItem>.of(_orders);
     final backendOrders = await _backendApi?.fetchAssignedOrders();
-    debugPrint('_ensureLoaded: backendOrders=${backendOrders?.length ?? 'null'}');
     final savedOrders = backendOrders == null
         ? await _storage?.loadOrders()
         : null;
-    debugPrint('_ensureLoaded: savedOrders=${savedOrders?.length ?? 'null'}');
-    final orders = backendOrders ?? savedOrders ?? _fallbackOrders;
+    final orders =
+        backendOrders ??
+        savedOrders ??
+        (currentOrders.isEmpty ? _fallbackOrders : currentOrders);
     _orders
       ..clear()
       ..addAll(orders.map(_normalizePrice));

@@ -37,7 +37,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   final List<Bubble> _bubbles = [];
   final _random = math.Random();
-  bool _isAutoLoggingIn = false;
 
   @override
   void initState() {
@@ -104,32 +103,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       return;
     }
 
-    final credentials =
-        await ref.read(authCredentialsStorageProvider).load();
-    if (credentials == null || !mounted) return;
-
-    setState(() => _isAutoLoggingIn = true);
-
-    final result = await ref.read(authRepositoryProvider).signIn(
-          email: credentials.email,
-          password: credentials.password,
-        );
-
-    if (!mounted) return;
-
-    if (result.isSuccess) {
-      ref.invalidate(backendAppConfigProvider);
-      _navigateToHome();
-    } else {
-      await ref.read(authCredentialsStorageProvider).clear();
-      if (mounted) setState(() => _isAutoLoggingIn = false);
+    final savedEmail = await ref
+        .read(authCredentialsStorageProvider)
+        .loadEmail();
+    if (savedEmail != null && mounted) {
+      _emailController.text = savedEmail;
     }
   }
 
   void _navigateToHome() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
@@ -147,20 +132,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           children: [
             _buildAnimatedBackground(),
             _buildLogoHeader(),
-            if (_isAutoLoggingIn)
-              const Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  ),
-                ),
-              )
-            else
-              _buildLoginCard(state),
+            _buildLoginCard(state),
           ],
         ),
       ),

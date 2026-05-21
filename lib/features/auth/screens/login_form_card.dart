@@ -119,10 +119,9 @@ extension _LoginFormCard on _LoginScreenState {
                         );
                         return;
                       }
-                      await ref.read(authCredentialsStorageProvider).save(
-                            email: _emailController.text.trim(),
-                            password: _passwordController.text,
-                          );
+                      await ref
+                          .read(authCredentialsStorageProvider)
+                          .saveEmail(_emailController.text.trim());
                       ref.invalidate(backendAppConfigProvider);
                       nav.pushReplacement(
                         MaterialPageRoute(builder: (_) => const HomeScreen()),
