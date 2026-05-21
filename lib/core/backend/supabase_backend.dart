@@ -8,8 +8,11 @@ class SupabaseBackend {
   );
   static const _publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: defaultPublishableKey,
   );
   static const _legacyAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const defaultPublishableKey =
+      'sb_publishable_4EUQnEl_Qv5jlSrMEgWqjQ_-Jk6oGVa';
 
   static bool _isInitialized = false;
 
