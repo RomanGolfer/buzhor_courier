@@ -25,6 +25,7 @@ class OrderItem {
   final Map<String, int> scannedItems;
   final String? deliveryComment;
   final String? failureReason;
+  final String? timeSlot;
 
   const OrderItem({
     required this.id,
@@ -48,6 +49,7 @@ class OrderItem {
     this.scannedItems = const {},
     this.deliveryComment,
     this.failureReason,
+    this.timeSlot,
   });
 
   final bool isDone;
@@ -89,6 +91,7 @@ class OrderItem {
       scannedItems: _intMapFromJson(json['scannedItems']),
       deliveryComment: json['deliveryComment'] as String?,
       failureReason: json['failureReason'] as String?,
+      timeSlot: json['timeSlot'] as String?,
     );
   }
 
@@ -123,6 +126,7 @@ class OrderItem {
       scannedItems: _intMapFromJson(json['scanned_items']),
       deliveryComment: json['delivery_comment'] as String?,
       failureReason: json['failure_reason'] as String?,
+      timeSlot: json['time_slot'] as String?,
     );
   }
 
@@ -148,6 +152,7 @@ class OrderItem {
     'scannedItems': scannedItems,
     'deliveryComment': deliveryComment,
     'failureReason': failureReason,
+    'timeSlot': timeSlot,
   };
 
   OrderItem copyWith({
@@ -165,6 +170,7 @@ class OrderItem {
     Map<String, int>? scannedItems,
     Object? deliveryComment = _copyWithSentinel,
     Object? failureReason = _copyWithSentinel,
+    Object? timeSlot = _copyWithSentinel,
   }) => OrderItem(
     id: id,
     orderNumber: _copyNullable(orderNumber, this.orderNumber),
@@ -187,6 +193,7 @@ class OrderItem {
     scannedItems: scannedItems ?? this.scannedItems,
     deliveryComment: _copyNullable(deliveryComment, this.deliveryComment),
     failureReason: _copyNullable(failureReason, this.failureReason),
+    timeSlot: _copyNullable(timeSlot, this.timeSlot),
   );
 }
 

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/order_repository.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
@@ -53,6 +52,13 @@ class OrdersState {
 }
 
 class OrdersNotifier extends StateNotifier<OrdersState> {
+  static const _defaultSlotLabel = '10:00 - 14:00';
+  static const _knownSlotLabels = [
+    _defaultSlotLabel,
+    '14:00 - 18:00',
+    '18:00 - 21:00',
+  ];
+
   final OrderRepository _repository;
 
   OrdersNotifier(this._repository) : super(const OrdersState()) {
@@ -155,18 +161,38 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 
   List<TimeSlot> _buildTimeSlots(List<OrderItem> activeOrders) {
-    final firstSlot = activeOrders.sublist(0, min(activeOrders.length, 4));
-    final secondSlot = activeOrders.sublist(min(activeOrders.length, 4));
+    final groupedOrders = <String, List<OrderItem>>{
+      for (final label in _knownSlotLabels) label: <OrderItem>[],
+    };
+
+    for (final order in activeOrders) {
+      final label = _slotLabelFor(order);
+      groupedOrders.putIfAbsent(label, () => <OrderItem>[]).add(order);
+    }
+
     final slots = <TimeSlot>[];
 
-    if (firstSlot.isNotEmpty) {
-      slots.add(TimeSlot(label: '10:00 - 14:00', orders: firstSlot));
+    for (final label in _knownSlotLabels) {
+      final orders = groupedOrders[label] ?? const <OrderItem>[];
+      if (orders.isNotEmpty) {
+        slots.add(TimeSlot(label: label, orders: orders));
+      }
     }
-    if (secondSlot.isNotEmpty) {
-      slots.add(TimeSlot(label: '14:00 - 18:00', orders: secondSlot));
+
+    for (final entry in groupedOrders.entries) {
+      if (_knownSlotLabels.contains(entry.key) || entry.value.isEmpty) {
+        continue;
+      }
+      slots.add(TimeSlot(label: entry.key, orders: entry.value));
     }
 
     return slots;
+  }
+
+  String _slotLabelFor(OrderItem order) {
+    final label = order.timeSlot?.trim();
+    if (label == null || label.isEmpty) return _defaultSlotLabel;
+    return label;
   }
 }
 

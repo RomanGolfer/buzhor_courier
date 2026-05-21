@@ -13,6 +13,7 @@ void main() {
       bottles: 2,
       lat: 44.8951,
       lng: 37.3168,
+      timeSlot: '14:00 - 18:00',
       isDone: true,
       deliveryState: OrderDeliveryState.delivered,
       deliveredBottles: 2,
@@ -28,6 +29,7 @@ void main() {
     expect(restored.id, order.id);
     expect(restored.displayId, order.id);
     expect(restored.payment, PaymentType.qr);
+    expect(restored.timeSlot, '14:00 - 18:00');
     expect(restored.effectiveDeliveryState, OrderDeliveryState.delivered);
     expect(restored.confirmedPayment, PaymentType.online);
     expect(restored.extras, {'Помпа': 1});
@@ -45,6 +47,7 @@ void main() {
       bottles: 2,
       lat: 44.8951,
       lng: 37.3168,
+      timeSlot: '10:00 - 14:00',
       comment: 'Old comment',
       phone: '+79990000000',
       deliveredBottles: 1,
@@ -62,6 +65,7 @@ void main() {
       confirmedPayment: null,
       deliveryComment: null,
       failureReason: null,
+      timeSlot: '14:00 - 18:00',
     );
 
     expect(updated.comment, 'New comment');
@@ -71,6 +75,7 @@ void main() {
     expect(updated.confirmedPayment, isNull);
     expect(updated.deliveryComment, isNull);
     expect(updated.failureReason, isNull);
+    expect(updated.timeSlot, '14:00 - 18:00');
   });
 
   test('uses order number for display while keeping backend id', () {
@@ -115,6 +120,7 @@ void main() {
       'confirmed_payment': 'online',
       'delivery_comment': 'Done',
       'failure_reason': null,
+      'time_slot': '14:00 - 18:00',
     });
 
     expect(order.id, '7ee65d46-1a38-4eb1-9d21-b491c61e04544');
@@ -124,5 +130,6 @@ void main() {
     expect(order.confirmedPayment, PaymentType.online);
     expect(order.extras, {'pump': 1});
     expect(order.scannedItems, {'water': 3});
+    expect(order.timeSlot, '14:00 - 18:00');
   });
 }

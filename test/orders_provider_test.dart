@@ -278,6 +278,18 @@ void main() {
       _incomingOrder.id,
     ]);
   });
+
+  test('groups active orders by backend time slot', () async {
+    final afternoonOrder = _incomingOrder.copyWith(timeSlot: '14:00 - 18:00');
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [afternoonOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(notifier.state.timeSlots, hasLength(1));
+    expect(notifier.state.timeSlots.single.label, '14:00 - 18:00');
+    expect(notifier.state.timeSlots.single.orders.single.id, afternoonOrder.id);
+  });
 }
 
 class _FakeOrderBackendApi implements OrderBackendApi {
