@@ -58,18 +58,10 @@ class OrderCard extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _NumberBadge(order: order, number: number),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _CardContent(
-                          order: order,
-                          showRouteButton: showRouteButton,
-                        ),
-                      ),
-                    ],
+                  child: _CardContent(
+                    order: order,
+                    number: number,
+                    showRouteButton: showRouteButton,
                   ),
                 ),
               ),

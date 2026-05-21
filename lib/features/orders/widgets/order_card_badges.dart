@@ -84,12 +84,16 @@ class _PaymentBadge extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: fgColor),
           const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              color: fgColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: fgColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

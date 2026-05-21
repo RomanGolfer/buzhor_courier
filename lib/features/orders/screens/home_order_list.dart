@@ -3,33 +3,70 @@ part of 'home_screen.dart';
 extension _HomeOrderList on _HomeScreenState {
   Widget _buildActiveList(OrdersState ordersState) {
     if (ordersState.activeOrders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inbox_rounded,
-              size: 56,
-              color: AppColors.lightBlue.withValues(alpha: 0.4),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Все заказы выполнены!',
-              style: TextStyle(
-                color: AppColors.textPrimary(context),
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+      return RefreshIndicator(
+        color: AppColors.blue,
+        backgroundColor: AppColors.surface(context),
+        onRefresh: _refreshOrders,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.inbox_rounded,
+                        size: 56,
+                        color: AppColors.lightBlue.withValues(alpha: 0.4),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Все заказы выполнены!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textPrimary(context),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Потяните вниз или нажмите обновить',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.grayBlue.withValues(alpha: 0.8),
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      FilledButton.icon(
+                        onPressed: _refreshOrders,
+                        icon: ordersState.isLoading
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.refresh_rounded, size: 18),
+                        label: const Text('Обновить'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.blue,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Статистика работы',
-              style: TextStyle(
-                color: AppColors.grayBlue.withValues(alpha: 0.8),
-                fontSize: 13,
-              ),
-            ),
-          ],
+            );
+          },
         ),
       );
     }

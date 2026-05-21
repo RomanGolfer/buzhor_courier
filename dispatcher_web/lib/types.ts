@@ -43,6 +43,8 @@ export type Order = {
   price: number;
   bottles: number;
   time_slot: string | null;
+  delivery_comment: string | null;
+  failure_reason: string | null;
   created_at: string;
   updated_at: string;
   couriers?: Pick<Courier, "id" | "display_name"> | null;

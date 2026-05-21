@@ -4,16 +4,21 @@ const double _routeActionColumnWidth = 112;
 
 class _CardContent extends StatelessWidget {
   final OrderItem order;
+  final int number;
   final bool showRouteButton;
 
-  const _CardContent({required this.order, this.showRouteButton = true});
+  const _CardContent({
+    required this.order,
+    required this.number,
+    this.showRouteButton = true,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _OrderCardHeaderRow(order: order),
+        _OrderCardHeaderRow(order: order, number: number),
         const SizedBox(height: 8),
         _OrderCardAddressRow(order: order),
         const SizedBox(height: 6),

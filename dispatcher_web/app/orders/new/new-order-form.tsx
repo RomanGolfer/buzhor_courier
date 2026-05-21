@@ -53,6 +53,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       price,
       payment_method: paymentMethod,
       time_slot: String(form.get("time_slot") ?? "") || null,
+      delivery_comment: String(form.get("delivery_comment") ?? "").trim() || null,
       assigned_courier_id: String(form.get("assigned_courier_id") ?? "") || null,
       created_by: user?.id ?? null,
       updated_by: user?.id ?? null
@@ -84,6 +85,14 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
         <div className="md:col-span-2">
           <Field label="Адрес" name="address" placeholder="ул. Крымская, 45, кв. 12" required />
         </div>
+        <label className="block md:col-span-2">
+          <span className="mb-1 block text-sm font-bold text-ink">Комментарий диспетчера</span>
+          <textarea
+            className="focus-ring min-h-24 w-full resize-y rounded-md border border-line px-3 py-3 text-sm"
+            name="delivery_comment"
+            placeholder="Код домофона, подъезд, уточнения по клиенту или доставке"
+          />
+        </label>
         <Field label="Район" name="district" placeholder="Анапа" />
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Курьер</span>

@@ -28,7 +28,7 @@ export async function getTodayOrders() {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, time_slot, created_at, updated_at, couriers(id, display_name)"
+      "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)"
     )
     .gte("created_at", start)
     .lt("created_at", end)
