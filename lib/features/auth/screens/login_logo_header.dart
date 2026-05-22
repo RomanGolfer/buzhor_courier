@@ -11,7 +11,7 @@ extension _LoginLogoHeader on _LoginScreenState {
       top: keyboardVisible ? -44 : 0,
       left: 0,
       right: 0,
-      height: mediaQuery.size.height * (keyboardVisible ? 0.38 : 0.45),
+      height: mediaQuery.size.height * (keyboardVisible ? 0.38 : 0.5),
       child: SafeArea(
         bottom: false,
         child: FadeTransition(
@@ -19,7 +19,7 @@ extension _LoginLogoHeader on _LoginScreenState {
           child: ScaleTransition(
             scale: _logoScale,
             child: Padding(
-              padding: EdgeInsets.only(top: keyboardVisible ? 28 : 60),
+              padding: EdgeInsets.only(top: keyboardVisible ? 28 : 96),
               child: Column(
                 children: [
                   Image.asset(
