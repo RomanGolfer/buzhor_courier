@@ -11,7 +11,8 @@ const _longOrder = OrderItem(
   id: '#1234567890',
   orderNumber: '#1234567890',
   clientName: 'Очень длинное имя клиента для проверки карточки',
-  address: 'Очень длинный адрес доставки, который должен занимать две строки',
+  address:
+      'Очень длинный адрес доставки, который должен занимать две строки без роста карточки',
   district: 'Очень длинный район',
   price: 12840,
   payment: PaymentType.contract,
@@ -61,8 +62,9 @@ void main() {
 
     expect(find.byType(OrderCard), findsOneWidget);
     final addressText = tester.widget<Text>(find.text(_longOrder.address));
-    expect(addressText.maxLines, isNull);
-    expect(addressText.overflow, isNull);
+    expect(addressText.maxLines, 2);
+    expect(addressText.overflow, TextOverflow.ellipsis);
+    expect(addressText.style?.fontSize, lessThan(15));
     expect(tester.takeException(), isNull);
   });
 }

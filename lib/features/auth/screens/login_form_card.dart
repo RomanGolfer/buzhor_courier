@@ -2,9 +2,14 @@ part of 'login_screen.dart';
 
 extension _LoginFormCard on _LoginScreenState {
   Widget _buildLoginCard(LoginState state) {
-    // Fixed white card in bottom 55%
-    return Positioned(
-      bottom: 0,
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardInset = mediaQuery.viewInsets.bottom;
+    final bottomOffset = keyboardInset > 0 ? keyboardInset + 48 : 0.0;
+
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      bottom: bottomOffset,
       left: 0,
       right: 0,
       child: Container(
@@ -25,9 +30,7 @@ extension _LoginFormCard on _LoginScreenState {
           24,
           24,
           24,
-          MediaQuery.of(context).viewInsets.bottom +
-              MediaQuery.of(context).padding.bottom +
-              24,
+          mediaQuery.padding.bottom + 24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -64,7 +67,6 @@ extension _LoginFormCard on _LoginScreenState {
             _buildField(
               controller: _emailController,
               label: 'Email',
-              hint: 'courier@buzhor.ru',
               icon: Icons.email_outlined,
               keyboardType: TextInputType.emailAddress,
               focused: state.phoneFocused,
@@ -75,7 +77,6 @@ extension _LoginFormCard on _LoginScreenState {
             _buildField(
               controller: _passwordController,
               label: 'Пароль',
-              hint: '••••••••',
               icon: Icons.lock_outline_rounded,
               obscure: state.obscurePassword,
               focused: state.passFocused,

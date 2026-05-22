@@ -37,6 +37,7 @@ class OrderCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(16),
+          border: Border(left: BorderSide(color: borderColor, width: 4)),
           boxShadow: [
             BoxShadow(
               color: borderColor.withValues(alpha: 0.10),
@@ -50,22 +51,12 @@ class OrderCard extends StatelessWidget {
             ),
           ],
         ),
-        child: IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(width: 4, color: borderColor),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
-                  child: _CardContent(
-                    order: order,
-                    number: number,
-                    showRouteButton: showRouteButton,
-                  ),
-                ),
-              ),
-            ],
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 14, 14, 14),
+          child: _CardContent(
+            order: order,
+            number: number,
+            showRouteButton: showRouteButton,
           ),
         ),
       ),

@@ -36,6 +36,9 @@ export function AppShell({ profile, children }: AppShellProps) {
             <Link className="rounded-md px-3 py-2 hover:bg-slate-100 hover:text-ink" href="/couriers">
               Курьеры
             </Link>
+            <Link className="rounded-md px-3 py-2 hover:bg-slate-100 hover:text-ink" href="/users">
+              Пользователи
+            </Link>
             <form action={signOut}>
               <button className="ml-2 rounded-md border border-line px-3 py-2 hover:border-brand hover:text-brand">
                 Выйти

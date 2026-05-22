@@ -14,9 +14,11 @@ export type PaymentMethod = "card" | "cash" | "qr" | "online" | "contract";
 export type Profile = {
   id: string;
   role: Role;
+  email: string | null;
   full_name: string | null;
   phone: string | null;
   is_active: boolean;
+  couriers?: Pick<Courier, "id" | "display_name" | "phone" | "region" | "is_active">[] | null;
 };
 
 export type Courier = {

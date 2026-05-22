@@ -4,7 +4,6 @@ extension _LoginFormField on _LoginScreenState {
   Widget _buildField({
     required TextEditingController controller,
     required String label,
-    required String hint,
     required IconData icon,
     required bool focused,
     required Function(bool) onFocus,
@@ -38,22 +37,18 @@ extension _LoginFormField on _LoginScreenState {
             fontSize: 15,
           ),
           decoration: InputDecoration(
-            labelText: label,
-            hintText: hint,
+            hintText: label,
+            floatingLabelBehavior: FloatingLabelBehavior.never,
+            filled: false,
+            fillColor: Colors.transparent,
             hintStyle: TextStyle(
               color:
                   (Theme.of(context).brightness == Brightness.dark
                           ? Colors.white.withValues(alpha: 0.4)
                           : const Color(0xFF6B8CAE).withValues(alpha: 0.5))
                       .withValues(alpha: 0.5),
-            ),
-            labelStyle: TextStyle(
-              color: focused
-                  ? const Color(0xFF1B5FA8)
-                  : (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white70
-                        : const Color(0xFF6B8CAE)),
-              fontWeight: focused ? FontWeight.w600 : FontWeight.normal,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
             ),
             prefixIcon: Icon(
               icon,
@@ -71,6 +66,11 @@ extension _LoginFormField on _LoginScreenState {
                   )
                 : null,
             border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            errorBorder: InputBorder.none,
+            focusedErrorBorder: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 16,

@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import type { Courier, CourierStats, Order } from "@/lib/types";
+import type { Courier, CourierStats, Order, Profile } from "@/lib/types";
 
 export function todayRange() {
   const start = new Date();
@@ -55,4 +55,15 @@ export async function getCourierStats() {
   }
 
   return [...stats.values()];
+}
+
+export async function getProfilesForManagement() {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, role, email, full_name, phone, is_active, couriers(id, display_name, phone, region, is_active)")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as unknown as Profile[];
 }

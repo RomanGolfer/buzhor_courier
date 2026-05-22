@@ -127,7 +127,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         statusBarBrightness: Brightness.dark,
       ),
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         body: Stack(
           children: [
             _buildAnimatedBackground(),
