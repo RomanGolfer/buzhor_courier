@@ -132,4 +132,36 @@ void main() {
     expect(order.scannedItems, {'water': 3});
     expect(order.timeSlot, '14:00 - 18:00');
   });
+
+  test('fromBackendJson maps failed and cancelled state to failed delivery state', () {
+    for (final state in ['failed', 'cancelled']) {
+      final order = OrderItem.fromBackendJson({'id': 'x', 'state': state});
+      expect(order.deliveryState, OrderDeliveryState.failed, reason: 'state=$state');
+      expect(order.isDone, false, reason: 'state=$state');
+    }
+  });
+
+  test('fromBackendJson maps null and unknown state to active', () {
+    for (final state in [null, 'unknown', 'new']) {
+      final order = OrderItem.fromBackendJson({'id': 'x', 'state': state});
+      expect(order.deliveryState, OrderDeliveryState.active, reason: 'state=$state');
+      expect(order.isDone, false, reason: 'state=$state');
+    }
+  });
+
+  test('fromBackendJson uses defaults for missing optional fields', () {
+    final order = OrderItem.fromBackendJson({'id': 'minimal'});
+
+    expect(order.clientName, '');
+    expect(order.address, '');
+    expect(order.district, '');
+    expect(order.price, 0.0);
+    expect(order.bottles, 0);
+    expect(order.payment, PaymentType.cash);
+    expect(order.extras, isEmpty);
+    expect(order.scannedItems, isEmpty);
+    expect(order.phone, isNull);
+    expect(order.timeSlot, isNull);
+    expect(order.deliveryState, OrderDeliveryState.active);
+  });
 }

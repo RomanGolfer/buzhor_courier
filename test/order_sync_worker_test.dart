@@ -37,6 +37,48 @@ void main() {
     expect(saved.lastError, contains('offline'));
   });
 
+  test('sync marks operation as needsReview after max attempts', () async {
+    final operation = OrderSyncOperation.fail('#1', reason: 'No answer')
+        .copyWith(attemptCount: 4);
+    final storage = _FakeOrderStorage(syncOperations: [operation]);
+    final dispatcher = _FakeOrderSyncDispatcher(error: Exception('network error'));
+    final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
+
+    await worker.sync();
+
+    final saved = storage.savedSyncOperations.single;
+    expect(saved.status, OrderSyncOperationStatus.needsReview);
+    expect(saved.attemptCount, 5);
+    expect(saved.lastError, contains('network error'));
+  });
+
+  test('sync skips operation whose nextAttemptAt is in the future', () async {
+    final operation = OrderSyncOperation.fail('#1', reason: 'No answer')
+        .copyWith(nextAttemptAt: DateTime.now().add(const Duration(hours: 1)));
+    final storage = _FakeOrderStorage(syncOperations: [operation]);
+    final dispatcher = _FakeOrderSyncDispatcher();
+    final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
+
+    await worker.sync();
+
+    expect(dispatcher.dispatched, isEmpty);
+    expect(storage.savedSyncOperations.single.attemptCount, 0);
+  });
+
+  test('sync skips non-pending operations', () async {
+    final acked = OrderSyncOperation.fail('#1', reason: 'x')
+        .copyWith(status: OrderSyncOperationStatus.acked);
+    final needsReview = OrderSyncOperation.fail('#2', reason: 'y')
+        .copyWith(status: OrderSyncOperationStatus.needsReview);
+    final storage = _FakeOrderStorage(syncOperations: [acked, needsReview]);
+    final dispatcher = _FakeOrderSyncDispatcher();
+    final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
+
+    await worker.sync();
+
+    expect(dispatcher.dispatched, isEmpty);
+  });
+
   test('sync does nothing without backend session', () async {
     final operation = OrderSyncOperation.fail('#1', reason: 'No answer');
     final storage = _FakeOrderStorage(syncOperations: [operation]);

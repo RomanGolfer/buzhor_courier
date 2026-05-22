@@ -23,16 +23,19 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
           .from('orders')
           .select()
           .order('updated_at', ascending: false);
-
-      final orders = <OrderItem>[];
-      for (final row in rows) {
-        try {
-          orders.add(OrderItem.fromBackendJson(row));
-        } catch (_) {}
-      }
-      return orders;
+      return parseOrderRows(rows);
     } catch (_) {
       return null;
     }
+  }
+
+  static List<OrderItem> parseOrderRows(List<Map<String, dynamic>> rows) {
+    final orders = <OrderItem>[];
+    for (final row in rows) {
+      try {
+        orders.add(OrderItem.fromBackendJson(row));
+      } catch (_) {}
+    }
+    return orders;
   }
 }
