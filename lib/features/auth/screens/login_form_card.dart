@@ -4,7 +4,7 @@ extension _LoginFormCard on _LoginScreenState {
   Widget _buildLoginCard(LoginState state) {
     final mediaQuery = MediaQuery.of(context);
     final keyboardInset = mediaQuery.viewInsets.bottom;
-    final bottomOffset = keyboardInset > 0 ? keyboardInset + 48 : 0.0;
+    final bottomOffset = keyboardInset > 0 ? keyboardInset : 0.0;
 
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 220),
