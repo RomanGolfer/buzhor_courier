@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent, InputHTMLAttributes } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/ui";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -25,6 +25,37 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [bottles, setBottles] = useState(2);
+  const [lat, setLat] = useState(defaultLat);
+  const [lng, setLng] = useState(defaultLng);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeHint, setGeocodeHint] = useState<string | null>(null);
+  const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function geocodeAddress(address: string) {
+    if (!address.trim()) return;
+    setGeocoding(true);
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ru`;
+      const res = await fetch(url, { headers: { "User-Agent": "buzhor-dispatcher/1.0" } });
+      const data: Array<{ lat: string; lon: string }> = await res.json();
+      if (data.length > 0) {
+        setLat(Number(data[0].lat).toFixed(7));
+        setLng(Number(data[0].lon).toFixed(7));
+        setGeocodeHint("Координаты определены автоматически");
+      } else {
+        setGeocodeHint("Адрес не найден — введите координаты вручную");
+      }
+    } catch {
+      setGeocodeHint("Адрес не найден — введите координаты вручную");
+    } finally {
+      setGeocoding(false);
+    }
+  }
+
+  function handleAddressChange(address: string) {
+    if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
+    geocodeTimer.current = setTimeout(() => geocodeAddress(address), 800);
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,7 +116,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
         <Field label="Клиент" name="client_name" placeholder="Иванова Марина" required />
         <Field label="Телефон" name="client_phone" placeholder="+7 900 000 00 00" />
         <div className="md:col-span-2">
-          <Field label="Адрес" name="address" placeholder="ул. Крымская, 45, кв. 12" required />
+          <Field label="Адрес" name="address" placeholder="ул. Крымская, 45, кв. 12" required onChange={(e) => handleAddressChange(e.target.value)} />
         </div>
         <label className="block md:col-span-2">
           <span className="mb-1 block text-sm font-bold text-ink">Комментарий диспетчера</span>
@@ -107,20 +138,35 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
             ))}
           </select>
         </label>
-        <Field
-          label="Lat"
-          name="lat"
-          placeholder={defaultLat}
-          defaultValue={defaultLat}
-          inputMode="decimal"
-        />
-        <Field
-          label="Lng"
-          name="lng"
-          placeholder={defaultLng}
-          defaultValue={defaultLng}
-          inputMode="decimal"
-        />
+        <label className="block">
+          <span className="mb-1 flex items-center gap-1.5">
+            <span className="text-sm font-bold text-ink">Lat</span>
+            {geocoding && <Spinner />}
+          </span>
+          <input
+            className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
+            inputMode="decimal"
+            name="lat"
+            value={lat}
+            onChange={(e) => setLat(e.target.value)}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 flex items-center gap-1.5">
+            <span className="text-sm font-bold text-ink">Lng</span>
+            {geocoding && <Spinner />}
+          </span>
+          <input
+            className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
+            inputMode="decimal"
+            name="lng"
+            value={lng}
+            onChange={(e) => setLng(e.target.value)}
+          />
+        </label>
+        {geocodeHint && (
+          <p className="text-xs text-gray-400 md:col-span-2">{geocodeHint}</p>
+        )}
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Бутыли</span>
           <input
@@ -170,7 +216,8 @@ function Field({
   placeholder,
   required,
   inputMode,
-  defaultValue
+  defaultValue,
+  onChange
 }: {
   label: string;
   name: string;
@@ -178,6 +225,7 @@ function Field({
   required?: boolean;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   defaultValue?: string;
+  onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
 }) {
   return (
     <label className="block">
@@ -189,8 +237,18 @@ function Field({
         placeholder={placeholder}
         required={required}
         defaultValue={defaultValue}
+        onChange={onChange}
       />
     </label>
+  );
+}
+
+function Spinner() {
+  return (
+    <svg className="size-3.5 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+    </svg>
   );
 }
 
