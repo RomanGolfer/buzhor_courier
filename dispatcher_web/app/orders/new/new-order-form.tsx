@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent, InputHTMLAttributes } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/ui";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
@@ -30,31 +30,66 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeHint, setGeocodeHint] = useState<string | null>(null);
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const geocodeAbortController = useRef<AbortController | null>(null);
+  const geocodeRequestId = useRef(0);
 
-  async function geocodeAddress(address: string) {
-    if (!address.trim()) return;
-    setGeocoding(true);
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=ru`;
-      const res = await fetch(url, { headers: { "User-Agent": "buzhor-dispatcher/1.0" } });
-      const data: Array<{ lat: string; lon: string }> = await res.json();
-      if (data.length > 0) {
-        setLat(Number(data[0].lat).toFixed(7));
-        setLng(Number(data[0].lon).toFixed(7));
-        setGeocodeHint("Координаты определены автоматически");
-      } else {
-        setGeocodeHint("Адрес не найден — введите координаты вручную");
+  useEffect(() => {
+    return () => {
+      if (geocodeTimer.current) {
+        clearTimeout(geocodeTimer.current);
       }
-    } catch {
-      setGeocodeHint("Адрес не найден — введите координаты вручную");
-    } finally {
-      setGeocoding(false);
-    }
-  }
+      geocodeAbortController.current?.abort();
+    };
+  }, []);
 
-  function handleAddressChange(address: string) {
-    if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
-    geocodeTimer.current = setTimeout(() => geocodeAddress(address), 800);
+  function geocodeAddress(address: string) {
+    if (geocodeTimer.current) {
+      clearTimeout(geocodeTimer.current);
+    }
+
+    geocodeAbortController.current?.abort();
+    const trimmedAddress = address.trim();
+
+    if (!trimmedAddress) {
+      setGeocoding(false);
+      setGeocodeHint(null);
+      return;
+    }
+
+    setGeocoding(true);
+    const requestId = geocodeRequestId.current + 1;
+    geocodeRequestId.current = requestId;
+
+    geocodeTimer.current = setTimeout(async () => {
+      const controller = new AbortController();
+      geocodeAbortController.current = controller;
+
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmedAddress)}`, {
+          signal: controller.signal
+        });
+        const data: Array<{ lat: string; lon: string }> = await res.json();
+
+        if (requestId !== geocodeRequestId.current) return;
+
+        if (data.length > 0) {
+          setLat(Number(data[0].lat).toFixed(7));
+          setLng(Number(data[0].lon).toFixed(7));
+          setGeocodeHint("Координаты определены автоматически");
+        } else {
+          setGeocodeHint("Адрес не найден — введите координаты вручную");
+        }
+      } catch (fetchError) {
+        if (fetchError instanceof DOMException && fetchError.name === "AbortError") return;
+        if (requestId === geocodeRequestId.current) {
+          setGeocodeHint("Адрес не найден — введите координаты вручную");
+        }
+      } finally {
+        if (requestId === geocodeRequestId.current) {
+          setGeocoding(false);
+        }
+      }
+    }, 800);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -116,7 +151,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
         <Field label="Клиент" name="client_name" placeholder="Иванова Марина" required />
         <Field label="Телефон" name="client_phone" placeholder="+7 900 000 00 00" />
         <div className="md:col-span-2">
-          <Field label="Адрес" name="address" placeholder="ул. Крымская, 45, кв. 12" required onChange={(e) => handleAddressChange(e.target.value)} />
+          <Field label="Адрес" name="address" placeholder="ул. Крымская, 45, кв. 12" required onChange={(e) => geocodeAddress(e.target.value)} />
         </div>
         <label className="block md:col-span-2">
           <span className="mb-1 block text-sm font-bold text-ink">Комментарий диспетчера</span>

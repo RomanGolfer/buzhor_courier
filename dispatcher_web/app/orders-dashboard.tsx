@@ -83,10 +83,12 @@ function formatMoney(value: number) {
 
 export function OrdersDashboard({
   initialDate,
+  initialLoadedAt,
   initialOrders,
   couriers
 }: {
   initialDate?: string;
+  initialLoadedAt: string;
   initialOrders: Order[];
   couriers: Courier[];
 }) {
@@ -105,7 +107,7 @@ export function OrdersDashboard({
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date());
+  const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date(initialLoadedAt));
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const loadOrders = useCallback(async (dateKey: string, currentSelectedOrderId: string) => {
@@ -163,6 +165,21 @@ export function OrdersDashboard({
       void supabase.removeChannel(channel);
     };
   }, [refreshOrders, supabase]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1280px)");
+    const closeDrawerOnWideLayout = () => {
+      if (mediaQuery.matches) {
+        setIsDrawerOpen(false);
+      }
+    };
+
+    mediaQuery.addEventListener("change", closeDrawerOnWideLayout);
+
+    return () => {
+      mediaQuery.removeEventListener("change", closeDrawerOnWideLayout);
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     return orders.filter((order) => {
@@ -269,14 +286,14 @@ export function OrdersDashboard({
 
   return (
     <>
-    <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_380px]">
-      <Panel>
+    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <Panel className="min-w-0">
         <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-sm font-bold text-muted">
               {filtered.length} заказов за {formatDateLabel(selectedDate)}
             </div>
-            <div className="text-xs font-semibold text-muted">
+            <div className="text-xs font-semibold text-muted" suppressHydrationWarning>
               Обновлено{" "}
               {lastUpdatedAt.toLocaleTimeString("ru-RU", {
                 hour: "2-digit",
@@ -331,7 +348,7 @@ export function OrdersDashboard({
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
+          <table className="min-w-[1040px] border-separate border-spacing-0 text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-muted">
               <tr>
                 {["Номер", "Клиент", "Адрес", "Курьер", "Статус", "Комментарий", "Оплата", ""].map((heading) => (
@@ -399,7 +416,7 @@ export function OrdersDashboard({
       </Panel>
 
       {/* Wide screens: inspector always visible in grid */}
-      <div className="hidden 2xl:block">
+      <div className="hidden xl:block">
         <OrderInspector {...inspectorProps} />
       </div>
     </div>
@@ -409,10 +426,10 @@ export function OrdersDashboard({
       <>
         <div
           aria-hidden
-          className="fixed inset-0 z-40 bg-black/40 2xl:hidden"
+          className="fixed inset-0 z-40 bg-black/40 xl:hidden"
           onClick={closeDrawer}
         />
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl 2xl:hidden">
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl xl:hidden">
           <OrderInspector {...inspectorProps} onClose={closeDrawer} />
         </div>
       </>
@@ -468,7 +485,7 @@ function OrderInspector({
       : null;
 
   return (
-    <Panel className="h-fit p-5 2xl:sticky 2xl:top-6">
+    <Panel className="h-fit p-5 xl:sticky xl:top-6">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.16em] text-muted">Заказ</div>

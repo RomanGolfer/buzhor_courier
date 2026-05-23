@@ -47,7 +47,7 @@ export function AppShell({ profile, children }: AppShellProps) {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-5 py-6">{children}</main>
+      <main className="mx-auto max-w-[1600px] px-5 py-6">{children}</main>
     </div>
   );
 }

@@ -1,12 +1,27 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Courier, CourierStats, Order, Profile } from "@/lib/types";
 
-export function todayRange() {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 1);
+const moscowOffsetMs = 3 * 60 * 60 * 1000;
+
+export function dateRange(dateKey?: string) {
+  const selectedDate = dateKey?.match(/^\d{4}-\d{2}-\d{2}$/)
+    ? dateKey
+    : moscowDateKey(new Date());
+  const [year, month, day] = selectedDate.split("-").map(Number);
+  const start = new Date(Date.UTC(year, month - 1, day) - moscowOffsetMs);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
   return { start: start.toISOString(), end: end.toISOString() };
+}
+
+function moscowDateKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric"
+  }).formatToParts(date);
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
 }
 
 export async function getCouriers() {
@@ -21,9 +36,9 @@ export async function getCouriers() {
   return (data ?? []) as Courier[];
 }
 
-export async function getTodayOrders() {
+export async function getOrdersByDate(dateKey?: string) {
   const supabase = await createServerSupabaseClient();
-  const { start, end } = todayRange();
+  const { start, end } = dateRange(dateKey);
 
   const { data, error } = await supabase
     .from("orders")
@@ -39,7 +54,7 @@ export async function getTodayOrders() {
 }
 
 export async function getCourierStats() {
-  const [couriers, orders] = await Promise.all([getCouriers(), getTodayOrders()]);
+  const [couriers, orders] = await Promise.all([getCouriers(), getOrdersByDate()]);
   const stats = new Map<string, CourierStats>();
 
   for (const courier of couriers) {
