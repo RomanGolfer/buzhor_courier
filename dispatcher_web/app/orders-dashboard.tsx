@@ -36,6 +36,36 @@ const editableStates: OrderState[] = [
   "cancelled"
 ];
 
+const moscowOffsetMs = 3 * 60 * 60 * 1000;
+
+function todayDateKey() {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric"
+  }).formatToParts(new Date());
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
+}
+
+function dateRangeForKey(dateKey: string) {
+  const selectedDate = dateKey.match(/^\d{4}-\d{2}-\d{2}$/) ? dateKey : todayDateKey();
+  const [year, month, day] = selectedDate.split("-").map(Number);
+  const start = new Date(Date.UTC(year, month - 1, day) - moscowOffsetMs);
+  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+function formatDateLabel(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
 function stateTone(state: OrderState): "good" | "warn" | "bad" | "muted" {
   if (state === "delivered") return "good";
   if (state === "failed" || state === "cancelled") return "bad";
@@ -52,13 +82,18 @@ function formatMoney(value: number) {
 }
 
 export function OrdersDashboard({
+  initialDate,
   initialOrders,
   couriers
 }: {
+  initialDate?: string;
   initialOrders: Order[];
   couriers: Courier[];
 }) {
   const [orders, setOrders] = useState(initialOrders);
+  const [selectedDate, setSelectedDate] = useState(
+    initialDate?.match(/^\d{4}-\d{2}-\d{2}$/) ? initialDate : todayDateKey()
+  );
   const [stateFilter, setStateFilter] = useState<"all" | OrderState>("all");
   const [courierFilter, setCourierFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState(initialOrders[0]?.id ?? "");
@@ -69,35 +104,38 @@ export function OrdersDashboard({
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date());
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
-  const refreshOrders = useCallback(async () => {
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+  const loadOrders = useCallback(async (dateKey: string, currentSelectedOrderId: string) => {
+    const { start, end } = dateRangeForKey(dateKey);
     const { data } = await supabase
       .from("orders")
       .select(orderSelect)
-      .gte("created_at", start.toISOString())
-      .lt("created_at", end.toISOString())
+      .gte("created_at", start)
+      .lt("created_at", end)
       .order("created_at", { ascending: false });
 
     if (data) {
       const nextOrders = data as unknown as Order[];
+      const currentSelectedOrder = nextOrders.find((order) => order.id === currentSelectedOrderId) ?? null;
+      const nextSelectedOrder = currentSelectedOrder ?? nextOrders[0] ?? null;
       setOrders(nextOrders);
-      if (!selectedOrderId && nextOrders[0]) {
-        const firstOrder = nextOrders[0];
-        setSelectedOrderId(firstOrder.id);
-        setDraftState(firstOrder.state);
-        setDraftCourierId(firstOrder.assigned_courier_id ?? "");
-        setDraftComment(firstOrder.delivery_comment ?? "");
-        setDraftFailureReason(firstOrder.failure_reason ?? "");
+      if (!currentSelectedOrder) {
+        setSelectedOrderId(nextSelectedOrder?.id ?? "");
+        setDraftState(nextSelectedOrder?.state ?? "assigned");
+        setDraftCourierId(nextSelectedOrder?.assigned_courier_id ?? "");
+        setDraftComment(nextSelectedOrder?.delivery_comment ?? "");
+        setDraftFailureReason(nextSelectedOrder?.failure_reason ?? "");
       }
       setLastUpdatedAt(new Date());
     }
-  }, [selectedOrderId, supabase]);
+  }, [supabase]);
+
+  const refreshOrders = useCallback(async () => {
+    await loadOrders(selectedDate, selectedOrderId);
+  }, [loadOrders, selectedDate, selectedOrderId]);
 
   useEffect(() => {
     const channel = supabase
@@ -146,6 +184,21 @@ export function OrdersDashboard({
     setDraftFailureReason(order.failure_reason ?? "");
     setSaveMessage(null);
     setSaveError(null);
+    setIsDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setIsDrawerOpen(false);
+  }
+
+  function changeSelectedDate(value: string) {
+    const nextDate = value || todayDateKey();
+    const params = new URLSearchParams(window.location.search);
+    params.set("date", nextDate);
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    setSelectedDate(nextDate);
+    setSelectedOrderId("");
+    void loadOrders(nextDate, "");
   }
 
   async function saveSelectedOrder() {
@@ -197,12 +250,32 @@ export function OrdersDashboard({
     setIsSaving(false);
   }
 
+  const inspectorProps = {
+    couriers,
+    draftComment,
+    draftCourierId,
+    draftFailureReason,
+    draftState,
+    error: saveError,
+    isSaving,
+    message: saveMessage,
+    order: selectedOrder,
+    onCommentChange: (value: string) => setDraftComment(value),
+    onCourierChange: (value: string) => setDraftCourierId(value),
+    onFailureReasonChange: (value: string) => setDraftFailureReason(value),
+    onSave: saveSelectedOrder,
+    onStateChange: (value: OrderState) => setDraftState(value),
+  };
+
   return (
+    <>
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
       <Panel>
         <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <div className="text-sm font-bold text-muted">{filtered.length} заказов в таблице</div>
+            <div className="text-sm font-bold text-muted">
+              {filtered.length} заказов за {formatDateLabel(selectedDate)}
+            </div>
             <div className="text-xs font-semibold text-muted">
               Обновлено{" "}
               {lastUpdatedAt.toLocaleTimeString("ru-RU", {
@@ -213,6 +286,18 @@ export function OrdersDashboard({
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
+            <label className="sr-only" htmlFor="orders-date-filter">
+              Дата заказов
+            </label>
+            <input
+              className="focus-ring rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink"
+              id="orders-date-filter"
+              type="date"
+              value={selectedDate}
+              onChange={(event) => {
+                changeSelectedDate(event.target.value);
+              }}
+            />
             <select
               className="focus-ring rounded-md border border-line px-3 py-2 text-sm"
               value={stateFilter}
@@ -313,31 +398,26 @@ export function OrdersDashboard({
         </div>
       </Panel>
 
-      <OrderInspector
-        couriers={couriers}
-        draftComment={draftComment}
-        draftCourierId={draftCourierId}
-        draftFailureReason={draftFailureReason}
-        draftState={draftState}
-        error={saveError}
-        isSaving={isSaving}
-        message={saveMessage}
-        order={selectedOrder}
-        onCommentChange={(value) => {
-          setDraftComment(value);
-        }}
-        onCourierChange={(value) => {
-          setDraftCourierId(value);
-        }}
-        onFailureReasonChange={(value) => {
-          setDraftFailureReason(value);
-        }}
-        onSave={saveSelectedOrder}
-        onStateChange={(value) => {
-          setDraftState(value);
-        }}
-      />
+      {/* Wide screens: inspector always visible in grid */}
+      <div className="hidden xl:block">
+        <OrderInspector {...inspectorProps} />
+      </div>
     </div>
+
+    {/* Narrow screens: drawer overlay */}
+    {isDrawerOpen && (
+      <>
+        <div
+          aria-hidden
+          className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+          onClick={closeDrawer}
+        />
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl xl:hidden">
+          <OrderInspector {...inspectorProps} onClose={closeDrawer} />
+        </div>
+      </>
+    )}
+    </>
   );
 }
 
@@ -355,7 +435,8 @@ function OrderInspector({
   onCourierChange,
   onCommentChange,
   onFailureReasonChange,
-  onSave
+  onSave,
+  onClose
 }: {
   order: Order | null;
   couriers: Courier[];
@@ -371,6 +452,7 @@ function OrderInspector({
   onCommentChange: (value: string) => void;
   onFailureReasonChange: (value: string) => void;
   onSave: () => void;
+  onClose?: () => void;
 }) {
   if (!order) {
     return (
@@ -392,7 +474,20 @@ function OrderInspector({
           <div className="text-xs font-black uppercase tracking-[0.16em] text-muted">Заказ</div>
           <h2 className="mt-1 text-xl font-black text-ink">{order.order_number}</h2>
         </div>
-        <StatusPill tone={stateTone(order.state)}>{stateLabels[order.state]}</StatusPill>
+        <div className="flex items-center gap-2">
+          <StatusPill tone={stateTone(order.state)}>{stateLabels[order.state]}</StatusPill>
+          {onClose && (
+            <button
+              aria-label="Закрыть"
+              className="rounded-md p-1.5 text-muted hover:bg-slate-100 hover:text-ink"
+              onClick={onClose}
+            >
+              <svg fill="none" height="16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24" width="16">
+                <path d="M18 6 6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3 border-b border-line pb-4 text-sm">
