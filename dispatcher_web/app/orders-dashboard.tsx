@@ -269,7 +269,7 @@ export function OrdersDashboard({
 
   return (
     <>
-    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_380px]">
       <Panel>
         <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -399,7 +399,7 @@ export function OrdersDashboard({
       </Panel>
 
       {/* Wide screens: inspector always visible in grid */}
-      <div className="hidden xl:block">
+      <div className="hidden 2xl:block">
         <OrderInspector {...inspectorProps} />
       </div>
     </div>
@@ -409,10 +409,10 @@ export function OrdersDashboard({
       <>
         <div
           aria-hidden
-          className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+          className="fixed inset-0 z-40 bg-black/40 2xl:hidden"
           onClick={closeDrawer}
         />
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl xl:hidden">
+        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl 2xl:hidden">
           <OrderInspector {...inspectorProps} onClose={closeDrawer} />
         </div>
       </>
@@ -468,7 +468,7 @@ function OrderInspector({
       : null;
 
   return (
-    <Panel className="h-fit p-5 xl:sticky xl:top-6">
+    <Panel className="h-fit p-5 2xl:sticky 2xl:top-6">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <div className="text-xs font-black uppercase tracking-[0.16em] text-muted">Заказ</div>
