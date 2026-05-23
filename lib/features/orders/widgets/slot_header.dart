@@ -25,33 +25,25 @@ class SlotHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 3,
-              decoration: BoxDecoration(
-                color: AppColors.blue.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SlotHeaderSummary(
-                    slot: slot,
-                    onToggle: onToggle,
-                    onBuildRoute: onBuildRoute,
-                  ),
-                  if (slot.isExpanded) _SlotOrdersList(slot: slot),
-                ],
-              ),
-            ),
-          ],
+      padding: const EdgeInsets.only(left: 10),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: AppColors.blue.withValues(alpha: 0.45),
+            width: 3,
+          ),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _SlotHeaderSummary(
+            slot: slot,
+            onToggle: onToggle,
+            onBuildRoute: onBuildRoute,
+          ),
+          if (slot.isExpanded) _SlotOrdersList(slot: slot),
+        ],
       ),
     );
   }

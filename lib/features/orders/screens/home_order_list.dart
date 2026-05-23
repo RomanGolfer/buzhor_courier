@@ -71,6 +71,10 @@ extension _HomeOrderList on _HomeScreenState {
       );
     }
 
+    final timeSlots = ordersState.timeSlots.isNotEmpty
+        ? ordersState.timeSlots
+        : [TimeSlot(label: '10:00 - 14:00', orders: ordersState.activeOrders)];
+
     return AnimatedOpacity(
       opacity: ordersState.listOpacity,
       duration: const Duration(milliseconds: 300),
@@ -79,11 +83,15 @@ extension _HomeOrderList on _HomeScreenState {
         color: AppColors.blue,
         backgroundColor: AppColors.surface(context),
         onRefresh: _refreshOrders,
-        child: ListView.builder(
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          itemCount: ordersState.timeSlots.length,
-          itemBuilder: (context, slotIndex) =>
-              _buildTimeSlotGroup(ordersState.timeSlots[slotIndex], slotIndex),
+          child: Column(
+            children: [
+              for (int slotIndex = 0; slotIndex < timeSlots.length; slotIndex++)
+                _buildTimeSlotGroup(timeSlots[slotIndex], slotIndex),
+            ],
+          ),
         ),
       ),
     );
@@ -100,14 +108,30 @@ extension _HomeOrderList on _HomeScreenState {
 
   Future<void> _buildRouteForSlot(TimeSlot slot) async {
     if (slot.orders.isEmpty) return;
+    final routeOrders = slot.orders
+        .where((order) => order.hasCoordinates)
+        .toList(growable: false);
+    if (routeOrders.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('У заказов нет координат для маршрута')),
+      );
+      return;
+    }
 
     await ref.read(ordersProvider.notifier).prepareRoute();
     if (!mounted) return;
+    if (routeOrders.length != slot.orders.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Заказы без координат не добавлены в маршрут'),
+        ),
+      );
+    }
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => RouteScreen(
-          orders: List.from(slot.orders),
+          orders: routeOrders,
           startLat: ref.read(locationProvider).position?.latitude,
           startLng: ref.read(locationProvider).position?.longitude,
           initialLowDataMode: ref.read(ordersProvider).isLowDataMode,

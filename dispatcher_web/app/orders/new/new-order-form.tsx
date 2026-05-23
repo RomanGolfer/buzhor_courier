@@ -16,6 +16,8 @@ const paymentOptions: Array<{ value: PaymentMethod; label: string }> = [
 ];
 
 const timeSlots = ["10:00 - 14:00", "14:00 - 18:00", "18:00 - 21:00"];
+const defaultLat = "44.8951000";
+const defaultLng = "37.3168000";
 
 export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const router = useRouter();
@@ -105,8 +107,20 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
             ))}
           </select>
         </label>
-        <Field label="Lat" name="lat" placeholder="44.8951000" inputMode="decimal" />
-        <Field label="Lng" name="lng" placeholder="37.3168000" inputMode="decimal" />
+        <Field
+          label="Lat"
+          name="lat"
+          placeholder={defaultLat}
+          defaultValue={defaultLat}
+          inputMode="decimal"
+        />
+        <Field
+          label="Lng"
+          name="lng"
+          placeholder={defaultLng}
+          defaultValue={defaultLng}
+          inputMode="decimal"
+        />
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Бутыли</span>
           <input
@@ -155,13 +169,15 @@ function Field({
   name,
   placeholder,
   required,
-  inputMode
+  inputMode,
+  defaultValue
 }: {
   label: string;
   name: string;
   placeholder: string;
   required?: boolean;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
+  defaultValue?: string;
 }) {
   return (
     <label className="block">
@@ -172,6 +188,7 @@ function Field({
         name={name}
         placeholder={placeholder}
         required={required}
+        defaultValue={defaultValue}
       />
     </label>
   );
@@ -179,5 +196,6 @@ function Field({
 
 function nullableNumber(value: FormDataEntryValue | null) {
   if (value === null || String(value).trim() === "") return null;
-  return Number(value);
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }

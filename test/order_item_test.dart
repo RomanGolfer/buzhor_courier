@@ -99,6 +99,34 @@ void main() {
     expect(restored.displayId, '#4821');
   });
 
+  test('detects missing and valid coordinates', () {
+    const withCoordinates = OrderItem(
+      id: '#1',
+      clientName: 'Client',
+      address: 'Address',
+      district: 'District',
+      price: 400,
+      payment: PaymentType.cash,
+      bottles: 1,
+      lat: 44.8951,
+      lng: 37.3168,
+    );
+    const withoutCoordinates = OrderItem(
+      id: '#2',
+      clientName: 'Client',
+      address: 'Address',
+      district: 'District',
+      price: 400,
+      payment: PaymentType.cash,
+      bottles: 1,
+      lat: 0,
+      lng: 0,
+    );
+
+    expect(withCoordinates.hasCoordinates, isTrue);
+    expect(withoutCoordinates.hasCoordinates, isFalse);
+  });
+
   test('maps backend order rows to app model', () {
     final order = OrderItem.fromBackendJson({
       'id': '7ee65d46-1a38-4eb1-9d21-b491c61e04544',
@@ -133,18 +161,29 @@ void main() {
     expect(order.timeSlot, '14:00 - 18:00');
   });
 
-  test('fromBackendJson maps failed and cancelled state to failed delivery state', () {
-    for (final state in ['failed', 'cancelled']) {
-      final order = OrderItem.fromBackendJson({'id': 'x', 'state': state});
-      expect(order.deliveryState, OrderDeliveryState.failed, reason: 'state=$state');
-      expect(order.isDone, false, reason: 'state=$state');
-    }
-  });
+  test(
+    'fromBackendJson maps failed and cancelled state to failed delivery state',
+    () {
+      for (final state in ['failed', 'cancelled']) {
+        final order = OrderItem.fromBackendJson({'id': 'x', 'state': state});
+        expect(
+          order.deliveryState,
+          OrderDeliveryState.failed,
+          reason: 'state=$state',
+        );
+        expect(order.isDone, false, reason: 'state=$state');
+      }
+    },
+  );
 
   test('fromBackendJson maps null and unknown state to active', () {
     for (final state in [null, 'unknown', 'new']) {
       final order = OrderItem.fromBackendJson({'id': 'x', 'state': state});
-      expect(order.deliveryState, OrderDeliveryState.active, reason: 'state=$state');
+      expect(
+        order.deliveryState,
+        OrderDeliveryState.active,
+        reason: 'state=$state',
+      );
       expect(order.isDone, false, reason: 'state=$state');
     }
   });

@@ -58,6 +58,12 @@ class OrderItem {
 
   bool get isClosed => effectiveDeliveryState != OrderDeliveryState.active;
   bool get isFailed => effectiveDeliveryState == OrderDeliveryState.failed;
+  bool get hasCoordinates =>
+      lat.isFinite &&
+      lng.isFinite &&
+      lat.abs() <= 90 &&
+      lng.abs() <= 180 &&
+      !(lat == 0 && lng == 0);
 
   OrderDeliveryState get effectiveDeliveryState {
     if (deliveryState != OrderDeliveryState.active) return deliveryState;

@@ -337,38 +337,47 @@ class _OrderRouteButtonSlot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasCoordinates = order.hasCoordinates;
     return SizedBox(
       width: _routeActionColumnWidth,
       child: Align(
         alignment: Alignment.centerRight,
         child: GestureDetector(
-          onTap: () =>
-              NavigationService.openExternalRoute(order.lat, order.lng),
+          onTap: hasCoordinates
+              ? () => NavigationService.openExternalRoute(order.lat, order.lng)
+              : null,
           child: Container(
             height: 32,
             padding: const EdgeInsets.symmetric(horizontal: 11),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.orange, AppColors.orangeLight],
-              ),
+              color: hasCoordinates
+                  ? null
+                  : AppColors.grayBlue.withValues(alpha: 0.42),
+              gradient: hasCoordinates
+                  ? const LinearGradient(
+                      colors: [AppColors.orange, AppColors.orangeLight],
+                    )
+                  : null,
               borderRadius: BorderRadius.circular(8),
             ),
             child: FittedBox(
               fit: BoxFit.scaleDown,
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Маршрут',
-                    style: TextStyle(
+                    hasCoordinates ? 'Маршрут' : 'Нет гео',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  SizedBox(width: 3),
+                  const SizedBox(width: 3),
                   Icon(
-                    Icons.arrow_forward_rounded,
+                    hasCoordinates
+                        ? Icons.arrow_forward_rounded
+                        : Icons.location_off_rounded,
                     color: Colors.white,
                     size: 13,
                   ),
