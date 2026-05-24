@@ -119,6 +119,7 @@ extension _AddressCardSections on _AddressCard {
                       bgColor: _paymentBgColor(context, paymentType),
                     )
                   : GestureDetector(
+                      key: const Key('paymentTypeSelector'),
                       onTap: () => _showPaymentSheet(context),
                       child: Container(
                         width: double.infinity,
@@ -143,6 +144,7 @@ extension _AddressCardSections on _AddressCard {
                             Expanded(
                               child: Text(
                                 _compactPaymentLabel(paymentType),
+                                key: const Key('paymentTypeValue'),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(

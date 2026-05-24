@@ -1,3 +1,4 @@
+import 'package:buzhor_courier/features/orders/data/order_repository.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -128,6 +129,36 @@ void main() {
     expect(find.text('Наличные'), findsWidgets);
     expect(find.text('Онлайн оплата'), findsNothing);
     expect(find.text('Оплачено'), findsNothing);
+  });
+
+  testWidgets('keeps selected payment when payment sync fails', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(
+            _FailingOrderRepository([_activeOrder]),
+          ),
+        ],
+        child: const MaterialApp(home: OrderDetailScreen(order: _activeOrder)),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const Key('paymentTypeSelector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('paymentTypeCardOption')));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 250));
+
+    expect(tester.takeException(), isNull);
+    final paymentText = tester.widget<Text>(
+      find.byKey(const Key('paymentTypeValue')),
+    );
+    expect(paymentText.data, 'Картой');
+    expect(
+      find.byKey(const Key('orderDetailSyncErrorSnackBar')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('shows payment QR for QR orders', (tester) async {
@@ -314,4 +345,14 @@ void main() {
 
     expect(find.text('Проверка оплаты пока не подключена'), findsOneWidget);
   });
+}
+
+class _FailingOrderRepository extends OrderRepository {
+  _FailingOrderRepository(List<OrderItem> initialOrders)
+    : super(initialOrders: initialOrders);
+
+  @override
+  Future<List<OrderItem>> upsertOrder(OrderItem incomingOrder) async {
+    throw StateError('payment sync failed');
+  }
 }

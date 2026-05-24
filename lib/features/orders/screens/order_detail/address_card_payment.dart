@@ -97,6 +97,7 @@ extension _AddressCardPayment on _AddressCard {
                   ),
                   const SizedBox(height: 12),
                   ListTile(
+                    key: const Key('paymentTypeCardOption'),
                     title: const Text('Картой курьеру'),
                     leading: Text(_paymentIcon(PaymentType.card)),
                     onTap: () {
@@ -105,6 +106,7 @@ extension _AddressCardPayment on _AddressCard {
                     },
                   ),
                   ListTile(
+                    key: const Key('paymentTypeContractOption'),
                     title: const Text('По договору'),
                     leading: Text(_paymentIcon(PaymentType.contract)),
                     onTap: () {
@@ -113,6 +115,7 @@ extension _AddressCardPayment on _AddressCard {
                     },
                   ),
                   ListTile(
+                    key: const Key('paymentTypeCashOption'),
                     title: const Text('Наличные'),
                     leading: Text(_paymentIcon(PaymentType.cash)),
                     onTap: () {

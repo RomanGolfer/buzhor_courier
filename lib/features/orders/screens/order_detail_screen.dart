@@ -56,6 +56,7 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   late int _bottles;
   late PaymentType _paymentType;
+  PaymentType? _pendingPaymentType;
   final Map<String, int> _extras = {};
   final Map<String, int> _scannedItems = {};
   double _dispatcherReveal = 0;
@@ -96,8 +97,14 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   void _onPaymentTypeChanged(PaymentType value) {
-    setState(() => _paymentType = value);
-    _syncToProvider();
+    setState(() {
+      _paymentType = value;
+      _pendingPaymentType = value;
+    });
+    _syncToProvider(
+      failureMessage:
+          'Не удалось сразу сохранить способ оплаты. Выбор оставлен, попробуйте еще раз.',
+    );
   }
 
   void _onExtrasChanged(Map<String, int> value) {
@@ -118,19 +125,44 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     _syncToProvider();
   }
 
-  void _syncToProvider() {
+  void _syncToProvider({String? failureMessage}) {
     final current = _resolveOrder(ref.read(ordersProvider));
     if (current.isClosed) return;
-    ref
-        .read(ordersProvider.notifier)
-        .updateOrder(
-          current.copyWith(
-            payment: _paymentType,
-            deliveredBottles: _bottles,
-            extras: Map.of(_extras),
-            scannedItems: Map.of(_scannedItems),
-          ),
-        );
+    final updatedOrder = current.copyWith(
+      payment: _paymentType,
+      deliveredBottles: _bottles,
+      extras: Map.of(_extras),
+      scannedItems: Map.of(_scannedItems),
+    );
+
+    unawaited(
+      ref
+          .read(ordersProvider.notifier)
+          .updateOrder(updatedOrder)
+          .then((_) {
+            if (!mounted || _pendingPaymentType != updatedOrder.payment) {
+              return;
+            }
+            setState(() => _pendingPaymentType = null);
+          })
+          .catchError((Object error, StackTrace stackTrace) {
+            if (!mounted || failureMessage == null) return;
+            _showSyncError(failureMessage);
+          }),
+    );
+  }
+
+  void _showSyncError(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          key: const Key('orderDetailSyncErrorSnackBar'),
+          content: Text(message),
+        ),
+      );
   }
 
   @override
@@ -145,7 +177,16 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         (o) => o.id == widget.order.id,
         orElse: () => widget.order,
       );
-      if (!updated.isClosed && updated.payment != _paymentType) {
+      if (updated.isClosed) return;
+      final pendingPaymentType = _pendingPaymentType;
+      if (pendingPaymentType != null) {
+        if (updated.payment == pendingPaymentType &&
+            pendingPaymentType == _paymentType) {
+          setState(() => _pendingPaymentType = null);
+        }
+        return;
+      }
+      if (updated.payment != _paymentType) {
         setState(() => _paymentType = updated.payment);
       }
     });
