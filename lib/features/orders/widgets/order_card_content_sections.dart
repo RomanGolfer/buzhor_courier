@@ -297,7 +297,7 @@ class _OrderCardFooterRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!order.isClosed && order.scannedItems.isNotEmpty) ...[
+              if (!order.isClosed && order.scannedCountFor('water') > 0) ...[
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.qr_code_scanner_rounded,
@@ -307,7 +307,7 @@ class _OrderCardFooterRow extends StatelessWidget {
                 const SizedBox(width: 3),
                 Flexible(
                   child: Text(
-                    '${order.scannedItems['water'] ?? 0}',
+                    '${order.scannedCountFor('water')}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

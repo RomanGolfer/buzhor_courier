@@ -2,7 +2,8 @@ part of '../order_detail_screen.dart';
 
 extension _DeliverySheetSections on _DeliverySheetState {
   Widget _buildMarkingSection() {
-    final scannedCount = _scannedItems['water'] ?? 0;
+    final scannedCount =
+        _markingCodes['water']?.length ?? _scannedItems['water'] ?? 0;
     final isComplete = scannedCount == widget.bottles;
 
     return Column(
@@ -77,7 +78,7 @@ extension _DeliverySheetSections on _DeliverySheetState {
   }
 
   Future<void> _openWaterScanner() async {
-    final result = await Navigator.push<int>(
+    final result = await Navigator.push<MarkingScanResult>(
       context,
       MaterialPageRoute(
         builder: (_) => QrScannerScreen(
@@ -87,6 +88,6 @@ extension _DeliverySheetSections on _DeliverySheetState {
       ),
     );
     if (result == null || !mounted) return;
-    _setWaterScanResult(result);
+    _setWaterMarkingCodes(result.codes);
   }
 }

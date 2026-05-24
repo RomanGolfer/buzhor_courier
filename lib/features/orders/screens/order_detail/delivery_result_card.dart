@@ -76,11 +76,11 @@ class _DeliveryResultCard extends StatelessWidget {
                     .toList(),
               ),
             ],
-            if (order.scannedItems.isNotEmpty) ...[
+            if (order.scannedCountFor('water') > 0) ...[
               const SizedBox(height: 12),
               _ResultInfoRow(
                 label: 'Маркировка',
-                value: '${order.scannedItems['water'] ?? 0} отсканировано',
+                value: '${order.scannedCountFor('water')} отсканировано',
               ),
             ],
             if (order.deliveryComment != null) ...[

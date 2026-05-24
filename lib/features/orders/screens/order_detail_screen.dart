@@ -59,6 +59,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   PaymentType? _pendingPaymentType;
   final Map<String, int> _extras = {};
   final Map<String, int> _scannedItems = {};
+  final Map<String, List<String>> _markingCodes = {};
   double _dispatcherReveal = 0;
   Timer? _dispatcherHideTimer;
 
@@ -83,6 +84,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     _paymentType = initial.confirmedPayment ?? initial.payment;
     _extras.addAll(initial.extras);
     _scannedItems.addAll(initial.scannedItems);
+    _markingCodes.addAll(_copyMarkingCodes(initial.markingCodes));
+    if (_scannedItems.isEmpty && _markingCodes.isNotEmpty) {
+      _scannedItems.addAll(_countsFromMarkingCodes(_markingCodes));
+    }
   }
 
   @override
@@ -125,6 +130,19 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     _syncToProvider();
   }
 
+  void _onMarkingCodesChanged(Map<String, List<String>> value) {
+    final markingCounts = _countsFromMarkingCodes(value);
+    setState(() {
+      _markingCodes
+        ..clear()
+        ..addAll(_copyMarkingCodes(value));
+      _scannedItems
+        ..clear()
+        ..addAll(markingCounts);
+    });
+    _syncToProvider();
+  }
+
   void _syncToProvider({String? failureMessage}) {
     final current = _resolveOrder(ref.read(ordersProvider));
     if (current.isClosed) return;
@@ -133,6 +151,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       deliveredBottles: _bottles,
       extras: Map.of(_extras),
       scannedItems: Map.of(_scannedItems),
+      markingCodes: _copyMarkingCodes(_markingCodes),
     );
 
     unawaited(
@@ -264,9 +283,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               paymentType: _paymentType,
               extras: _extras,
               scannedItems: _scannedItems,
+              markingCodes: _markingCodes,
               totalPrice: _currentTotal,
               onPaymentTypeChanged: _onPaymentTypeChanged,
               onScannedItemsChanged: _onScannedItemsChanged,
+              onMarkingCodesChanged: _onMarkingCodesChanged,
               onDelivered: _completeOrder,
               onFailed: _failOrder,
             ),
@@ -282,7 +303,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           returnedBottles: confirmation.returnedBottles,
           paymentType: confirmation.paymentType,
           extras: _extras,
-          scannedItems: _scannedItems,
+          scannedItems: confirmation.scannedItems,
+          markingCodes: confirmation.markingCodes,
           comment: confirmation.comment,
         );
   }
@@ -329,12 +351,14 @@ String _paymentLabel(PaymentType type) => switch (type) {
 class _DeliveryConfirmation {
   final int returnedBottles;
   final Map<String, int> scannedItems;
+  final Map<String, List<String>> markingCodes;
   final PaymentType paymentType;
   final String? comment;
 
   const _DeliveryConfirmation({
     required this.returnedBottles,
     required this.scannedItems,
+    required this.markingCodes,
     required this.paymentType,
     required this.comment,
   });
@@ -344,4 +368,20 @@ class _FailureConfirmation {
   final String reason;
 
   const _FailureConfirmation({required this.reason});
+}
+
+Map<String, List<String>> _copyMarkingCodes(
+  Map<String, List<String>> markingCodes,
+) {
+  if (markingCodes.isEmpty) return {};
+  return markingCodes.map(
+    (key, codes) => MapEntry(key, List<String>.unmodifiable(codes)),
+  );
+}
+
+Map<String, int> _countsFromMarkingCodes(
+  Map<String, List<String>> markingCodes,
+) {
+  if (markingCodes.isEmpty) return {};
+  return markingCodes.map((key, codes) => MapEntry(key, codes.length));
 }

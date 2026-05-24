@@ -6,9 +6,11 @@ class _BottomButtons extends StatelessWidget {
   final PaymentType paymentType;
   final Map<String, int> extras;
   final Map<String, int> scannedItems;
+  final Map<String, List<String>> markingCodes;
   final double totalPrice;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final ValueChanged<Map<String, int>> onScannedItemsChanged;
+  final ValueChanged<Map<String, List<String>>> onMarkingCodesChanged;
   final Future<void> Function(_DeliveryConfirmation confirmation) onDelivered;
   final Future<void> Function(_FailureConfirmation confirmation) onFailed;
 
@@ -18,9 +20,11 @@ class _BottomButtons extends StatelessWidget {
     required this.paymentType,
     required this.extras,
     required this.scannedItems,
+    required this.markingCodes,
     required this.totalPrice,
     required this.onPaymentTypeChanged,
     required this.onScannedItemsChanged,
+    required this.onMarkingCodesChanged,
     required this.onDelivered,
     required this.onFailed,
   });
@@ -85,9 +89,11 @@ class _BottomButtons extends StatelessWidget {
                     paymentType: paymentType,
                     extras: extras,
                     scannedItems: scannedItems,
+                    markingCodes: markingCodes,
                     totalPrice: totalPrice,
                     onPaymentTypeChanged: onPaymentTypeChanged,
                     onScannedItemsChanged: onScannedItemsChanged,
+                    onMarkingCodesChanged: onMarkingCodesChanged,
                     onConfirm: onDelivered,
                   ),
                 ),

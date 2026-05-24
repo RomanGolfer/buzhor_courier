@@ -51,6 +51,7 @@ class OrderSyncOperation {
     required PaymentType paymentType,
     required Map<String, int> extras,
     required Map<String, int> scannedItems,
+    Map<String, List<String>> markingCodes = const {},
     String? comment,
     int? orderVersion,
   }) {
@@ -67,6 +68,7 @@ class OrderSyncOperation {
         'paymentType': paymentType.name,
         'extras': extras,
         'scannedItems': scannedItems,
+        'markingCodes': markingCodes,
         'comment': comment,
       },
       attemptCount: 0,

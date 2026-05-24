@@ -39,6 +39,7 @@ class OrderRepository {
     required PaymentType paymentType,
     required Map<String, int> extras,
     required Map<String, int> scannedItems,
+    Map<String, List<String>> markingCodes = const {},
     String? comment,
   }) async {
     await _ensureLoaded();
@@ -50,6 +51,7 @@ class OrderRepository {
         paymentType: paymentType,
         extras: extras,
         scannedItems: scannedItems,
+        markingCodes: markingCodes,
         comment: comment,
       ),
     );
@@ -61,6 +63,7 @@ class OrderRepository {
         paymentType: paymentType,
         extras: extras,
         scannedItems: scannedItems,
+        markingCodes: markingCodes,
         comment: comment,
       ),
     );
@@ -137,6 +140,8 @@ class OrderRepository {
         _replaceOrder(entry.orderId, (order) {
           final bottles = entry.payload['bottles'] as int;
           final extras = _intMap(entry.payload['extras']);
+          final markingCodes = _stringListMap(entry.payload['markingCodes']);
+          final scannedItems = _intMap(entry.payload['scannedItems']);
           return order.copyWith(
             isDone: true,
             deliveryState: OrderDeliveryState.delivered,
@@ -151,8 +156,11 @@ class OrderRepository {
             ),
             extras: Map.unmodifiable(extras),
             scannedItems: Map.unmodifiable(
-              _intMap(entry.payload['scannedItems']),
+              scannedItems.isEmpty
+                  ? _countsFromMarkingCodes(markingCodes)
+                  : scannedItems,
             ),
+            markingCodes: _unmodifiableStringListMap(markingCodes),
             deliveryComment: _normalizeOptionalText(
               entry.payload['comment'] as String?,
             ),
@@ -210,6 +218,32 @@ class OrderRepository {
 Map<String, int> _intMap(Object? value) {
   if (value is! Map) return const {};
   return value.map((key, value) => MapEntry(key as String, value as int));
+}
+
+Map<String, List<String>> _stringListMap(Object? value) {
+  if (value is! Map) return const {};
+  return value.map(
+    (key, value) => MapEntry(
+      key as String,
+      (value as List).map((item) => item.toString()).toList(),
+    ),
+  );
+}
+
+Map<String, int> _countsFromMarkingCodes(
+  Map<String, List<String>> markingCodes,
+) {
+  if (markingCodes.isEmpty) return const {};
+  return markingCodes.map((key, codes) => MapEntry(key, codes.length));
+}
+
+Map<String, List<String>> _unmodifiableStringListMap(
+  Map<String, List<String>> value,
+) {
+  if (value.isEmpty) return const {};
+  return Map.unmodifiable(
+    value.map((key, codes) => MapEntry(key, List<String>.unmodifiable(codes))),
+  );
 }
 
 PaymentType _paymentTypeFromName(String name) {

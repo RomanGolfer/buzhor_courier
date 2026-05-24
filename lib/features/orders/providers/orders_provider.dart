@@ -120,6 +120,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     required PaymentType paymentType,
     required Map<String, int> extras,
     required Map<String, int> scannedItems,
+    Map<String, List<String>> markingCodes = const {},
     String? comment,
   }) async {
     final orders = await _repository.completeOrder(
@@ -129,6 +130,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       paymentType: paymentType,
       extras: extras,
       scannedItems: scannedItems,
+      markingCodes: markingCodes,
       comment: comment,
     );
     _setOrders(orders);

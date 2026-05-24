@@ -64,6 +64,21 @@ const _activeScannedOrder = OrderItem(
   lng: 37.3168,
 );
 
+const _activeMarkingCodesOnlyOrder = OrderItem(
+  id: '#6',
+  clientName: 'Клиент с кодами маркировки',
+  address: 'ул. Тестовая, 6',
+  district: 'Анапа',
+  price: 900,
+  payment: PaymentType.cash,
+  bottles: 3,
+  markingCodes: {
+    'water': ['010460123456789021A1', '010460123456789021A2'],
+  },
+  lat: 44.8951,
+  lng: 37.3168,
+);
+
 const _qrOrder = OrderItem(
   id: '#4',
   clientName: 'Клиент с QR',
@@ -263,6 +278,18 @@ void main() {
       expect(find.text('Сбросить'), findsNothing);
     },
   );
+
+  testWidgets('shows marking count from stored marking codes', (tester) async {
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: OrderDetailScreen(order: _activeMarkingCodesOnlyOrder),
+        ),
+      ),
+    );
+
+    expect(find.text('2 / 3 отсканировано'), findsOneWidget);
+  });
 
   testWidgets('copies order number from payment QR screen', (tester) async {
     final clipboardWrites = <String>[];

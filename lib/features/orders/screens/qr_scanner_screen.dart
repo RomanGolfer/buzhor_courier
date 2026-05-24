@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+class MarkingScanResult {
+  final List<String> codes;
+
+  const MarkingScanResult({required this.codes});
+
+  const MarkingScanResult.empty() : codes = const [];
+
+  int get count => codes.length;
+}
+
 class QrScannerScreen extends StatefulWidget {
   final String itemName;
   final int requiredCount;
@@ -33,7 +43,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     super.initState();
     if (_requiredCount == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.of(context).pop(0);
+        if (mounted) Navigator.of(context).pop(const MarkingScanResult.empty());
       });
     }
   }
@@ -48,7 +58,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     if (_isCompleting) return;
 
     for (final barcode in capture.barcodes) {
-      final code = barcode.rawValue;
+      final code = barcode.rawValue?.trim();
       if (code == null || code.isEmpty || !_scannedCodes.add(code)) continue;
 
       HapticFeedback.mediumImpact();
@@ -66,7 +76,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     _isCompleting = true;
     await Future<void>.delayed(const Duration(milliseconds: 500));
     if (!mounted) return;
-    Navigator.of(context).pop(_scannedCount);
+    Navigator.of(context).pop(_scanResult());
   }
 
   Future<void> _toggleTorch() async {
@@ -76,7 +86,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   }
 
   void _close() {
-    Navigator.of(context).pop(_scannedCount);
+    Navigator.of(context).pop(_scanResult());
+  }
+
+  MarkingScanResult _scanResult() {
+    return MarkingScanResult(codes: List.unmodifiable(_scannedCodes));
   }
 
   @override

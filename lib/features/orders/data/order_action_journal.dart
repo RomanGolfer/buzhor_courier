@@ -24,6 +24,7 @@ class OrderActionJournalEntry {
     required PaymentType paymentType,
     required Map<String, int> extras,
     required Map<String, int> scannedItems,
+    Map<String, List<String>> markingCodes = const {},
     String? comment,
   }) {
     return OrderActionJournalEntry(
@@ -37,6 +38,7 @@ class OrderActionJournalEntry {
         'paymentType': paymentType.name,
         'extras': extras,
         'scannedItems': scannedItems,
+        'markingCodes': markingCodes,
         'comment': comment,
       },
     );

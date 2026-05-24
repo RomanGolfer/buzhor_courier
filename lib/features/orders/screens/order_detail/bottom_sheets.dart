@@ -6,9 +6,11 @@ class _DeliverySheet extends StatefulWidget {
   final PaymentType paymentType;
   final Map<String, int> extras;
   final Map<String, int> scannedItems;
+  final Map<String, List<String>> markingCodes;
   final double totalPrice;
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final ValueChanged<Map<String, int>> onScannedItemsChanged;
+  final ValueChanged<Map<String, List<String>>> onMarkingCodesChanged;
   final Future<void> Function(_DeliveryConfirmation confirmation) onConfirm;
 
   const _DeliverySheet({
@@ -17,9 +19,11 @@ class _DeliverySheet extends StatefulWidget {
     required this.paymentType,
     required this.extras,
     required this.scannedItems,
+    required this.markingCodes,
     required this.totalPrice,
     required this.onPaymentTypeChanged,
     required this.onScannedItemsChanged,
+    required this.onMarkingCodesChanged,
     required this.onConfirm,
   });
 
@@ -31,6 +35,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   int _returnedBottles = 0;
   bool _isSubmitting = false;
   final Map<String, int> _scannedItems = {};
+  final Map<String, List<String>> _markingCodes = {};
   final _commentController = TextEditingController();
   late PaymentType _paymentType;
 
@@ -39,6 +44,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     super.initState();
     _paymentType = widget.paymentType;
     _scannedItems.addAll(widget.scannedItems);
+    _markingCodes.addAll(_copyMarkingCodes(widget.markingCodes));
+    if (_scannedItems.isEmpty && _markingCodes.isNotEmpty) {
+      _scannedItems.addAll(_countsFromMarkingCodes(_markingCodes));
+    }
   }
 
   @override
@@ -205,6 +214,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
       _DeliveryConfirmation(
         returnedBottles: _returnedBottles,
         scannedItems: Map.unmodifiable(_scannedItems),
+        markingCodes: _copyMarkingCodes(_markingCodes),
         paymentType: _paymentType,
         comment: _commentController.text,
       ),
@@ -215,11 +225,33 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     navigator.pop();
   }
 
-  void _setWaterScanResult(int result) {
-    _setScannedItems({'water': result});
+  void _setWaterMarkingCodes(List<String> codes) {
+    final updated = _copyMarkingCodes(_markingCodes);
+    if (codes.isEmpty) {
+      updated.remove('water');
+    } else {
+      updated['water'] = List<String>.unmodifiable(codes);
+    }
+    setState(() {
+      _markingCodes
+        ..clear()
+        ..addAll(updated);
+      _scannedItems
+        ..clear()
+        ..addAll(_countsFromMarkingCodes(updated));
+    });
+    widget.onMarkingCodesChanged(_copyMarkingCodes(_markingCodes));
   }
 
   void _resetWaterScanResult() {
+    final updatedMarkingCodes = _copyMarkingCodes(_markingCodes)
+      ..remove('water');
+    setState(() {
+      _markingCodes
+        ..clear()
+        ..addAll(updatedMarkingCodes);
+    });
+    widget.onMarkingCodesChanged(_copyMarkingCodes(_markingCodes));
     _setScannedItems({});
   }
 

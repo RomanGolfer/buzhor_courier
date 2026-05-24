@@ -21,6 +21,9 @@ void main() {
       confirmedPayment: PaymentType.online,
       extras: {'Помпа': 1},
       scannedItems: {'water': 2},
+      markingCodes: {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      },
       deliveryComment: 'Оставлено у двери',
     );
 
@@ -34,6 +37,10 @@ void main() {
     expect(restored.confirmedPayment, PaymentType.online);
     expect(restored.extras, {'Помпа': 1});
     expect(restored.scannedItems, {'water': 2});
+    expect(restored.markingCodes, {
+      'water': ['010460123456789021A1', '010460123456789021A2'],
+    });
+    expect(restored.scannedCountFor('water'), 2);
     expect(restored.deliveryComment, 'Оставлено у двери');
   });
   test('copyWith can update and clear nullable fields', () {
@@ -76,6 +83,30 @@ void main() {
     expect(updated.deliveryComment, isNull);
     expect(updated.failureReason, isNull);
     expect(updated.timeSlot, '14:00 - 18:00');
+  });
+
+  test('copyWith derives scanned item counts from marking codes', () {
+    const order = OrderItem(
+      id: '#1',
+      clientName: 'Client',
+      address: 'Address',
+      district: 'District',
+      price: 560,
+      payment: PaymentType.cash,
+      bottles: 2,
+      lat: 44.8951,
+      lng: 37.3168,
+    );
+
+    final updated = order.copyWith(
+      markingCodes: {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      },
+    );
+
+    expect(updated.markingCodes['water'], hasLength(2));
+    expect(updated.scannedItems, {'water': 2});
+    expect(updated.scannedCountFor('water'), 2);
   });
 
   test('uses order number for display while keeping backend id', () {
@@ -143,6 +174,13 @@ void main() {
       'state': 'delivered',
       'extras': {'pump': 1},
       'scanned_items': {'water': 3},
+      'marking_codes': {
+        'water': [
+          '010460123456789021A1',
+          '010460123456789021A2',
+          '010460123456789021A3',
+        ],
+      },
       'delivered_bottles': 3,
       'returned_bottles': 0,
       'confirmed_payment': 'online',
@@ -158,6 +196,7 @@ void main() {
     expect(order.confirmedPayment, PaymentType.online);
     expect(order.extras, {'pump': 1});
     expect(order.scannedItems, {'water': 3});
+    expect(order.markingCodes['water'], hasLength(3));
     expect(order.timeSlot, '14:00 - 18:00');
   });
 

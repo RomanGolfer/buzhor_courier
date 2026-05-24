@@ -23,6 +23,7 @@ class OrderItem {
   final PaymentType? confirmedPayment;
   final Map<String, int> extras;
   final Map<String, int> scannedItems;
+  final Map<String, List<String>> markingCodes;
   final String? deliveryComment;
   final String? failureReason;
   final String? timeSlot;
@@ -47,6 +48,7 @@ class OrderItem {
     this.confirmedPayment,
     this.extras = const {},
     this.scannedItems = const {},
+    this.markingCodes = const {},
     this.deliveryComment,
     this.failureReason,
     this.timeSlot,
@@ -65,12 +67,21 @@ class OrderItem {
       lng.abs() <= 180 &&
       !(lat == 0 && lng == 0);
 
+  int scannedCountFor(String itemId) {
+    final codes = markingCodes[itemId];
+    if (codes != null && codes.isNotEmpty) return codes.length;
+    return scannedItems[itemId] ?? 0;
+  }
+
   OrderDeliveryState get effectiveDeliveryState {
     if (deliveryState != OrderDeliveryState.active) return deliveryState;
     return isDone ? OrderDeliveryState.delivered : OrderDeliveryState.active;
   }
 
   factory OrderItem.fromJson(Map<String, dynamic> json) {
+    final markingCodes = _stringListMapFromJson(json['markingCodes']);
+    final scannedItems = _intMapFromJson(json['scannedItems']);
+
     return OrderItem(
       id: json['id'] as String,
       orderNumber: json['orderNumber'] as String?,
@@ -94,7 +105,10 @@ class OrderItem {
         json['confirmedPayment'] as String?,
       ),
       extras: _intMapFromJson(json['extras']),
-      scannedItems: _intMapFromJson(json['scannedItems']),
+      scannedItems: scannedItems.isEmpty
+          ? _countsFromMarkingCodes(markingCodes)
+          : scannedItems,
+      markingCodes: markingCodes,
       deliveryComment: json['deliveryComment'] as String?,
       failureReason: json['failureReason'] as String?,
       timeSlot: json['timeSlot'] as String?,
@@ -105,6 +119,8 @@ class OrderItem {
     final state = _deliveryStateFromBackend(json['state'] as String?);
     final deliveredBottles = json['delivered_bottles'] as int?;
     final returnedBottles = json['returned_bottles'] as int?;
+    final markingCodes = _stringListMapFromJson(json['marking_codes']);
+    final scannedItems = _intMapFromJson(json['scanned_items']);
 
     return OrderItem(
       id: json['id'] as String,
@@ -129,7 +145,10 @@ class OrderItem {
         json['confirmed_payment'] as String?,
       ),
       extras: _intMapFromJson(json['extras']),
-      scannedItems: _intMapFromJson(json['scanned_items']),
+      scannedItems: scannedItems.isEmpty
+          ? _countsFromMarkingCodes(markingCodes)
+          : scannedItems,
+      markingCodes: markingCodes,
       deliveryComment: json['delivery_comment'] as String?,
       failureReason: json['failure_reason'] as String?,
       timeSlot: json['time_slot'] as String?,
@@ -156,6 +175,7 @@ class OrderItem {
     'confirmedPayment': confirmedPayment?.name,
     'extras': extras,
     'scannedItems': scannedItems,
+    'markingCodes': markingCodes,
     'deliveryComment': deliveryComment,
     'failureReason': failureReason,
     'timeSlot': timeSlot,
@@ -174,6 +194,7 @@ class OrderItem {
     Object? confirmedPayment = _copyWithSentinel,
     Map<String, int>? extras,
     Map<String, int>? scannedItems,
+    Map<String, List<String>>? markingCodes,
     Object? deliveryComment = _copyWithSentinel,
     Object? failureReason = _copyWithSentinel,
     Object? timeSlot = _copyWithSentinel,
@@ -196,7 +217,12 @@ class OrderItem {
     returnedBottles: _copyNullable(returnedBottles, this.returnedBottles),
     confirmedPayment: _copyNullable(confirmedPayment, this.confirmedPayment),
     extras: extras ?? this.extras,
-    scannedItems: scannedItems ?? this.scannedItems,
+    scannedItems:
+        scannedItems ??
+        (markingCodes == null
+            ? this.scannedItems
+            : _countsFromMarkingCodes(markingCodes)),
+    markingCodes: markingCodes ?? this.markingCodes,
     deliveryComment: _copyNullable(deliveryComment, this.deliveryComment),
     failureReason: _copyNullable(failureReason, this.failureReason),
     timeSlot: _copyNullable(timeSlot, this.timeSlot),
@@ -233,4 +259,20 @@ Map<String, int> _intMapFromJson(Object? value) {
   if (value == null) return const {};
   final map = value as Map<String, dynamic>;
   return map.map((key, value) => MapEntry(key, (value as num).toInt()));
+}
+
+Map<String, List<String>> _stringListMapFromJson(Object? value) {
+  if (value == null) return const {};
+  final map = value as Map<String, dynamic>;
+  return map.map(
+    (key, value) =>
+        MapEntry(key, (value as List).map((item) => item.toString()).toList()),
+  );
+}
+
+Map<String, int> _countsFromMarkingCodes(
+  Map<String, List<String>> markingCodes,
+) {
+  if (markingCodes.isEmpty) return const {};
+  return markingCodes.map((key, codes) => MapEntry(key, codes.length));
 }

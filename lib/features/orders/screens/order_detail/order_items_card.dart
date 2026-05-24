@@ -51,7 +51,7 @@ class _OrderItemsCard extends StatelessWidget {
               ),
             ],
           ),
-          if (!order.isClosed && order.scannedItems.isNotEmpty) ...[
+          if (!order.isClosed && order.scannedCountFor('water') > 0) ...[
             const SizedBox(height: 8),
             Row(
               children: [
@@ -62,7 +62,7 @@ class _OrderItemsCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '${order.scannedItems['water'] ?? 0} / $bottles отсканировано',
+                  '${order.scannedCountFor('water')} / $bottles отсканировано',
                   style: const TextStyle(
                     color: AppColors.green,
                     fontSize: 13,

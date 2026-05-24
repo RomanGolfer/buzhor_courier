@@ -47,6 +47,13 @@ void main() {
         paymentType: PaymentType.card,
         extras: {'Помпа': 1},
         scannedItems: {'water': 3},
+        markingCodes: {
+          'water': [
+            '010460123456789021A1',
+            '010460123456789021A2',
+            '010460123456789021A3',
+          ],
+        },
         comment: 'Оставлено у двери',
       );
 
@@ -61,6 +68,7 @@ void main() {
       expect(completed.confirmedPayment, PaymentType.card);
       expect(completed.extras, {'Помпа': 1});
       expect(completed.scannedItems, {'water': 3});
+      expect(completed.markingCodes['water'], hasLength(3));
       expect(completed.deliveryComment, 'Оставлено у двери');
     },
   );
@@ -114,6 +122,9 @@ void main() {
       paymentType: PaymentType.cash,
       extras: const {},
       scannedItems: const {'water': 2},
+      markingCodes: const {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      },
     );
     await notifier.refreshOrders();
 
@@ -154,6 +165,9 @@ void main() {
       paymentType: PaymentType.cash,
       extras: const {},
       scannedItems: const {'water': 2},
+      markingCodes: const {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      },
     );
 
     final restoredRepository = OrderRepository(
@@ -211,6 +225,9 @@ void main() {
       paymentType: PaymentType.cash,
       extras: const {},
       scannedItems: const {'water': 2},
+      markingCodes: const {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      },
     );
 
     final operation = storage.savedSyncOperations.single;
@@ -219,6 +236,9 @@ void main() {
     expect(operation.orderId, _activeOrder.id);
     expect(operation.payload['bottles'], 2);
     expect(operation.payload['paymentType'], PaymentType.cash.name);
+    expect(operation.payload['markingCodes'], {
+      'water': ['010460123456789021A1', '010460123456789021A2'],
+    });
   });
 
   test('failOrder stores pending sync operation for nonblank reason', () async {
