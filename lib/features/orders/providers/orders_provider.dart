@@ -13,6 +13,7 @@ class OrdersState {
   final List<OrderItem> activeOrders;
   final List<OrderItem> completedOrders;
   final List<TimeSlot> timeSlots;
+  final Set<String> newOrderIds;
 
   const OrdersState({
     this.navIndex = 0,
@@ -24,6 +25,7 @@ class OrdersState {
     this.activeOrders = const [],
     this.completedOrders = const [],
     this.timeSlots = const [],
+    this.newOrderIds = const {},
   });
 
   OrdersState copyWith({
@@ -36,6 +38,7 @@ class OrdersState {
     List<OrderItem>? activeOrders,
     List<OrderItem>? completedOrders,
     List<TimeSlot>? timeSlots,
+    Set<String>? newOrderIds,
   }) {
     return OrdersState(
       navIndex: navIndex ?? this.navIndex,
@@ -47,6 +50,7 @@ class OrdersState {
       activeOrders: activeOrders ?? this.activeOrders,
       completedOrders: completedOrders ?? this.completedOrders,
       timeSlots: timeSlots ?? this.timeSlots,
+      newOrderIds: newOrderIds ?? this.newOrderIds,
     );
   }
 }
@@ -144,24 +148,52 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 
   Future<void> upsertIncomingOrder(OrderItem order) async {
+    _rememberNewOrderIfNeeded(order);
     final orders = await _repository.upsertOrder(order);
     _setOrders(orders);
   }
 
   Future<void> updateOrder(OrderItem updatedOrder) async {
+    _rememberNewOrderIfNeeded(updatedOrder);
     final orders = await _repository.upsertOrder(updatedOrder);
     _setOrders(orders);
+  }
+
+  void markOrderSeen(String orderId) {
+    if (!state.newOrderIds.contains(orderId)) return;
+    state = state.copyWith(newOrderIds: _withoutNewOrderIds({orderId}));
+  }
+
+  void markOrdersSeen(Iterable<String> orderIds) {
+    final ids = orderIds.toSet();
+    if (ids.isEmpty || !state.newOrderIds.any(ids.contains)) return;
+    state = state.copyWith(newOrderIds: _withoutNewOrderIds(ids));
   }
 
   void _setOrders(List<OrderItem> orders) {
     final activeOrders = orders.where((order) => !order.isClosed).toList();
     final completedOrders = orders.where((order) => order.isClosed).toList();
+    final activeIds = activeOrders.map((order) => order.id).toSet();
     state = state.copyWith(
       activeOrders: activeOrders,
       completedOrders: completedOrders,
       timeSlots: _buildTimeSlots(activeOrders),
+      newOrderIds: state.newOrderIds.intersection(activeIds),
       isLoading: false,
     );
+  }
+
+  void _rememberNewOrderIfNeeded(OrderItem order) {
+    if (order.isClosed || state.newOrderIds.contains(order.id)) return;
+    final alreadyKnown =
+        state.activeOrders.any((item) => item.id == order.id) ||
+        state.completedOrders.any((item) => item.id == order.id);
+    if (alreadyKnown) return;
+    state = state.copyWith(newOrderIds: {...state.newOrderIds, order.id});
+  }
+
+  Set<String> _withoutNewOrderIds(Set<String> orderIds) {
+    return state.newOrderIds.where((id) => !orderIds.contains(id)).toSet();
   }
 
   List<TimeSlot> _buildTimeSlots(List<OrderItem> activeOrders) {

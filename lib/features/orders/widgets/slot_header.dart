@@ -11,14 +11,18 @@ const double _routeActionColumnWidth = 112;
 
 class SlotHeader extends StatelessWidget {
   final TimeSlot slot;
+  final Set<String> newOrderIds;
   final VoidCallback onToggle;
   final VoidCallback onBuildRoute;
+  final ValueChanged<String> onOrderOpen;
 
   const SlotHeader({
     super.key,
     required this.slot,
+    this.newOrderIds = const {},
     required this.onToggle,
     required this.onBuildRoute,
+    required this.onOrderOpen,
   });
 
   @override
@@ -42,7 +46,12 @@ class SlotHeader extends StatelessWidget {
             onToggle: onToggle,
             onBuildRoute: onBuildRoute,
           ),
-          if (slot.isExpanded) _SlotOrdersList(slot: slot),
+          if (slot.isExpanded)
+            _SlotOrdersList(
+              slot: slot,
+              newOrderIds: newOrderIds,
+              onOrderOpen: onOrderOpen,
+            ),
         ],
       ),
     );

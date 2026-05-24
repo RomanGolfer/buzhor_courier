@@ -6,11 +6,13 @@ class _CardContent extends StatelessWidget {
   final OrderItem order;
   final int number;
   final bool showRouteButton;
+  final bool isNew;
 
   const _CardContent({
     required this.order,
     required this.number,
     this.showRouteButton = true,
+    this.isNew = false,
   });
 
   @override
@@ -18,7 +20,7 @@ class _CardContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _OrderCardHeaderRow(order: order, number: number),
+        _OrderCardHeaderRow(order: order, number: number, isNew: isNew),
         const SizedBox(height: 8),
         _OrderCardAddressRow(order: order),
         const SizedBox(height: 6),

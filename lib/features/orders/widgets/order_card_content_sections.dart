@@ -3,8 +3,13 @@ part of 'order_card.dart';
 class _OrderCardHeaderRow extends StatelessWidget {
   final OrderItem order;
   final int number;
+  final bool isNew;
 
-  const _OrderCardHeaderRow({required this.order, required this.number});
+  const _OrderCardHeaderRow({
+    required this.order,
+    required this.number,
+    required this.isNew,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +42,10 @@ class _OrderCardHeaderRow extends StatelessWidget {
               if (isOverdue) ...[
                 const SizedBox(width: 8),
                 const Flexible(child: _OrderOverdueBadge()),
+              ],
+              if (isNew) ...[
+                const SizedBox(width: 8),
+                const Flexible(child: _OrderNewBadge()),
               ],
             ],
           ),
@@ -85,6 +94,32 @@ class _OrderOverdueBadge extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
           color: Colors.red.shade500,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _OrderNewBadge extends StatelessWidget {
+  const _OrderNewBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('orderNewBadge'),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.orange.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text(
+        '\u041d\u043e\u0432\u044b\u0439',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: AppColors.orange,
           fontSize: 10,
           fontWeight: FontWeight.w700,
         ),

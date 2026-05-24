@@ -100,9 +100,12 @@ extension _HomeOrderList on _HomeScreenState {
   Widget _buildTimeSlotGroup(TimeSlot slot, int slotIndex) {
     return SlotHeader(
       slot: slot,
+      newOrderIds: ref.watch(ordersProvider).newOrderIds,
       onToggle: () =>
           ref.read(ordersProvider.notifier).toggleSlotExpansion(slotIndex),
       onBuildRoute: () => _buildRouteForSlot(slot),
+      onOrderOpen: (orderId) =>
+          ref.read(ordersProvider.notifier).markOrderSeen(orderId),
     );
   }
 
@@ -118,6 +121,9 @@ extension _HomeOrderList on _HomeScreenState {
       return;
     }
 
+    ref
+        .read(ordersProvider.notifier)
+        .markOrdersSeen(slot.orders.map((order) => order.id));
     await ref.read(ordersProvider.notifier).prepareRoute();
     if (!mounted) return;
     if (routeOrders.length != slot.orders.length) {

@@ -67,6 +67,18 @@ void main() {
     expect(addressText.style?.fontSize, lessThan(15));
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('new order card shows new badge', (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: OrderCard(order: _longOrder, number: 1, isNew: true),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('orderNewBadge')), findsOneWidget);
+  });
 }
 
 class _CountingOrderRepository extends OrderRepository {

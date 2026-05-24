@@ -13,6 +13,7 @@ class OrderCard extends StatelessWidget {
   final int number;
   final VoidCallback? onTap;
   final bool showRouteButton;
+  final bool isNew;
 
   const OrderCard({
     super.key,
@@ -20,6 +21,7 @@ class OrderCard extends StatelessWidget {
     required this.number,
     this.onTap,
     this.showRouteButton = true,
+    this.isNew = false,
   });
 
   @override
@@ -30,6 +32,8 @@ class OrderCard extends StatelessWidget {
         ? Colors.red.shade400
         : isOverdue
         ? Colors.red.shade500
+        : isNew
+        ? AppColors.orange
         : order.isClosed
         ? AppColors.green
         : AppColors.blue;
@@ -38,6 +42,12 @@ class OrderCard extends StatelessWidget {
             AppColors.surface(context),
             isDark ? Colors.red.shade900 : Colors.red.shade50,
             isDark ? 0.16 : 0.70,
+          )
+        : isNew
+        ? Color.lerp(
+            AppColors.surface(context),
+            isDark ? AppColors.orange : AppColors.orangeLight,
+            isDark ? 0.14 : 0.26,
           )
         : AppColors.surface(context);
     return GestureDetector(
@@ -68,6 +78,7 @@ class OrderCard extends StatelessWidget {
             order: order,
             number: number,
             showRouteButton: showRouteButton,
+            isNew: isNew,
           ),
         ),
       ),

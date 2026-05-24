@@ -31,6 +31,18 @@ const _incomingOrder = OrderItem(
   lng: 37.3378,
 );
 
+const _secondIncomingOrder = OrderItem(
+  id: '#3',
+  clientName: 'Second incoming client',
+  address: 'Second incoming address',
+  district: 'Anapa',
+  price: 1120,
+  payment: PaymentType.card,
+  bottles: 4,
+  lat: 44.9121,
+  lng: 37.3478,
+);
+
 void main() {
   test(
     'completeOrder moves active order to completed with delivery details',
@@ -332,6 +344,42 @@ void main() {
       _activeOrder.id,
       _incomingOrder.id,
     ]);
+  });
+
+  test('upsertIncomingOrder marks unseen active order as new', () async {
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.upsertIncomingOrder(_incomingOrder);
+
+    expect(notifier.state.newOrderIds, {_incomingOrder.id});
+  });
+
+  test('markOrderSeen clears one new order marker', () async {
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.upsertIncomingOrder(_incomingOrder);
+    notifier.markOrderSeen(_incomingOrder.id);
+
+    expect(notifier.state.newOrderIds, isEmpty);
+  });
+
+  test('markOrdersSeen clears new markers for a route group', () async {
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [_activeOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.upsertIncomingOrder(_incomingOrder);
+    await notifier.upsertIncomingOrder(_secondIncomingOrder);
+    notifier.markOrdersSeen([_incomingOrder.id, _secondIncomingOrder.id]);
+
+    expect(notifier.state.newOrderIds, isEmpty);
   });
 
   test('groups active orders by backend time slot', () async {
