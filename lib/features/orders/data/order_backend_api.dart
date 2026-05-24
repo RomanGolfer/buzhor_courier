@@ -1,5 +1,6 @@
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:flutter/foundation.dart';
 
 abstract class OrderBackendApi {
   Future<List<OrderItem>?> fetchAssignedOrders();
@@ -19,12 +20,20 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     }
 
     try {
+      final session = client.auth.currentSession;
+      if (session == null) return null;
+      if (session.isExpired) {
+        await client.auth.refreshSession();
+      }
+
       final rows = await client
           .from('orders')
           .select()
           .order('updated_at', ascending: false);
       return parseOrderRows(rows);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Failed to fetch assigned orders: $error');
+      debugPrintStack(stackTrace: stackTrace);
       return null;
     }
   }
