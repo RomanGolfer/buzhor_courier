@@ -24,6 +24,7 @@ void main() {
       markingCodes: {
         'water': ['010460123456789021A1', '010460123456789021A2'],
       },
+      fiscalReceipt: FiscalReceipt.pending(operationId: 'fiscal-#1-1'),
       deliveryComment: 'Оставлено у двери',
     );
 
@@ -41,6 +42,8 @@ void main() {
       'water': ['010460123456789021A1', '010460123456789021A2'],
     });
     expect(restored.scannedCountFor('water'), 2);
+    expect(restored.fiscalReceipt.status, FiscalReceiptStatus.pending);
+    expect(restored.fiscalReceipt.operationId, 'fiscal-#1-1');
     expect(restored.deliveryComment, 'Оставлено у двери');
   });
   test('copyWith can update and clear nullable fields', () {
@@ -107,6 +110,27 @@ void main() {
     expect(updated.markingCodes['water'], hasLength(2));
     expect(updated.scannedItems, {'water': 2});
     expect(updated.scannedCountFor('water'), 2);
+  });
+
+  test('fiscal receipt accepts backend snake case fields', () {
+    final receipt = FiscalReceipt.fromJson({
+      'status': 'issued',
+      'operation_id': 'fiscal-1',
+      'receipt_url': 'https://ofd.example/receipt/1',
+      'fiscal_document_number': '123',
+      'fiscal_drive_number': '456',
+      'fiscal_sign': '789',
+      'issued_at': '2026-05-24T12:00:00Z',
+    });
+
+    expect(receipt.status, FiscalReceiptStatus.issued);
+    expect(receipt.operationId, 'fiscal-1');
+    expect(receipt.receiptUrl, 'https://ofd.example/receipt/1');
+    expect(receipt.fiscalDocumentNumber, '123');
+    expect(receipt.fiscalDriveNumber, '456');
+    expect(receipt.fiscalSign, '789');
+    expect(receipt.issuedAt, DateTime.parse('2026-05-24T12:00:00Z'));
+    expect(receipt.toJson()['status'], 'issued');
   });
 
   test('uses order number for display while keeping backend id', () {
@@ -181,6 +205,10 @@ void main() {
           '010460123456789021A3',
         ],
       },
+      'fiscal_receipt': {
+        'status': 'pending',
+        'operationId': 'fiscal-backend-1',
+      },
       'delivered_bottles': 3,
       'returned_bottles': 0,
       'confirmed_payment': 'online',
@@ -197,6 +225,8 @@ void main() {
     expect(order.extras, {'pump': 1});
     expect(order.scannedItems, {'water': 3});
     expect(order.markingCodes['water'], hasLength(3));
+    expect(order.fiscalReceipt.status, FiscalReceiptStatus.pending);
+    expect(order.fiscalReceipt.operationId, 'fiscal-backend-1');
     expect(order.timeSlot, '14:00 - 18:00');
   });
 
@@ -238,6 +268,7 @@ void main() {
     expect(order.payment, PaymentType.cash);
     expect(order.extras, isEmpty);
     expect(order.scannedItems, isEmpty);
+    expect(order.fiscalReceipt.status, FiscalReceiptStatus.notRequired);
     expect(order.phone, isNull);
     expect(order.timeSlot, isNull);
     expect(order.deliveryState, OrderDeliveryState.active);

@@ -348,6 +348,14 @@ String _paymentLabel(PaymentType type) => switch (type) {
   PaymentType.contract => 'По договору',
 };
 
+String _fiscalReceiptLabel(FiscalReceiptStatus status) => switch (status) {
+  FiscalReceiptStatus.notRequired => 'Не требуется',
+  FiscalReceiptStatus.pending => 'Ожидает фискализации',
+  FiscalReceiptStatus.issued => 'Чек выдан',
+  FiscalReceiptStatus.failed => 'Ошибка чека',
+  FiscalReceiptStatus.needsReview => 'Нужна проверка',
+};
+
 class _DeliveryConfirmation {
   final int returnedBottles;
   final Map<String, int> scannedItems;

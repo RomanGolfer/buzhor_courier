@@ -11,6 +11,25 @@ export type OrderState =
 
 export type PaymentMethod = "card" | "cash" | "qr" | "online" | "contract";
 
+export type FiscalReceiptStatus =
+  | "not_required"
+  | "pending"
+  | "issued"
+  | "failed"
+  | "needs_review";
+
+export type FiscalReceipt = {
+  status: FiscalReceiptStatus;
+  operationId?: string | null;
+  provider?: string | null;
+  receiptUrl?: string | null;
+  fiscalDocumentNumber?: string | null;
+  fiscalDriveNumber?: string | null;
+  fiscalSign?: string | null;
+  issuedAt?: string | null;
+  error?: string | null;
+};
+
 export type Profile = {
   id: string;
   role: Role;
@@ -44,6 +63,8 @@ export type Order = {
   payment_method: PaymentMethod;
   price: number;
   bottles: number;
+  marking_codes: Record<string, string[]> | null;
+  fiscal_receipt: FiscalReceipt | null;
   time_slot: string | null;
   delivery_comment: string | null;
   failure_reason: string | null;

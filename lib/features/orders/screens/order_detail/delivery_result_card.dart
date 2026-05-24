@@ -58,6 +58,11 @@ class _DeliveryResultCard extends StatelessWidget {
               label: 'Оплата',
               value: _paymentLabel(order.confirmedPayment ?? order.payment),
             ),
+            const SizedBox(height: 8),
+            _ResultInfoRow(
+              label: 'Чек',
+              value: _fiscalReceiptLabel(order.fiscalReceipt.status),
+            ),
             if (order.extras.isNotEmpty) ...[
               const SizedBox(height: 12),
               Wrap(

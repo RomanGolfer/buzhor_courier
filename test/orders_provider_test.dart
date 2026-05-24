@@ -69,6 +69,8 @@ void main() {
       expect(completed.extras, {'Помпа': 1});
       expect(completed.scannedItems, {'water': 3});
       expect(completed.markingCodes['water'], hasLength(3));
+      expect(completed.fiscalReceipt.status, FiscalReceiptStatus.pending);
+      expect(completed.fiscalReceipt.operationId, startsWith('fiscal-#1-'));
       expect(completed.deliveryComment, 'Оставлено у двери');
     },
   );
@@ -239,7 +241,32 @@ void main() {
     expect(operation.payload['markingCodes'], {
       'water': ['010460123456789021A1', '010460123456789021A2'],
     });
+    final fiscalReceipt =
+        operation.payload['fiscalReceipt'] as Map<String, dynamic>;
+    expect(fiscalReceipt['status'], 'pending');
+    expect(fiscalReceipt['operationId'], startsWith('fiscal-#1-'));
   });
+
+  test(
+    'completeOrder does not require fiscal receipt for contract payment',
+    () async {
+      final repository = OrderRepository(initialOrders: [_activeOrder]);
+
+      final orders = await repository.completeOrder(
+        _activeOrder.id,
+        bottles: 2,
+        returnedBottles: 0,
+        paymentType: PaymentType.contract,
+        extras: const {},
+        scannedItems: const {},
+      );
+
+      expect(
+        orders.single.fiscalReceipt.status,
+        FiscalReceiptStatus.notRequired,
+      );
+    },
+  );
 
   test('failOrder stores pending sync operation for nonblank reason', () async {
     final storage = _FakeOrderStorage();

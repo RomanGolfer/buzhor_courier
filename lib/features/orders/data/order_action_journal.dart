@@ -25,6 +25,7 @@ class OrderActionJournalEntry {
     required Map<String, int> extras,
     required Map<String, int> scannedItems,
     Map<String, List<String>> markingCodes = const {},
+    FiscalReceipt fiscalReceipt = const FiscalReceipt.notRequired(),
     String? comment,
   }) {
     return OrderActionJournalEntry(
@@ -39,6 +40,7 @@ class OrderActionJournalEntry {
         'extras': extras,
         'scannedItems': scannedItems,
         'markingCodes': markingCodes,
+        'fiscalReceipt': fiscalReceipt.toJson(),
         'comment': comment,
       },
     );

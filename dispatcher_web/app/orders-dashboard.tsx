@@ -6,7 +6,7 @@ import type { Courier, Order, OrderState } from "@/lib/types";
 import { Panel, StatusPill } from "@/components/ui";
 
 const orderSelect =
-  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
+  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
 
 const stateLabels: Record<OrderState, string> = {
   draft: "Черновик",
@@ -24,6 +24,14 @@ const paymentLabels: Record<string, string> = {
   qr: "QR",
   online: "Онлайн",
   contract: "Договор"
+};
+
+const fiscalReceiptLabels: Record<string, string> = {
+  not_required: "чек не требуется",
+  pending: "чек ожидает",
+  issued: "чек выдан",
+  failed: "ошибка чека",
+  needs_review: "проверить чек"
 };
 
 const editableStates: OrderState[] = [
@@ -79,6 +87,14 @@ function formatMoney(value: number) {
     style: "currency",
     currency: "RUB"
   }).format(value);
+}
+
+function fiscalReceiptLabel(order: Order) {
+  return fiscalReceiptLabels[order.fiscal_receipt?.status ?? "not_required"] ?? "чек не требуется";
+}
+
+function markingCount(order: Order) {
+  return order.marking_codes?.water?.length ?? 0;
 }
 
 export function OrdersDashboard({
@@ -392,6 +408,7 @@ export function OrdersDashboard({
                     <div className="text-xs text-muted">
                       {paymentLabels[order.payment_method]}, {order.bottles} бут.
                     </div>
+                    <div className="text-xs font-semibold text-muted">{fiscalReceiptLabel(order)}</div>
                   </td>
                   <td className="border-b border-line px-4 py-3 text-right">
                     <button
@@ -515,6 +532,11 @@ function OrderInspector({
         <InfoRow label="Слот" value={order.time_slot ?? "без слота"} />
         <InfoRow label="Оплата" value={`${paymentLabels[order.payment_method]} · ${formatMoney(order.price)}`} />
         <InfoRow label="Бутыли" value={String(order.bottles)} />
+        <InfoRow label="Маркировка" value={`${markingCount(order)} кодов`} />
+        <InfoRow label="Чек" value={fiscalReceiptLabel(order)} />
+        {order.fiscal_receipt?.receiptUrl ? (
+          <InfoRow label="Ссылка на чек" value="Открыть чек" href={order.fiscal_receipt.receiptUrl} />
+        ) : null}
         {mapHref ? <InfoRow label="Карта" value="Открыть точку" href={mapHref} /> : null}
       </div>
 

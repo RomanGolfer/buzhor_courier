@@ -43,6 +43,7 @@ class OrderRepository {
     String? comment,
   }) async {
     await _ensureLoaded();
+    final fiscalReceipt = _fiscalReceiptForCompletion(orderId, paymentType);
     await _storage?.appendSyncOperation(
       OrderSyncOperation.complete(
         orderId,
@@ -52,6 +53,7 @@ class OrderRepository {
         extras: extras,
         scannedItems: scannedItems,
         markingCodes: markingCodes,
+        fiscalReceipt: fiscalReceipt,
         comment: comment,
       ),
     );
@@ -64,6 +66,7 @@ class OrderRepository {
         extras: extras,
         scannedItems: scannedItems,
         markingCodes: markingCodes,
+        fiscalReceipt: fiscalReceipt,
         comment: comment,
       ),
     );
@@ -142,6 +145,9 @@ class OrderRepository {
           final extras = _intMap(entry.payload['extras']);
           final markingCodes = _stringListMap(entry.payload['markingCodes']);
           final scannedItems = _intMap(entry.payload['scannedItems']);
+          final fiscalReceipt = FiscalReceipt.fromJson(
+            entry.payload['fiscalReceipt'],
+          );
           return order.copyWith(
             isDone: true,
             deliveryState: OrderDeliveryState.delivered,
@@ -161,6 +167,7 @@ class OrderRepository {
                   : scannedItems,
             ),
             markingCodes: _unmodifiableStringListMap(markingCodes),
+            fiscalReceipt: fiscalReceipt,
             deliveryComment: _normalizeOptionalText(
               entry.payload['comment'] as String?,
             ),
@@ -196,6 +203,35 @@ class OrderRepository {
     final index = _orders.indexWhere((order) => order.id == orderId);
     if (index == -1) return;
     _orders[index] = update(_orders[index]);
+  }
+
+  OrderItem? _findOrder(String orderId) {
+    for (final order in _orders) {
+      if (order.id == orderId) return order;
+    }
+    return null;
+  }
+
+  FiscalReceipt _fiscalReceiptForCompletion(
+    String orderId,
+    PaymentType paymentType,
+  ) {
+    if (paymentType == PaymentType.contract) {
+      return const FiscalReceipt.notRequired();
+    }
+
+    final existing = _findOrder(orderId)?.fiscalReceipt;
+    if (existing?.status == FiscalReceiptStatus.issued) {
+      return existing!;
+    }
+
+    final operationId = existing?.operationId ?? _fiscalOperationId(orderId);
+    return (existing ?? FiscalReceipt.pending(operationId: operationId))
+        .copyWith(
+          status: FiscalReceiptStatus.pending,
+          operationId: operationId,
+          error: null,
+        );
   }
 
   String? _normalizeOptionalText(String? value) {
@@ -244,6 +280,11 @@ Map<String, List<String>> _unmodifiableStringListMap(
   return Map.unmodifiable(
     value.map((key, codes) => MapEntry(key, List<String>.unmodifiable(codes))),
   );
+}
+
+String _fiscalOperationId(String orderId) {
+  final timestamp = DateTime.now().microsecondsSinceEpoch;
+  return 'fiscal-$orderId-$timestamp';
 }
 
 PaymentType _paymentTypeFromName(String name) {
