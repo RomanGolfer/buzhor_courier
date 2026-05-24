@@ -53,6 +53,7 @@ class OrderSyncOperation {
     required Map<String, int> scannedItems,
     Map<String, List<String>> markingCodes = const {},
     FiscalReceipt fiscalReceipt = const FiscalReceipt.notRequired(),
+    ClientRating? clientRating,
     String? comment,
     int? orderVersion,
   }) {
@@ -71,6 +72,7 @@ class OrderSyncOperation {
         'scannedItems': scannedItems,
         'markingCodes': markingCodes,
         'fiscalReceipt': fiscalReceipt.toJson(),
+        'clientRating': clientRating?.toJson(),
         'comment': comment,
       },
       attemptCount: 0,

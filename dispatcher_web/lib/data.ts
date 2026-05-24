@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
 import type { Courier, CourierStats, Order, Profile } from "@/lib/types";
 
 const moscowOffsetMs = 3 * 60 * 60 * 1000;
@@ -43,14 +44,30 @@ export async function getOrdersByDate(dateKey?: string) {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)"
+      "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)"
     )
     .gte("created_at", start)
     .lt("created_at", end)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return (data ?? []) as unknown as Order[];
+  const orders = (data ?? []) as unknown as Order[];
+  const phones = [
+    ...new Set(
+      orders
+        .map((order) => normalizeClientPhone(order.client_phone))
+        .filter((phone): phone is string => Boolean(phone))
+    )
+  ];
+  if (phones.length === 0) return orders;
+
+  const { data: ratings, error: ratingsError } = await supabase
+    .from("client_ratings")
+    .select("client_phone_normalized, rating")
+    .in("client_phone_normalized", phones);
+
+  if (ratingsError) throw ratingsError;
+  return attachClientRatingStats(orders, (ratings ?? []) as ClientRatingRow[]);
 }
 
 export async function getCourierStats() {

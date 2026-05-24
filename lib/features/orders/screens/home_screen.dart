@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/utils/location_utils.dart';
@@ -35,11 +37,15 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   late final MapController _mapController;
+  Timer? _overdueRefreshTimer;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _overdueRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationProvider.notifier).refreshLocation();
     });
@@ -47,6 +53,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   void dispose() {
+    _overdueRefreshTimer?.cancel();
     super.dispose();
   }
 

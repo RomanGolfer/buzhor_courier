@@ -25,6 +25,7 @@ void main() {
         'water': ['010460123456789021A1', '010460123456789021A2'],
       },
       fiscalReceipt: FiscalReceipt.pending(operationId: 'fiscal-#1-1'),
+      clientRating: ClientRating(rating: 5),
       deliveryComment: 'Оставлено у двери',
     );
 
@@ -44,6 +45,7 @@ void main() {
     expect(restored.scannedCountFor('water'), 2);
     expect(restored.fiscalReceipt.status, FiscalReceiptStatus.pending);
     expect(restored.fiscalReceipt.operationId, 'fiscal-#1-1');
+    expect(restored.clientRating?.rating, 5);
     expect(restored.deliveryComment, 'Оставлено у двери');
   });
   test('copyWith can update and clear nullable fields', () {
@@ -133,6 +135,17 @@ void main() {
     expect(receipt.toJson()['status'], 'issued');
   });
 
+  test('client rating accepts backend snake case fields', () {
+    final rating = ClientRating.fromJson({
+      'rating': 4,
+      'rated_at': '2026-05-24T12:00:00Z',
+    });
+
+    expect(rating?.rating, 4);
+    expect(rating?.ratedAt, DateTime.parse('2026-05-24T12:00:00Z'));
+    expect(rating?.toJson()['rating'], 4);
+  });
+
   test('uses order number for display while keeping backend id', () {
     const order = OrderItem(
       id: '7ee65d46-1a38-4eb1-9d21-b491c61e04544',
@@ -209,6 +222,7 @@ void main() {
         'status': 'pending',
         'operationId': 'fiscal-backend-1',
       },
+      'client_rating': {'rating': 4},
       'delivered_bottles': 3,
       'returned_bottles': 0,
       'confirmed_payment': 'online',
@@ -227,6 +241,7 @@ void main() {
     expect(order.markingCodes['water'], hasLength(3));
     expect(order.fiscalReceipt.status, FiscalReceiptStatus.pending);
     expect(order.fiscalReceipt.operationId, 'fiscal-backend-1');
+    expect(order.clientRating?.rating, 4);
     expect(order.timeSlot, '14:00 - 18:00');
   });
 
@@ -269,6 +284,7 @@ void main() {
     expect(order.extras, isEmpty);
     expect(order.scannedItems, isEmpty);
     expect(order.fiscalReceipt.status, FiscalReceiptStatus.notRequired);
+    expect(order.clientRating, isNull);
     expect(order.phone, isNull);
     expect(order.timeSlot, isNull);
     expect(order.deliveryState, OrderDeliveryState.active);

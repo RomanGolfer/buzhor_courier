@@ -305,6 +305,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           extras: _extras,
           scannedItems: confirmation.scannedItems,
           markingCodes: confirmation.markingCodes,
+          clientRating: confirmation.clientRating,
           comment: confirmation.comment,
         );
   }
@@ -361,6 +362,7 @@ class _DeliveryConfirmation {
   final Map<String, int> scannedItems;
   final Map<String, List<String>> markingCodes;
   final PaymentType paymentType;
+  final ClientRating clientRating;
   final String? comment;
 
   const _DeliveryConfirmation({
@@ -368,6 +370,7 @@ class _DeliveryConfirmation {
     required this.scannedItems,
     required this.markingCodes,
     required this.paymentType,
+    required this.clientRating,
     required this.comment,
   });
 }

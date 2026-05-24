@@ -8,6 +8,7 @@ class _OrderCardHeaderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isOverdue = OrderTimingService.isOverdue(order);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,6 +33,10 @@ class _OrderCardHeaderRow extends StatelessWidget {
               if (order.isClosed) ...[
                 const SizedBox(width: 8),
                 Flexible(child: _OrderStatusBadge(order: order)),
+              ],
+              if (isOverdue) ...[
+                const SizedBox(width: 8),
+                const Flexible(child: _OrderOverdueBadge()),
               ],
             ],
           ),
@@ -58,6 +63,32 @@ class _OrderCardHeaderRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _OrderOverdueBadge extends StatelessWidget {
+  const _OrderOverdueBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('orderOverdueBadge'),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.red.shade400.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        'Просрочен',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: Colors.red.shade500,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 }

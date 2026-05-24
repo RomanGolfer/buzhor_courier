@@ -2,11 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
 import type { Courier, Order, OrderState } from "@/lib/types";
 import { Panel, StatusPill } from "@/components/ui";
 
 const orderSelect =
-  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
+  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
 
 const stateLabels: Record<OrderState, string> = {
   draft: "Черновик",
@@ -45,6 +46,8 @@ const editableStates: OrderState[] = [
 ];
 
 const moscowOffsetMs = 3 * 60 * 60 * 1000;
+const defaultTimeSlot = "10:00 - 14:00";
+const activeStates: OrderState[] = ["draft", "assigned", "accepted", "in_progress"];
 
 function todayDateKey() {
   const parts = new Intl.DateTimeFormat("en", {
@@ -89,12 +92,81 @@ function formatMoney(value: number) {
   }).format(value);
 }
 
+function clientRatingLabel(order: Order) {
+  const stats = order.client_rating_stats;
+  if (!stats || stats.count === 0) return "нет оценок";
+  return `${stats.average.toFixed(1)} / 5 · ${stats.count} оценок`;
+}
+
+function clientRatingShortLabel(order: Order) {
+  const stats = order.client_rating_stats;
+  if (!stats || stats.count === 0) return null;
+  return `★ ${stats.average.toFixed(1)} (${stats.count})`;
+}
+
 function fiscalReceiptLabel(order: Order) {
   return fiscalReceiptLabels[order.fiscal_receipt?.status ?? "not_required"] ?? "чек не требуется";
 }
 
 function markingCount(order: Order) {
   return order.marking_codes?.water?.length ?? 0;
+}
+
+function parseTimeSlotEnd(slot: string | null) {
+  const match = (slot?.trim() || defaultTimeSlot).match(/^\s*\d{1,2}:\d{2}\s*[-–—]\s*(\d{1,2}):(\d{2})\s*$/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour) || !Number.isInteger(minute)) return null;
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return { hour, minute };
+}
+
+function moscowDateParts(date: Date) {
+  const moscow = new Date(date.getTime() + moscowOffsetMs);
+  return {
+    day: moscow.getUTCDate(),
+    month: moscow.getUTCMonth(),
+    year: moscow.getUTCFullYear()
+  };
+}
+
+function isOrderOverdue(order: Order) {
+  if (!activeStates.includes(order.state)) return false;
+  const slotEnd = parseTimeSlotEnd(order.time_slot);
+  if (!slotEnd) return false;
+  const created = moscowDateParts(new Date(order.created_at));
+  const endUtc = new Date(Date.UTC(created.year, created.month, created.day, slotEnd.hour, slotEnd.minute) - moscowOffsetMs);
+  return Date.now() >= endUtc.getTime();
+}
+
+function orderRowClassName(order: Order, isSelected: boolean) {
+  if (isOrderOverdue(order)) {
+    return isSelected ? "bg-red-50/90 ring-1 ring-inset ring-red-200" : "bg-red-50/80 hover:bg-red-100/80";
+  }
+  return isSelected ? "bg-blue-50/70" : "hover:bg-slate-50";
+}
+
+async function loadClientRatingStats(
+  supabase: ReturnType<typeof createBrowserSupabaseClient>,
+  orders: Order[]
+) {
+  const phones = [
+    ...new Set(
+      orders
+        .map((order) => normalizeClientPhone(order.client_phone))
+        .filter((phone): phone is string => Boolean(phone))
+    )
+  ];
+  if (phones.length === 0) return orders;
+
+  const { data, error } = await supabase
+    .from("client_ratings")
+    .select("client_phone_normalized, rating")
+    .in("client_phone_normalized", phones);
+
+  if (error) return orders;
+  return attachClientRatingStats(orders, (data ?? []) as ClientRatingRow[]);
 }
 
 export function OrdersDashboard({
@@ -136,7 +208,7 @@ export function OrdersDashboard({
       .order("created_at", { ascending: false });
 
     if (data) {
-      const nextOrders = data as unknown as Order[];
+      const nextOrders = await loadClientRatingStats(supabase, data as unknown as Order[]);
       const currentSelectedOrder = nextOrders.find((order) => order.id === currentSelectedOrderId) ?? null;
       const nextSelectedOrder = currentSelectedOrder ?? nextOrders[0] ?? null;
       setOrders(nextOrders);
@@ -375,21 +447,27 @@ export function OrdersDashboard({
               </tr>
             </thead>
             <tbody>
-              {filtered.map((order) => (
+              {filtered.map((order) => {
+                const overdue = isOrderOverdue(order);
+                const ratingLabel = clientRatingShortLabel(order);
+
+                return (
                 <tr
-                  className={order.id === selectedOrder?.id ? "bg-blue-50/70" : "hover:bg-slate-50"}
+                  className={orderRowClassName(order, order.id === selectedOrder?.id)}
                   key={order.id}
                 >
                   <td className="border-b border-line px-4 py-3 font-black text-ink">{order.order_number}</td>
                   <td className="border-b border-line px-4 py-3">
                     <div className="font-bold text-ink">{order.client_name}</div>
                     <div className="text-xs text-muted">{order.client_phone ?? "без телефона"}</div>
+                    {ratingLabel ? <div className="mt-1 text-xs font-black text-amber-700">{ratingLabel}</div> : null}
                   </td>
                   <td className="max-w-sm border-b border-line px-4 py-3 text-muted">
                     <div>{order.address}</div>
                     <div className="mt-1 flex flex-wrap gap-2 text-xs font-semibold text-ink">
                       {order.district ? <span>{order.district}</span> : null}
                       {order.time_slot ? <span>{order.time_slot}</span> : null}
+                      {overdue ? <span className="rounded bg-red-100 px-2 py-0.5 font-black text-bad">просрочен</span> : null}
                     </div>
                   </td>
                   <td className="border-b border-line px-4 py-3">
@@ -419,7 +497,8 @@ export function OrdersDashboard({
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {filtered.length === 0 ? (
                 <tr>
                   <td className="px-4 py-10 text-center text-sm font-semibold text-muted" colSpan={8}>
@@ -530,6 +609,8 @@ function OrderInspector({
         <InfoRow label="Адрес" value={order.address} />
         <InfoRow label="Район" value={order.district ?? "не указан"} />
         <InfoRow label="Слот" value={order.time_slot ?? "без слота"} />
+        {isOrderOverdue(order) ? <InfoRow label="Срок" value="Просрочен" /> : null}
+        <InfoRow label="Рейтинг клиента" value={clientRatingLabel(order)} />
         <InfoRow label="Оплата" value={`${paymentLabels[order.payment_method]} · ${formatMoney(order.price)}`} />
         <InfoRow label="Бутыли" value={String(order.bottles)} />
         <InfoRow label="Маркировка" value={`${markingCount(order)} кодов`} />

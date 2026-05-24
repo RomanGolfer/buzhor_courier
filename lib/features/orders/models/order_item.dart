@@ -118,6 +118,30 @@ class FiscalReceipt {
   }
 }
 
+class ClientRating {
+  final int rating;
+  final DateTime? ratedAt;
+
+  const ClientRating({required this.rating, this.ratedAt})
+    : assert(rating >= 1 && rating <= 5);
+
+  static ClientRating? fromJson(Object? value) {
+    if (value is! Map) return null;
+    final json = Map<String, dynamic>.from(value);
+    final rawRating = (json['rating'] as num?)?.toInt();
+    if (rawRating == null) return null;
+    return ClientRating(
+      rating: rawRating.clamp(1, 5).toInt(),
+      ratedAt: _optionalDateTime(json['ratedAt'] ?? json['rated_at']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'rating': rating,
+    'ratedAt': ratedAt?.toIso8601String(),
+  };
+}
+
 extension FiscalReceiptStatusName on FiscalReceiptStatus {
   String get backendName {
     return switch (this) {
@@ -151,6 +175,7 @@ class OrderItem {
   final Map<String, int> scannedItems;
   final Map<String, List<String>> markingCodes;
   final FiscalReceipt fiscalReceipt;
+  final ClientRating? clientRating;
   final String? deliveryComment;
   final String? failureReason;
   final String? timeSlot;
@@ -177,6 +202,7 @@ class OrderItem {
     this.scannedItems = const {},
     this.markingCodes = const {},
     this.fiscalReceipt = const FiscalReceipt.notRequired(),
+    this.clientRating,
     this.deliveryComment,
     this.failureReason,
     this.timeSlot,
@@ -238,6 +264,7 @@ class OrderItem {
           : scannedItems,
       markingCodes: markingCodes,
       fiscalReceipt: FiscalReceipt.fromJson(json['fiscalReceipt']),
+      clientRating: ClientRating.fromJson(json['clientRating']),
       deliveryComment: json['deliveryComment'] as String?,
       failureReason: json['failureReason'] as String?,
       timeSlot: json['timeSlot'] as String?,
@@ -279,6 +306,7 @@ class OrderItem {
           : scannedItems,
       markingCodes: markingCodes,
       fiscalReceipt: FiscalReceipt.fromJson(json['fiscal_receipt']),
+      clientRating: ClientRating.fromJson(json['client_rating']),
       deliveryComment: json['delivery_comment'] as String?,
       failureReason: json['failure_reason'] as String?,
       timeSlot: json['time_slot'] as String?,
@@ -307,6 +335,7 @@ class OrderItem {
     'scannedItems': scannedItems,
     'markingCodes': markingCodes,
     'fiscalReceipt': fiscalReceipt.toJson(),
+    'clientRating': clientRating?.toJson(),
     'deliveryComment': deliveryComment,
     'failureReason': failureReason,
     'timeSlot': timeSlot,
@@ -327,6 +356,7 @@ class OrderItem {
     Map<String, int>? scannedItems,
     Map<String, List<String>>? markingCodes,
     FiscalReceipt? fiscalReceipt,
+    Object? clientRating = _copyWithSentinel,
     Object? deliveryComment = _copyWithSentinel,
     Object? failureReason = _copyWithSentinel,
     Object? timeSlot = _copyWithSentinel,
@@ -356,6 +386,7 @@ class OrderItem {
             : _countsFromMarkingCodes(markingCodes)),
     markingCodes: markingCodes ?? this.markingCodes,
     fiscalReceipt: fiscalReceipt ?? this.fiscalReceipt,
+    clientRating: _copyNullable(clientRating, this.clientRating),
     deliveryComment: _copyNullable(deliveryComment, this.deliveryComment),
     failureReason: _copyNullable(failureReason, this.failureReason),
     timeSlot: _copyNullable(timeSlot, this.timeSlot),

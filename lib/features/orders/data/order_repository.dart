@@ -40,6 +40,7 @@ class OrderRepository {
     required Map<String, int> extras,
     required Map<String, int> scannedItems,
     Map<String, List<String>> markingCodes = const {},
+    ClientRating? clientRating,
     String? comment,
   }) async {
     await _ensureLoaded();
@@ -54,6 +55,7 @@ class OrderRepository {
         scannedItems: scannedItems,
         markingCodes: markingCodes,
         fiscalReceipt: fiscalReceipt,
+        clientRating: clientRating,
         comment: comment,
       ),
     );
@@ -67,6 +69,7 @@ class OrderRepository {
         scannedItems: scannedItems,
         markingCodes: markingCodes,
         fiscalReceipt: fiscalReceipt,
+        clientRating: clientRating,
         comment: comment,
       ),
     );
@@ -148,6 +151,9 @@ class OrderRepository {
           final fiscalReceipt = FiscalReceipt.fromJson(
             entry.payload['fiscalReceipt'],
           );
+          final clientRating = ClientRating.fromJson(
+            entry.payload['clientRating'],
+          );
           return order.copyWith(
             isDone: true,
             deliveryState: OrderDeliveryState.delivered,
@@ -168,6 +174,7 @@ class OrderRepository {
             ),
             markingCodes: _unmodifiableStringListMap(markingCodes),
             fiscalReceipt: fiscalReceipt,
+            clientRating: clientRating,
             deliveryComment: _normalizeOptionalText(
               entry.payload['comment'] as String?,
             ),

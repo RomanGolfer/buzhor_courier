@@ -33,6 +33,7 @@ class _DeliverySheet extends StatefulWidget {
 
 class _DeliverySheetState extends State<_DeliverySheet> {
   int _returnedBottles = 0;
+  int _clientRating = 5;
   bool _isSubmitting = false;
   final Map<String, int> _scannedItems = {};
   final Map<String, List<String>> _markingCodes = {};
@@ -102,6 +103,8 @@ class _DeliverySheetState extends State<_DeliverySheet> {
               _buildMarkingSection(),
               const SizedBox(height: 20),
               _buildPaymentQrAction(),
+              const SizedBox(height: 20),
+              _buildClientRatingSection(),
               const SizedBox(height: 20),
               TextField(
                 controller: _commentController,
@@ -216,6 +219,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
         scannedItems: Map.unmodifiable(_scannedItems),
         markingCodes: _copyMarkingCodes(_markingCodes),
         paymentType: _paymentType,
+        clientRating: ClientRating(
+          rating: _clientRating,
+          ratedAt: DateTime.now().toUtc(),
+        ),
         comment: _commentController.text,
       ),
     );
@@ -253,6 +260,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
     });
     widget.onMarkingCodesChanged(_copyMarkingCodes(_markingCodes));
     _setScannedItems({});
+  }
+
+  void _setClientRating(int value) {
+    setState(() => _clientRating = value);
   }
 
   void _setScannedItems(Map<String, int> value) {

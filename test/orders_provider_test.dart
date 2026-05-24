@@ -54,6 +54,7 @@ void main() {
             '010460123456789021A3',
           ],
         },
+        clientRating: const ClientRating(rating: 4),
         comment: 'Оставлено у двери',
       );
 
@@ -71,6 +72,7 @@ void main() {
       expect(completed.markingCodes['water'], hasLength(3));
       expect(completed.fiscalReceipt.status, FiscalReceiptStatus.pending);
       expect(completed.fiscalReceipt.operationId, startsWith('fiscal-#1-'));
+      expect(completed.clientRating?.rating, 4);
       expect(completed.deliveryComment, 'Оставлено у двери');
     },
   );
@@ -127,6 +129,7 @@ void main() {
       markingCodes: const {
         'water': ['010460123456789021A1', '010460123456789021A2'],
       },
+      clientRating: const ClientRating(rating: 2),
     );
     await notifier.refreshOrders();
 
@@ -170,6 +173,7 @@ void main() {
       markingCodes: const {
         'water': ['010460123456789021A1', '010460123456789021A2'],
       },
+      clientRating: const ClientRating(rating: 2),
     );
 
     final restoredRepository = OrderRepository(
@@ -230,6 +234,7 @@ void main() {
       markingCodes: const {
         'water': ['010460123456789021A1', '010460123456789021A2'],
       },
+      clientRating: const ClientRating(rating: 2),
     );
 
     final operation = storage.savedSyncOperations.single;
@@ -245,6 +250,9 @@ void main() {
         operation.payload['fiscalReceipt'] as Map<String, dynamic>;
     expect(fiscalReceipt['status'], 'pending');
     expect(fiscalReceipt['operationId'], startsWith('fiscal-#1-'));
+    final clientRating =
+        operation.payload['clientRating'] as Map<String, dynamic>;
+    expect(clientRating['rating'], 2);
   });
 
   test(

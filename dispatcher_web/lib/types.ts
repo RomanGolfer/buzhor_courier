@@ -30,6 +30,16 @@ export type FiscalReceipt = {
   error?: string | null;
 };
 
+export type ClientRating = {
+  rating: number;
+  ratedAt?: string | null;
+};
+
+export type ClientRatingStats = {
+  average: number;
+  count: number;
+};
+
 export type Profile = {
   id: string;
   role: Role;
@@ -65,6 +75,8 @@ export type Order = {
   bottles: number;
   marking_codes: Record<string, string[]> | null;
   fiscal_receipt: FiscalReceipt | null;
+  client_rating: ClientRating | null;
+  client_rating_stats?: ClientRatingStats | null;
   time_slot: string | null;
   delivery_comment: string | null;
   failure_reason: string | null;

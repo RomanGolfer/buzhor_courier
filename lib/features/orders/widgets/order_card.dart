@@ -1,6 +1,7 @@
 import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:buzhor_courier/features/orders/services/order_timing_service.dart';
 import 'package:flutter/material.dart';
 
 part 'order_card_badges.dart';
@@ -24,18 +25,28 @@ class OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AppColors.isDark(context);
+    final isOverdue = OrderTimingService.isOverdue(order);
     final borderColor = order.isFailed
         ? Colors.red.shade400
+        : isOverdue
+        ? Colors.red.shade500
         : order.isClosed
         ? AppColors.green
         : AppColors.blue;
+    final surfaceColor = isOverdue
+        ? Color.lerp(
+            AppColors.surface(context),
+            isDark ? Colors.red.shade900 : Colors.red.shade50,
+            isDark ? 0.16 : 0.70,
+          )
+        : AppColors.surface(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
-          color: AppColors.surface(context),
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(16),
           border: Border(left: BorderSide(color: borderColor, width: 4)),
           boxShadow: [

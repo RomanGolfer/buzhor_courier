@@ -1,6 +1,87 @@
 part of '../order_detail_screen.dart';
 
 extension _DeliverySheetSections on _DeliverySheetState {
+  Widget _buildClientRatingSection() {
+    final label = switch (_clientRating) {
+      5 => 'отлично',
+      4 => 'хорошо',
+      3 => 'нормально',
+      2 => 'сложно',
+      _ => 'проблемно',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Оценка клиента',
+          style: TextStyle(
+            color: AppColors.textPrimary(context),
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.softSurface(context),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.dividerColor(context)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    for (int rating = 1; rating <= 5; rating++)
+                      IconButton(
+                        key: Key('clientRatingStar$rating'),
+                        onPressed: () => _setClientRating(rating),
+                        constraints: const BoxConstraints.tightFor(
+                          width: 34,
+                          height: 34,
+                        ),
+                        padding: EdgeInsets.zero,
+                        tooltip: '$rating из 5',
+                        visualDensity: VisualDensity.compact,
+                        icon: Icon(
+                          rating <= _clientRating
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: AppColors.orange,
+                          size: 28,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Container(
+                constraints: const BoxConstraints(minWidth: 76),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.orange.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.orange,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildMarkingSection() {
     final scannedCount =
         _markingCodes['water']?.length ?? _scannedItems['water'] ?? 0;
