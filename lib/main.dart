@@ -3,7 +3,7 @@ import 'package:buzhor_courier/features/orders/data/order_sync_worker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:buzhor_courier/features/auth/screens/login_screen.dart';
+import 'package:buzhor_courier/features/auth/widgets/auth_gate.dart';
 import 'package:buzhor_courier/core/theme/app_theme.dart';
 import 'package:buzhor_courier/core/theme/theme_mode_provider.dart';
 import 'package:buzhor_courier/core/notifications/push_notification_listener.dart';
@@ -40,7 +40,7 @@ class BuzhorApp extends ConsumerWidget {
           child: RealtimeOrderListener(child: child ?? const SizedBox.shrink()),
         );
       },
-      home: const LoginScreen(),
+      home: const AuthGate(),
     );
   }
 }

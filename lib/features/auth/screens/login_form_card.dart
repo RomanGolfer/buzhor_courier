@@ -140,11 +140,15 @@ extension _LoginFormCard on _LoginScreenState {
                                 .read(authCredentialsStorageProvider)
                                 .saveEmail(_emailController.text.trim());
                             ref.invalidate(backendAppConfigProvider);
-                            nav.pushReplacement(
-                              MaterialPageRoute(
-                                builder: (_) => const HomeScreen(),
-                              ),
-                            );
+                            // In demo mode AuthGate is absent, so navigate manually.
+                            // In Supabase mode, onAuthStateChange in AuthGate handles it.
+                            if (!result.isBackendSession) {
+                              nav.pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (_) => const HomeScreen(),
+                                ),
+                              );
+                            }
                           },
                     child: Container(
                       width: double.infinity,

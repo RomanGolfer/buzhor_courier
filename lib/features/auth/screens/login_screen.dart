@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/core/config/backend_app_config.dart';
 import 'package:buzhor_courier/features/auth/data/auth_credentials_storage.dart';
 import 'package:buzhor_courier/features/auth/data/auth_repository.dart';
@@ -41,7 +40,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   void initState() {
     super.initState();
-    Future.microtask(_tryAutoLogin);
+    Future.microtask(_loadSavedEmail);
 
     for (int i = 0; i < 18; i++) {
       _bubbles.add(
@@ -96,25 +95,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     super.dispose();
   }
 
-  Future<void> _tryAutoLogin() async {
-    final client = SupabaseBackend.client;
-    if (client != null && client.auth.currentSession != null) {
-      if (mounted) _navigateToHome();
-      return;
-    }
-
+  Future<void> _loadSavedEmail() async {
     final savedEmail = await ref
         .read(authCredentialsStorageProvider)
         .loadEmail();
     if (savedEmail != null && mounted) {
       _emailController.text = savedEmail;
     }
-  }
-
-  void _navigateToHome() {
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
   }
 
   @override
