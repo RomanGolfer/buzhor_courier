@@ -1,0 +1,14 @@
+meta:
+  environment: nodejs
+  toolchain:
+    name: node
+    version: 20
+
+build:
+  nixPacks: false
+  buildDirectory: .
+  buildCommand: npm ci && npm run build
+
+run:
+  persistenceMount: /app/.next/cache
+  runCommand: npm run start
