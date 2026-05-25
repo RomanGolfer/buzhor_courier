@@ -24,7 +24,14 @@ class SupabaseBackend {
   static Future<void> initialize() async {
     if (!isConfigured || _isInitialized) return;
 
-    await Supabase.initialize(url: projectUrl, anonKey: clientKey);
+    await Supabase.initialize(
+      url: projectUrl,
+      anonKey: clientKey,
+      authOptions: const FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        autoRefreshToken: true,
+      ),
+    );
     _isInitialized = true;
   }
 }
