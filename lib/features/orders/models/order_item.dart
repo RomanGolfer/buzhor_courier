@@ -1,158 +1,11 @@
+part 'client_rating.dart';
+part 'fiscal_receipt.dart';
+
 enum PaymentType { card, cash, qr, online, contract }
 
 enum OrderDeliveryState { active, delivered, failed }
 
-enum FiscalReceiptStatus { notRequired, pending, issued, failed, needsReview }
-
 const Object _copyWithSentinel = Object();
-
-class FiscalReceipt {
-  final FiscalReceiptStatus status;
-  final String? operationId;
-  final String? provider;
-  final String? receiptUrl;
-  final String? fiscalDocumentNumber;
-  final String? fiscalDriveNumber;
-  final String? fiscalSign;
-  final DateTime? issuedAt;
-  final String? error;
-
-  const FiscalReceipt({
-    required this.status,
-    this.operationId,
-    this.provider,
-    this.receiptUrl,
-    this.fiscalDocumentNumber,
-    this.fiscalDriveNumber,
-    this.fiscalSign,
-    this.issuedAt,
-    this.error,
-  });
-
-  const FiscalReceipt.notRequired()
-    : status = FiscalReceiptStatus.notRequired,
-      operationId = null,
-      provider = null,
-      receiptUrl = null,
-      fiscalDocumentNumber = null,
-      fiscalDriveNumber = null,
-      fiscalSign = null,
-      issuedAt = null,
-      error = null;
-
-  const FiscalReceipt.pending({required this.operationId})
-    : status = FiscalReceiptStatus.pending,
-      provider = null,
-      receiptUrl = null,
-      fiscalDocumentNumber = null,
-      fiscalDriveNumber = null,
-      fiscalSign = null,
-      issuedAt = null,
-      error = null;
-
-  factory FiscalReceipt.fromJson(Object? value) {
-    if (value is! Map) return const FiscalReceipt.notRequired();
-    final json = Map<String, dynamic>.from(value);
-    return FiscalReceipt(
-      status: _fiscalReceiptStatusFromName(json['status'] as String?),
-      operationId:
-          json['operationId'] as String? ?? json['operation_id'] as String?,
-      provider: json['provider'] as String?,
-      receiptUrl:
-          json['receiptUrl'] as String? ?? json['receipt_url'] as String?,
-      fiscalDocumentNumber:
-          json['fiscalDocumentNumber'] as String? ??
-          json['fiscal_document_number'] as String?,
-      fiscalDriveNumber:
-          json['fiscalDriveNumber'] as String? ??
-          json['fiscal_drive_number'] as String?,
-      fiscalSign:
-          json['fiscalSign'] as String? ?? json['fiscal_sign'] as String?,
-      issuedAt: _optionalDateTime(json['issuedAt'] ?? json['issued_at']),
-      error: json['error'] as String?,
-    );
-  }
-
-  bool get isRequired => status != FiscalReceiptStatus.notRequired;
-
-  Map<String, dynamic> toJson() => {
-    'status': status.backendName,
-    'operationId': operationId,
-    'provider': provider,
-    'receiptUrl': receiptUrl,
-    'fiscalDocumentNumber': fiscalDocumentNumber,
-    'fiscalDriveNumber': fiscalDriveNumber,
-    'fiscalSign': fiscalSign,
-    'issuedAt': issuedAt?.toIso8601String(),
-    'error': error,
-  };
-
-  FiscalReceipt copyWith({
-    FiscalReceiptStatus? status,
-    Object? operationId = _copyWithSentinel,
-    Object? provider = _copyWithSentinel,
-    Object? receiptUrl = _copyWithSentinel,
-    Object? fiscalDocumentNumber = _copyWithSentinel,
-    Object? fiscalDriveNumber = _copyWithSentinel,
-    Object? fiscalSign = _copyWithSentinel,
-    Object? issuedAt = _copyWithSentinel,
-    Object? error = _copyWithSentinel,
-  }) {
-    return FiscalReceipt(
-      status: status ?? this.status,
-      operationId: _copyNullable(operationId, this.operationId),
-      provider: _copyNullable(provider, this.provider),
-      receiptUrl: _copyNullable(receiptUrl, this.receiptUrl),
-      fiscalDocumentNumber: _copyNullable(
-        fiscalDocumentNumber,
-        this.fiscalDocumentNumber,
-      ),
-      fiscalDriveNumber: _copyNullable(
-        fiscalDriveNumber,
-        this.fiscalDriveNumber,
-      ),
-      fiscalSign: _copyNullable(fiscalSign, this.fiscalSign),
-      issuedAt: _copyNullable(issuedAt, this.issuedAt),
-      error: _copyNullable(error, this.error),
-    );
-  }
-}
-
-class ClientRating {
-  final int rating;
-  final DateTime? ratedAt;
-
-  const ClientRating({required this.rating, this.ratedAt})
-    : assert(rating >= 1 && rating <= 5);
-
-  static ClientRating? fromJson(Object? value) {
-    if (value is! Map) return null;
-    final json = Map<String, dynamic>.from(value);
-    final rawRating = (json['rating'] as num?)?.toInt();
-    if (rawRating == null) return null;
-    return ClientRating(
-      rating: rawRating.clamp(1, 5).toInt(),
-      ratedAt: _optionalDateTime(json['ratedAt'] ?? json['rated_at']),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'rating': rating,
-    'ratedAt': ratedAt?.toIso8601String(),
-  };
-}
-
-extension FiscalReceiptStatusName on FiscalReceiptStatus {
-  String get backendName {
-    return switch (this) {
-      FiscalReceiptStatus.notRequired => 'not_required',
-      FiscalReceiptStatus.pending => 'pending',
-      FiscalReceiptStatus.issued => 'issued',
-      FiscalReceiptStatus.failed => 'failed',
-      FiscalReceiptStatus.needsReview => 'needs_review',
-    };
-  }
-}
 
 class OrderItem {
   final String id;
@@ -439,17 +292,6 @@ Map<String, int> _countsFromMarkingCodes(
 ) {
   if (markingCodes.isEmpty) return const {};
   return markingCodes.map((key, codes) => MapEntry(key, codes.length));
-}
-
-FiscalReceiptStatus _fiscalReceiptStatusFromName(String? name) {
-  return switch (name) {
-    'notRequired' || 'not_required' => FiscalReceiptStatus.notRequired,
-    'pending' => FiscalReceiptStatus.pending,
-    'issued' => FiscalReceiptStatus.issued,
-    'failed' => FiscalReceiptStatus.failed,
-    'needsReview' || 'needs_review' => FiscalReceiptStatus.needsReview,
-    _ => FiscalReceiptStatus.notRequired,
-  };
 }
 
 DateTime? _optionalDateTime(Object? value) {

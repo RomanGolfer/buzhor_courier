@@ -6,7 +6,10 @@ import 'package:flutter/material.dart';
 
 part 'order_card_badges.dart';
 part 'order_card_content.dart';
-part 'order_card_content_sections.dart';
+part 'order_card_address.dart';
+part 'order_card_client_comment.dart';
+part 'order_card_footer.dart';
+part 'order_card_header.dart';
 
 class OrderCard extends StatelessWidget {
   final OrderItem order;
