@@ -43,6 +43,9 @@ part 'order_detail/payment_qr_full_screen.dart';
 part 'order_detail/payment_qr_full_screen_widgets.dart';
 part 'order_detail/payment_qr_cards.dart';
 part 'order_detail/payment_qr_payload.dart';
+part 'order_detail/order_detail_labels.dart';
+part 'order_detail/order_detail_confirmations.dart';
+part 'order_detail/order_detail_marking_helpers.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final OrderItem order;
@@ -339,60 +342,4 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     if (!mounted || _dispatcherReveal == 0) return;
     setState(() => _dispatcherReveal = 0);
   }
-}
-
-String _paymentLabel(PaymentType type) => switch (type) {
-  PaymentType.card => 'Картой курьеру',
-  PaymentType.cash => 'Наличные',
-  PaymentType.qr => 'Онлайн оплата',
-  PaymentType.online => 'Оплачено',
-  PaymentType.contract => 'По договору',
-};
-
-String _fiscalReceiptLabel(FiscalReceiptStatus status) => switch (status) {
-  FiscalReceiptStatus.notRequired => 'Не требуется',
-  FiscalReceiptStatus.pending => 'Ожидает фискализации',
-  FiscalReceiptStatus.issued => 'Чек выдан',
-  FiscalReceiptStatus.failed => 'Ошибка чека',
-  FiscalReceiptStatus.needsReview => 'Нужна проверка',
-};
-
-class _DeliveryConfirmation {
-  final int returnedBottles;
-  final Map<String, int> scannedItems;
-  final Map<String, List<String>> markingCodes;
-  final PaymentType paymentType;
-  final ClientRating clientRating;
-  final String? comment;
-
-  const _DeliveryConfirmation({
-    required this.returnedBottles,
-    required this.scannedItems,
-    required this.markingCodes,
-    required this.paymentType,
-    required this.clientRating,
-    required this.comment,
-  });
-}
-
-class _FailureConfirmation {
-  final String reason;
-
-  const _FailureConfirmation({required this.reason});
-}
-
-Map<String, List<String>> _copyMarkingCodes(
-  Map<String, List<String>> markingCodes,
-) {
-  if (markingCodes.isEmpty) return {};
-  return markingCodes.map(
-    (key, codes) => MapEntry(key, List<String>.unmodifiable(codes)),
-  );
-}
-
-Map<String, int> _countsFromMarkingCodes(
-  Map<String, List<String>> markingCodes,
-) {
-  if (markingCodes.isEmpty) return {};
-  return markingCodes.map((key, codes) => MapEntry(key, codes.length));
 }

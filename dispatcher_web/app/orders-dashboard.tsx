@@ -1,49 +1,12 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
 import type { Courier, Order, OrderState } from "@/lib/types";
-import { Panel, StatusPill } from "@/components/ui";
-import {
-  clientRatingLabel,
-  clientRatingShortLabel,
-  dateRangeForKey,
-  editableStates,
-  fiscalReceiptLabel,
-  formatDateLabel,
-  formatMoney,
-  isOrderOverdue,
-  markingCount,
-  orderRowClassName,
-  orderSelect,
-  paymentLabels,
-  stateLabels,
-  stateTone,
-  todayDateKey
-} from "./orders-dashboard-utils";
-
-async function loadClientRatingStats(
-  supabase: ReturnType<typeof createBrowserSupabaseClient>,
-  orders: Order[]
-) {
-  const phones = [
-    ...new Set(
-      orders
-        .map((order) => normalizeClientPhone(order.client_phone))
-        .filter((phone): phone is string => Boolean(phone))
-    )
-  ];
-  if (phones.length === 0) return orders;
-
-  const { data, error } = await supabase
-    .from("client_ratings")
-    .select("client_phone_normalized, rating")
-    .in("client_phone_normalized", phones);
-
-  if (error) return orders;
-  return attachClientRatingStats(orders, (data ?? []) as ClientRatingRow[]);
-}
+import { todayDateKey } from "./orders-dashboard/date-utils";
+import { OrderInspector } from "./orders-dashboard/order-inspector";
+import { loadOrdersForDate, saveDispatcherOrderUpdate } from "./orders-dashboard/orders-data-client";
+import { OrdersTable } from "./orders-dashboard/orders-table";
 
 export function OrdersDashboard({
   initialDate,
@@ -74,30 +37,26 @@ export function OrdersDashboard({
   const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date(initialLoadedAt));
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
-  const loadOrders = useCallback(async (dateKey: string, currentSelectedOrderId: string) => {
-    const { start, end } = dateRangeForKey(dateKey);
-    const { data } = await supabase
-      .from("orders")
-      .select(orderSelect)
-      .gte("created_at", start)
-      .lt("created_at", end)
-      .order("created_at", { ascending: false });
+  const syncDraftFromOrder = useCallback((order: Order | null) => {
+    setDraftState(order?.state ?? "assigned");
+    setDraftCourierId(order?.assigned_courier_id ?? "");
+    setDraftComment(order?.delivery_comment ?? "");
+    setDraftFailureReason(order?.failure_reason ?? "");
+  }, []);
 
-    if (data) {
-      const nextOrders = await loadClientRatingStats(supabase, data as unknown as Order[]);
-      const currentSelectedOrder = nextOrders.find((order) => order.id === currentSelectedOrderId) ?? null;
-      const nextSelectedOrder = currentSelectedOrder ?? nextOrders[0] ?? null;
-      setOrders(nextOrders);
-      if (!currentSelectedOrder) {
-        setSelectedOrderId(nextSelectedOrder?.id ?? "");
-        setDraftState(nextSelectedOrder?.state ?? "assigned");
-        setDraftCourierId(nextSelectedOrder?.assigned_courier_id ?? "");
-        setDraftComment(nextSelectedOrder?.delivery_comment ?? "");
-        setDraftFailureReason(nextSelectedOrder?.failure_reason ?? "");
-      }
-      setLastUpdatedAt(new Date());
+  const loadOrders = useCallback(async (dateKey: string, currentSelectedOrderId: string) => {
+    const nextOrders = await loadOrdersForDate(supabase, dateKey);
+    if (!nextOrders) return;
+
+    const currentSelectedOrder = nextOrders.find((order) => order.id === currentSelectedOrderId) ?? null;
+    const nextSelectedOrder = currentSelectedOrder ?? nextOrders[0] ?? null;
+    setOrders(nextOrders);
+    if (!currentSelectedOrder) {
+      setSelectedOrderId(nextSelectedOrder?.id ?? "");
+      syncDraftFromOrder(nextSelectedOrder);
     }
-  }, [supabase]);
+    setLastUpdatedAt(new Date());
+  }, [supabase, syncDraftFromOrder]);
 
   const refreshOrders = useCallback(async () => {
     await loadOrders(selectedDate, selectedOrderId);
@@ -159,10 +118,7 @@ export function OrdersDashboard({
 
   function selectOrder(order: Order) {
     setSelectedOrderId(order.id);
-    setDraftState(order.state);
-    setDraftCourierId(order.assigned_courier_id ?? "");
-    setDraftComment(order.delivery_comment ?? "");
-    setDraftFailureReason(order.failure_reason ?? "");
+    syncDraftFromOrder(order);
     setSaveMessage(null);
     setSaveError(null);
     setIsDrawerOpen(true);
@@ -189,42 +145,20 @@ export function OrdersDashboard({
     setSaveMessage(null);
     setSaveError(null);
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-    const needsFailureReason = draftState === "failed" || draftState === "cancelled";
-    const failureReason = needsFailureReason ? draftFailureReason.trim() || null : null;
-    const deliveryComment = draftComment.trim() || null;
-    const nextCourierId = draftCourierId || null;
+    const result = await saveDispatcherOrderUpdate({
+      draftComment,
+      draftCourierId,
+      draftFailureReason,
+      draftState,
+      order: selectedOrder,
+      supabase
+    });
 
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        assigned_courier_id: nextCourierId,
-        state: draftState,
-        delivery_comment: deliveryComment,
-        failure_reason: failureReason,
-        updated_by: user?.id ?? null
-      })
-      .eq("id", selectedOrder.id);
-
-    if (error) {
-      setSaveError(error.message);
+    if (result.error) {
+      setSaveError(result.error);
       setIsSaving(false);
       return;
     }
-
-    await supabase.from("order_events").insert({
-      order_id: selectedOrder.id,
-      actor_profile_id: user?.id ?? null,
-      event_type: "dispatcher_update",
-      payload: {
-        state: draftState,
-        assigned_courier_id: nextCourierId,
-        delivery_comment: deliveryComment,
-        failure_reason: failureReason
-      }
-    });
 
     await refreshOrders();
     setSaveMessage("Изменения сохранены");
@@ -245,336 +179,44 @@ export function OrdersDashboard({
     onCourierChange: (value: string) => setDraftCourierId(value),
     onFailureReasonChange: (value: string) => setDraftFailureReason(value),
     onSave: saveSelectedOrder,
-    onStateChange: (value: OrderState) => setDraftState(value),
+    onStateChange: (value: OrderState) => setDraftState(value)
   };
 
   return (
     <>
-    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-      <Panel className="min-w-0">
-        <div className="flex flex-col gap-3 border-b border-line p-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="text-sm font-bold text-muted">
-              {filtered.length} заказов за {formatDateLabel(selectedDate)}
-            </div>
-            <div className="text-xs font-semibold text-muted" suppressHydrationWarning>
-              Обновлено{" "}
-              {lastUpdatedAt.toLocaleTimeString("ru-RU", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
-              })}
-            </div>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <label className="sr-only" htmlFor="orders-date-filter">
-              Дата заказов
-            </label>
-            <input
-              className="focus-ring rounded-md border border-line px-3 py-2 text-sm font-semibold text-ink"
-              id="orders-date-filter"
-              type="date"
-              value={selectedDate}
-              onChange={(event) => {
-                changeSelectedDate(event.target.value);
-              }}
-            />
-            <select
-              className="focus-ring rounded-md border border-line px-3 py-2 text-sm"
-              value={stateFilter}
-              onChange={(event) => setStateFilter(event.target.value as "all" | OrderState)}
-            >
-              <option value="all">Все статусы</option>
-              {Object.entries(stateLabels).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <select
-              className="focus-ring rounded-md border border-line px-3 py-2 text-sm"
-              value={courierFilter}
-              onChange={(event) => setCourierFilter(event.target.value)}
-            >
-              <option value="all">Все курьеры</option>
-              {couriers.map((courier) => (
-                <option key={courier.id} value={courier.id}>
-                  {courier.display_name}
-                </option>
-              ))}
-            </select>
-            <button
-              className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:bg-slate-50"
-              onClick={() => void refreshOrders()}
-            >
-              Обновить
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-[1040px] border-separate border-spacing-0 text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-muted">
-              <tr>
-                {["Номер", "Клиент", "Адрес", "Курьер", "Статус", "Комментарий", "Оплата", ""].map((heading) => (
-                  <th className="border-b border-line px-4 py-3 font-black" key={heading}>
-                    {heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((order) => {
-                const overdue = isOrderOverdue(order);
-                const ratingLabel = clientRatingShortLabel(order);
-
-                return (
-                <tr
-                  className={orderRowClassName(order, order.id === selectedOrder?.id)}
-                  key={order.id}
-                >
-                  <td className="border-b border-line px-4 py-3 font-black text-ink">{order.order_number}</td>
-                  <td className="border-b border-line px-4 py-3">
-                    <div className="font-bold text-ink">{order.client_name}</div>
-                    <div className="text-xs text-muted">{order.client_phone ?? "без телефона"}</div>
-                    {ratingLabel ? <div className="mt-1 text-xs font-black text-amber-700">{ratingLabel}</div> : null}
-                  </td>
-                  <td className="max-w-sm border-b border-line px-4 py-3 text-muted">
-                    <div>{order.address}</div>
-                    <div className="mt-1 flex flex-wrap gap-2 text-xs font-semibold text-ink">
-                      {order.district ? <span>{order.district}</span> : null}
-                      {order.time_slot ? <span>{order.time_slot}</span> : null}
-                      {overdue ? <span className="rounded bg-red-100 px-2 py-0.5 font-black text-bad">просрочен</span> : null}
-                    </div>
-                  </td>
-                  <td className="border-b border-line px-4 py-3">
-                    {order.couriers?.display_name ?? "Не назначен"}
-                  </td>
-                  <td className="border-b border-line px-4 py-3">
-                    <StatusPill tone={stateTone(order.state)}>{stateLabels[order.state]}</StatusPill>
-                  </td>
-                  <td className="max-w-56 border-b border-line px-4 py-3 text-muted">
-                    <div className="line-clamp-2">
-                      {order.failure_reason || order.delivery_comment || "нет"}
-                    </div>
-                  </td>
-                  <td className="border-b border-line px-4 py-3">
-                    <div className="font-bold text-ink">{formatMoney(order.price)}</div>
-                    <div className="text-xs text-muted">
-                      {paymentLabels[order.payment_method]}, {order.bottles} бут.
-                    </div>
-                    <div className="text-xs font-semibold text-muted">{fiscalReceiptLabel(order)}</div>
-                  </td>
-                  <td className="border-b border-line px-4 py-3 text-right">
-                    <button
-                      className="rounded-md border border-line px-3 py-2 text-xs font-black text-ink hover:border-brand hover:text-brand"
-                      onClick={() => selectOrder(order)}
-                    >
-                      Открыть
-                    </button>
-                  </td>
-                </tr>
-                );
-              })}
-              {filtered.length === 0 ? (
-                <tr>
-                  <td className="px-4 py-10 text-center text-sm font-semibold text-muted" colSpan={8}>
-                    Заказов по выбранным фильтрам нет
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </div>
-      </Panel>
-
-      {/* Wide screens: inspector always visible in grid */}
-      <div className="hidden xl:block">
-        <OrderInspector {...inspectorProps} />
-      </div>
-    </div>
-
-    {/* Narrow screens: drawer overlay */}
-    {isDrawerOpen && (
-      <>
-        <div
-          aria-hidden
-          className="fixed inset-0 z-40 bg-black/40 xl:hidden"
-          onClick={closeDrawer}
+      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <OrdersTable
+          courierFilter={courierFilter}
+          couriers={couriers}
+          lastUpdatedAt={lastUpdatedAt}
+          onCourierFilterChange={setCourierFilter}
+          onDateChange={changeSelectedDate}
+          onRefresh={() => void refreshOrders()}
+          onSelectOrder={selectOrder}
+          onStateFilterChange={setStateFilter}
+          orders={filtered}
+          selectedDate={selectedDate}
+          selectedOrderId={selectedOrder?.id ?? ""}
+          stateFilter={stateFilter}
         />
-        <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl xl:hidden">
-          <OrderInspector {...inspectorProps} onClose={closeDrawer} />
-        </div>
-      </>
-    )}
-    </>
-  );
-}
 
-function OrderInspector({
-  order,
-  couriers,
-  draftState,
-  draftCourierId,
-  draftComment,
-  draftFailureReason,
-  isSaving,
-  message,
-  error,
-  onStateChange,
-  onCourierChange,
-  onCommentChange,
-  onFailureReasonChange,
-  onSave,
-  onClose
-}: {
-  order: Order | null;
-  couriers: Courier[];
-  draftState: OrderState;
-  draftCourierId: string;
-  draftComment: string;
-  draftFailureReason: string;
-  isSaving: boolean;
-  message: string | null;
-  error: string | null;
-  onStateChange: (value: OrderState) => void;
-  onCourierChange: (value: string) => void;
-  onCommentChange: (value: string) => void;
-  onFailureReasonChange: (value: string) => void;
-  onSave: () => void;
-  onClose?: () => void;
-}) {
-  if (!order) {
-    return (
-      <Panel className="p-5">
-        <div className="text-sm font-semibold text-muted">Выберите заказ, чтобы открыть диспетчерские действия.</div>
-      </Panel>
-    );
-  }
-
-  const mapHref =
-    order.lat !== null && order.lng !== null
-      ? `https://yandex.ru/maps/?pt=${order.lng},${order.lat}&z=16&l=map`
-      : null;
-
-  return (
-    <Panel className="h-fit p-5 xl:sticky xl:top-6">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <div className="text-xs font-black uppercase tracking-[0.16em] text-muted">Заказ</div>
-          <h2 className="mt-1 text-xl font-black text-ink">{order.order_number}</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusPill tone={stateTone(order.state)}>{stateLabels[order.state]}</StatusPill>
-          {onClose && (
-            <button
-              aria-label="Закрыть"
-              className="rounded-md p-1.5 text-muted hover:bg-slate-100 hover:text-ink"
-              onClick={onClose}
-            >
-              <svg fill="none" height="16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24" width="16">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </button>
-          )}
+        <div className="hidden xl:block">
+          <OrderInspector {...inspectorProps} />
         </div>
       </div>
 
-      <div className="space-y-3 border-b border-line pb-4 text-sm">
-        <InfoRow label="Клиент" value={order.client_name} />
-        <InfoRow label="Телефон" value={order.client_phone ?? "не указан"} href={order.client_phone ? `tel:${order.client_phone}` : undefined} />
-        <InfoRow label="Адрес" value={order.address} />
-        <InfoRow label="Район" value={order.district ?? "не указан"} />
-        <InfoRow label="Слот" value={order.time_slot ?? "без слота"} />
-        {isOrderOverdue(order) ? <InfoRow label="Срок" value="Просрочен" /> : null}
-        <InfoRow label="Рейтинг клиента" value={clientRatingLabel(order)} />
-        <InfoRow label="Оплата" value={`${paymentLabels[order.payment_method]} · ${formatMoney(order.price)}`} />
-        <InfoRow label="Бутыли" value={String(order.bottles)} />
-        <InfoRow label="Маркировка" value={`${markingCount(order)} кодов`} />
-        <InfoRow label="Чек" value={fiscalReceiptLabel(order)} />
-        {order.fiscal_receipt?.receiptUrl ? (
-          <InfoRow label="Ссылка на чек" value="Открыть чек" href={order.fiscal_receipt.receiptUrl} />
-        ) : null}
-        {mapHref ? <InfoRow label="Карта" value="Открыть точку" href={mapHref} /> : null}
-      </div>
-
-      <div className="mt-4 space-y-4">
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-ink">Статус</span>
-          <select
-            className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
-            value={draftState}
-            onChange={(event) => onStateChange(event.target.value as OrderState)}
-          >
-            {editableStates.map((state) => (
-              <option key={state} value={state}>
-                {stateLabels[state]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-ink">Курьер</span>
-          <select
-            className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
-            value={draftCourierId}
-            onChange={(event) => onCourierChange(event.target.value)}
-          >
-            <option value="">Не назначен</option>
-            {couriers.map((courier) => (
-              <option key={courier.id} value={courier.id}>
-                {courier.display_name}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-ink">Комментарий диспетчера</span>
-          <textarea
-            className="focus-ring min-h-28 w-full resize-y rounded-md border border-line px-3 py-3 text-sm"
-            placeholder="Код домофона, уточнения по клиенту, что передать курьеру"
-            value={draftComment}
-            onChange={(event) => onCommentChange(event.target.value)}
+      {isDrawerOpen && (
+        <>
+          <div
+            aria-hidden
+            className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+            onClick={closeDrawer}
           />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-ink">Причина проблемы</span>
-          <textarea
-            className="focus-ring min-h-20 w-full resize-y rounded-md border border-line px-3 py-3 text-sm"
-            placeholder="Заполняется для проблемных или отмененных заказов"
-            value={draftFailureReason}
-            onChange={(event) => onFailureReasonChange(event.target.value)}
-          />
-        </label>
-
-        {message ? <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm font-bold text-good">{message}</div> : null}
-        {error ? <div className="rounded-md bg-red-50 px-3 py-2 text-sm font-bold text-bad">{error}</div> : null}
-
-        <button
-          className="w-full rounded-md bg-brand px-4 py-3 text-sm font-black text-white hover:bg-brandDark disabled:opacity-60"
-          disabled={isSaving}
-          onClick={() => void onSave()}
-        >
-          {isSaving ? "Сохраняем..." : "Сохранить изменения"}
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
-function InfoRow({ label, value, href }: { label: string; value: string; href?: string }) {
-  return (
-    <div>
-      <div className="text-xs font-bold uppercase tracking-[0.12em] text-muted">{label}</div>
-      {href ? (
-        <a className="font-bold text-brand hover:text-brandDark" href={href} rel="noreferrer" target={href.startsWith("http") ? "_blank" : undefined}>
-          {value}
-        </a>
-      ) : (
-        <div className="font-semibold text-ink">{value}</div>
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl xl:hidden">
+            <OrderInspector {...inspectorProps} onClose={closeDrawer} />
+          </div>
+        </>
       )}
-    </div>
+    </>
   );
 }
