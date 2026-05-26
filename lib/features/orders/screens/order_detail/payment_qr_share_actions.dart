@@ -1,5 +1,4 @@
 part of '../order_detail_screen.dart';
-import 'package:buzhor_courier/core/logger.dart';
 
 extension _PaymentQrShareActions on _PaymentQrFullScreenState {
   Future<void> _sharePaymentQr() async {
@@ -51,7 +50,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
     // Brief pause for the pop animation to settle before the share sheet opens.
     await Future.delayed(const Duration(milliseconds: 150));
 
-      try {
+    try {
       await SharePlus.instance.share(
         ShareParams(
           text:
