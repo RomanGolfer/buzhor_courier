@@ -1,5 +1,6 @@
 meta:
   environment: nodejs
+  # Deploy trigger: webhook branch aligned to main.
   toolchain:
     name: npm
     version: "20"
