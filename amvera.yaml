@@ -5,14 +5,14 @@ meta:
     version: "20"
 build:
   skip: false
-  additionalCommands: cd dispatcher_web && npm ci && npm run build
+  additionalCommands: sh -c "cd dispatcher_web && npm ci && npm run build"
   artifacts:
     "*": /
 run:
   scriptName: null
   scriptArguments: null
   nodeArguments: null
-  command: cd dispatcher_web && npm run start
+  command: sh -c "cd /dispatcher_web && npm run start"
   persistenceMount: /data
   containerPort: "80"
   servicePort: "80"
