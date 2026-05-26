@@ -201,7 +201,18 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       for (final label in _knownSlotLabels) label: <OrderItem>[],
     };
 
-    for (final order in activeOrders) {
+    final sortedOrders = List<OrderItem>.of(activeOrders)
+      ..sort((a, b) {
+        final dateCompare = _deliveryDateKeyFor(
+          a,
+        ).compareTo(_deliveryDateKeyFor(b));
+        if (dateCompare != 0) return dateCompare;
+        return _slotSortIndex(
+          _slotLabelFor(a),
+        ).compareTo(_slotSortIndex(_slotLabelFor(b)));
+      });
+
+    for (final order in sortedOrders) {
       final label = _slotLabelFor(order);
       groupedOrders.putIfAbsent(label, () => <OrderItem>[]).add(order);
     }
@@ -226,9 +237,42 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 
   String _slotLabelFor(OrderItem order) {
+    final slot = _baseSlotLabelFor(order);
+    final deliveryDate = order.deliveryDate;
+    if (deliveryDate == null || _isMoscowToday(deliveryDate)) return slot;
+    return '${deliveryDate.day.toString().padLeft(2, '0')}.'
+        '${deliveryDate.month.toString().padLeft(2, '0')} · $slot';
+  }
+
+  String _baseSlotLabelFor(OrderItem order) {
     final label = order.timeSlot?.trim();
     if (label == null || label.isEmpty) return _defaultSlotLabel;
     return label;
+  }
+
+  int _slotSortIndex(String label) {
+    final baseLabel = label.contains(' · ') ? label.split(' · ').last : label;
+    final index = _knownSlotLabels.indexOf(baseLabel);
+    return index == -1 ? _knownSlotLabels.length : index;
+  }
+
+  String _deliveryDateKeyFor(OrderItem order) {
+    final date = order.deliveryDate;
+    if (date == null) return _todayMoscowKey();
+    return _dateKey(date);
+  }
+
+  bool _isMoscowToday(DateTime date) => _dateKey(date) == _todayMoscowKey();
+
+  String _todayMoscowKey() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 3));
+    return _dateKey(now);
+  }
+
+  String _dateKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 }
 

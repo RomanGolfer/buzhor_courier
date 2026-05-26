@@ -101,3 +101,75 @@ class _PaymentBadge extends StatelessWidget {
     );
   }
 }
+
+class _ClientRatingBadge extends StatelessWidget {
+  final ClientRating rating;
+
+  const _ClientRatingBadge({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('orderClientRatingBadge'),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFD58A00)),
+          const SizedBox(width: 3),
+          Text(
+            '${rating.rating}/5',
+            style: const TextStyle(
+              color: Color(0xFF9A5F00),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeliveryDateBadge extends StatelessWidget {
+  final DateTime date;
+
+  const _DeliveryDateBadge({required this.date});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('orderDeliveryDateBadge'),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.blue.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.calendar_today_rounded,
+            size: 12,
+            color: AppColors.blue,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '${date.day.toString().padLeft(2, '0')}.'
+            '${date.month.toString().padLeft(2, '0')}',
+            style: const TextStyle(
+              color: AppColors.blue,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

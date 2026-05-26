@@ -78,6 +78,7 @@ export type Order = {
   client_rating: ClientRating | null;
   client_rating_stats?: ClientRatingStats | null;
   time_slot: string | null;
+  delivery_date: string | null;
   delivery_comment: string | null;
   failure_reason: string | null;
   created_at: string;

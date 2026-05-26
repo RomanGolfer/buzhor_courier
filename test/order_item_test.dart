@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('serializes and restores delivery details', () {
-    const order = OrderItem(
+    final order = OrderItem(
       id: '#1',
       clientName: 'Тестовый клиент',
       address: 'ул. Тестовая, 1',
@@ -27,6 +27,7 @@ void main() {
       fiscalReceipt: FiscalReceipt.pending(operationId: 'fiscal-#1-1'),
       clientRating: ClientRating(rating: 5),
       deliveryComment: 'Оставлено у двери',
+      deliveryDate: DateTime(2026, 5, 27),
     );
 
     final restored = OrderItem.fromJson(order.toJson());
@@ -47,9 +48,10 @@ void main() {
     expect(restored.fiscalReceipt.operationId, 'fiscal-#1-1');
     expect(restored.clientRating?.rating, 5);
     expect(restored.deliveryComment, 'Оставлено у двери');
+    expect(restored.deliveryDate, DateTime(2026, 5, 27));
   });
   test('copyWith can update and clear nullable fields', () {
-    const order = OrderItem(
+    final order = OrderItem(
       id: '#1',
       clientName: 'Client',
       address: 'Address',
@@ -67,6 +69,7 @@ void main() {
       confirmedPayment: PaymentType.cash,
       deliveryComment: 'Left at door',
       failureReason: 'No answer',
+      deliveryDate: DateTime(2026, 5, 27),
     );
 
     final updated = order.copyWith(
@@ -78,6 +81,7 @@ void main() {
       deliveryComment: null,
       failureReason: null,
       timeSlot: '14:00 - 18:00',
+      deliveryDate: null,
     );
 
     expect(updated.comment, 'New comment');
@@ -88,6 +92,7 @@ void main() {
     expect(updated.deliveryComment, isNull);
     expect(updated.failureReason, isNull);
     expect(updated.timeSlot, '14:00 - 18:00');
+    expect(updated.deliveryDate, isNull);
   });
 
   test('copyWith derives scanned item counts from marking codes', () {
@@ -229,6 +234,7 @@ void main() {
       'delivery_comment': 'Done',
       'failure_reason': null,
       'time_slot': '14:00 - 18:00',
+      'delivery_date': '2026-05-28',
     });
 
     expect(order.id, '7ee65d46-1a38-4eb1-9d21-b491c61e04544');
@@ -243,6 +249,7 @@ void main() {
     expect(order.fiscalReceipt.operationId, 'fiscal-backend-1');
     expect(order.clientRating?.rating, 4);
     expect(order.timeSlot, '14:00 - 18:00');
+    expect(order.deliveryDate, DateTime(2026, 5, 28));
   });
 
   test(

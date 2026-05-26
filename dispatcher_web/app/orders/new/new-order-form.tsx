@@ -121,6 +121,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       price,
       payment_method: paymentMethod,
       time_slot: String(form.get("time_slot") ?? "") || null,
+      delivery_date: String(form.get("delivery_date") ?? "") || todayDateKey(),
       delivery_comment: String(form.get("delivery_comment") ?? "").trim() || null,
       assigned_courier_id: String(form.get("assigned_courier_id") ?? "") || null,
       created_by: user?.id ?? null,
@@ -226,6 +227,13 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Временной слот</span>
+          <input
+            className="focus-ring mb-3 w-full rounded-md border border-line px-3 py-3 text-sm"
+            defaultValue={todayDateKey()}
+            name="delivery_date"
+            required
+            type="date"
+          />
           <select className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm" name="time_slot">
             {timeSlots.map((slot) => (
               <option key={slot} value={slot}>
@@ -291,4 +299,15 @@ function nullableNumber(value: FormDataEntryValue | null) {
   if (value === null || String(value).trim() === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+function todayDateKey() {
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric"
+  }).formatToParts(new Date());
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
 }

@@ -80,6 +80,26 @@ void main() {
     expect(find.byKey(const Key('orderNewBadge')), findsOneWidget);
   });
 
+  testWidgets('order card shows delivery date and client rating', (
+    tester,
+  ) async {
+    final order = _longOrder.copyWith(
+      clientRating: const ClientRating(rating: 4),
+      deliveryDate: DateTime(2026, 5, 27),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: OrderCard(order: order, number: 1)),
+      ),
+    );
+
+    expect(find.byKey(const Key('orderDeliveryDateBadge')), findsOneWidget);
+    expect(find.byKey(const Key('orderClientRatingBadge')), findsOneWidget);
+    expect(find.text('27.05'), findsOneWidget);
+    expect(find.text('4/5'), findsOneWidget);
+  });
+
   testWidgets('daily report shows courier summary sections', (tester) async {
     final repository = OrderRepository(
       initialOrders: const [

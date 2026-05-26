@@ -54,3 +54,17 @@ DateTime? _optionalDateTime(Object? value) {
   if (value is! String || value.isEmpty) return null;
   return DateTime.tryParse(value);
 }
+
+DateTime? _optionalDate(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return null;
+  return DateTime(parsed.year, parsed.month, parsed.day);
+}
+
+String? _dateKey(DateTime? value) {
+  if (value == null) return null;
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '${value.year}-$month-$day';
+}

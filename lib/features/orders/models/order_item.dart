@@ -29,6 +29,7 @@ class OrderItem {
   final String? deliveryComment;
   final String? failureReason;
   final String? timeSlot;
+  final DateTime? deliveryDate;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -58,6 +59,7 @@ class OrderItem {
     this.deliveryComment,
     this.failureReason,
     this.timeSlot,
+    this.deliveryDate,
     this.createdAt,
     this.updatedAt,
   });
@@ -122,6 +124,7 @@ class OrderItem {
       deliveryComment: json['deliveryComment'] as String?,
       failureReason: json['failureReason'] as String?,
       timeSlot: json['timeSlot'] as String?,
+      deliveryDate: _optionalDate(json['deliveryDate']),
       createdAt: _optionalDateTime(json['createdAt']),
       updatedAt: _optionalDateTime(json['updatedAt']),
     );
@@ -166,6 +169,7 @@ class OrderItem {
       deliveryComment: json['delivery_comment'] as String?,
       failureReason: json['failure_reason'] as String?,
       timeSlot: json['time_slot'] as String?,
+      deliveryDate: _optionalDate(json['delivery_date']),
       createdAt: _optionalDateTime(json['created_at']),
       updatedAt: _optionalDateTime(json['updated_at']),
     );
@@ -197,6 +201,7 @@ class OrderItem {
     'deliveryComment': deliveryComment,
     'failureReason': failureReason,
     'timeSlot': timeSlot,
+    'deliveryDate': _dateKey(deliveryDate),
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
   };
@@ -220,6 +225,7 @@ class OrderItem {
     Object? deliveryComment = _copyWithSentinel,
     Object? failureReason = _copyWithSentinel,
     Object? timeSlot = _copyWithSentinel,
+    Object? deliveryDate = _copyWithSentinel,
     Object? createdAt = _copyWithSentinel,
     Object? updatedAt = _copyWithSentinel,
   }) => OrderItem(
@@ -252,6 +258,7 @@ class OrderItem {
     deliveryComment: _copyNullable(deliveryComment, this.deliveryComment),
     failureReason: _copyNullable(failureReason, this.failureReason),
     timeSlot: _copyNullable(timeSlot, this.timeSlot),
+    deliveryDate: _copyNullable(deliveryDate, this.deliveryDate),
     createdAt: _copyNullable(createdAt, this.createdAt),
     updatedAt: _copyNullable(updatedAt, this.updatedAt),
   );

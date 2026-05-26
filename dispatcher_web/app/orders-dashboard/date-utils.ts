@@ -55,7 +55,16 @@ export function isOrderOverdue(order: Order) {
   if (!activeStates.includes(order.state)) return false;
   const slotEnd = parseTimeSlotEnd(order.time_slot);
   if (!slotEnd) return false;
-  const created = moscowDateParts(new Date(order.created_at));
-  const endUtc = new Date(Date.UTC(created.year, created.month, created.day, slotEnd.hour, slotEnd.minute) - moscowOffsetMs);
+  const delivery = order.delivery_date
+    ? new Date(`${order.delivery_date}T00:00:00Z`)
+    : new Date(order.created_at);
+  const deliveryParts = order.delivery_date
+    ? {
+        day: delivery.getUTCDate(),
+        month: delivery.getUTCMonth(),
+        year: delivery.getUTCFullYear()
+      }
+    : moscowDateParts(delivery);
+  const endUtc = new Date(Date.UTC(deliveryParts.year, deliveryParts.month, deliveryParts.day, slotEnd.hour, slotEnd.minute) - moscowOffsetMs);
   return Date.now() >= endUtc.getTime();
 }

@@ -25,9 +25,33 @@ class _CardContent extends StatelessWidget {
         _OrderCardAddressRow(order: order),
         const SizedBox(height: 6),
         _OrderCardClientRow(order: order),
+        if (order.clientRating != null || order.deliveryDate != null) ...[
+          const SizedBox(height: 7),
+          _OrderCardMetaRow(order: order),
+        ],
         _OrderCardCommentRow(order: order),
         const SizedBox(height: 10),
         _OrderCardFooterRow(order: order, showRouteButton: showRouteButton),
+      ],
+    );
+  }
+}
+
+class _OrderCardMetaRow extends StatelessWidget {
+  final OrderItem order;
+
+  const _OrderCardMetaRow({required this.order});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 7,
+      runSpacing: 6,
+      children: [
+        if (order.deliveryDate != null)
+          _DeliveryDateBadge(date: order.deliveryDate!),
+        if (order.clientRating != null)
+          _ClientRatingBadge(rating: order.clientRating!),
       ],
     );
   }

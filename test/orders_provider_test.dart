@@ -393,6 +393,28 @@ void main() {
     expect(notifier.state.timeSlots.single.label, '14:00 - 18:00');
     expect(notifier.state.timeSlots.single.orders.single.id, afternoonOrder.id);
   });
+
+  test('groups future active orders by delivery date and time slot', () async {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final futureOrder = _incomingOrder.copyWith(
+      deliveryDate: DateTime(tomorrow.year, tomorrow.month, tomorrow.day),
+      timeSlot: '18:00 - 21:00',
+    );
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [futureOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    final expectedDate =
+        '${tomorrow.day.toString().padLeft(2, '0')}.'
+        '${tomorrow.month.toString().padLeft(2, '0')}';
+    expect(notifier.state.timeSlots, hasLength(1));
+    expect(
+      notifier.state.timeSlots.single.label,
+      '$expectedDate · 18:00 - 21:00',
+    );
+    expect(notifier.state.timeSlots.single.orders.single.id, futureOrder.id);
+  });
 }
 
 class _FakeOrderBackendApi implements OrderBackendApi {

@@ -15,10 +15,11 @@ class OrderTimingService {
     final nowMoscow = (nowUtc ?? DateTime.now().toUtc()).toUtc().add(
       _moscowOffset,
     );
+    final deliveryDate = order.deliveryDate ?? nowMoscow;
     final endMoscow = DateTime.utc(
-      nowMoscow.year,
-      nowMoscow.month,
-      nowMoscow.day,
+      deliveryDate.year,
+      deliveryDate.month,
+      deliveryDate.day,
       slotEnd.hour,
       slotEnd.minute,
     );

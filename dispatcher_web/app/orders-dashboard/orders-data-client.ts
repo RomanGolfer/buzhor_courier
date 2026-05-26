@@ -1,10 +1,9 @@
 ﻿import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { Order, OrderState } from "@/lib/types";
-import { dateRangeForKey } from "./date-utils";
 
 export const orderSelect =
-  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
+  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_date, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
 
 type BrowserSupabaseClient = ReturnType<typeof createBrowserSupabaseClient>;
 
@@ -28,12 +27,10 @@ async function loadClientRatingStats(supabase: BrowserSupabaseClient, orders: Or
 }
 
 export async function loadOrdersForDate(supabase: BrowserSupabaseClient, dateKey: string) {
-  const { start, end } = dateRangeForKey(dateKey);
   const { data } = await supabase
     .from("orders")
     .select(orderSelect)
-    .gte("created_at", start)
-    .lt("created_at", end)
+    .eq("delivery_date", dateKey)
     .order("created_at", { ascending: false });
 
   if (!data) return null;
