@@ -25,6 +25,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const [error, setError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [bottles, setBottles] = useState(2);
+  const [deliveryDate, setDeliveryDate] = useState(todayDateKey);
   const [lat, setLat] = useState(defaultLat);
   const [lng, setLng] = useState(defaultLng);
   const [geocoding, setGeocoding] = useState(false);
@@ -108,7 +109,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       data: { user }
     } = await supabase.auth.getUser();
 
-    const deliveryDate = String(form.get("delivery_date") ?? "") || todayDateKey();
+    const selectedDeliveryDate = String(form.get("delivery_date") ?? "") || deliveryDate || todayDateKey();
     const payload = {
       order_number: orderNumber,
       state: "assigned",
@@ -122,7 +123,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       price,
       payment_method: paymentMethod,
       time_slot: String(form.get("time_slot") ?? "") || null,
-      delivery_date: deliveryDate,
+      delivery_date: selectedDeliveryDate,
       delivery_comment: String(form.get("delivery_comment") ?? "").trim() || null,
       assigned_courier_id: String(form.get("assigned_courier_id") ?? "") || null,
       created_by: user?.id ?? null,
@@ -143,7 +144,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       return;
     }
 
-    router.push(`/?date=${encodeURIComponent(deliveryDate)}`);
+    router.push(`/?date=${encodeURIComponent(selectedDeliveryDate)}`);
     router.refresh();
   }
 
@@ -155,6 +156,46 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
         <div className="md:col-span-2">
           <Field label="Адрес" name="address" placeholder="ул. Крымская, 45, кв. 12" required onChange={(e) => geocodeAddress(e.target.value)} />
         </div>
+        <section className="rounded-md border border-brand/30 bg-brand/5 p-4 md:col-span-2">
+          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-base font-black text-ink">Дата и время доставки</h2>
+              <p className="text-xs font-semibold text-muted">Выберите день доставки до назначения курьера</p>
+            </div>
+            <div className="text-sm font-black text-brand">{formatShortDate(deliveryDate)}</div>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[1fr_220px]">
+            <div className="grid gap-2 sm:grid-cols-3">
+              {datePresets().map((preset) => (
+                <button
+                  className={`rounded-md border px-3 py-2 text-sm font-black ${
+                    deliveryDate === preset.value
+                      ? "border-brand bg-brand text-white"
+                      : "border-line bg-white text-ink hover:border-brand hover:text-brand"
+                  }`}
+                  key={preset.value}
+                  onClick={() => setDeliveryDate(preset.value)}
+                  type="button"
+                >
+                  <span className="block">{preset.label}</span>
+                  <span className="block text-xs font-semibold opacity-80">{formatShortDate(preset.value)}</span>
+                </button>
+              ))}
+            </div>
+            <label className="block">
+              <span className="mb-1 block text-sm font-bold text-ink">Другая дата</span>
+              <input
+                className="focus-ring w-full rounded-md border border-line bg-white px-3 py-3 text-sm font-bold"
+                min={todayDateKey()}
+                name="delivery_date"
+                onChange={(event) => setDeliveryDate(event.target.value)}
+                required
+                type="date"
+                value={deliveryDate}
+              />
+            </label>
+          </div>
+        </section>
         <label className="block md:col-span-2">
           <span className="mb-1 block text-sm font-bold text-ink">Комментарий диспетчера</span>
           <textarea
@@ -225,16 +266,6 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
               </option>
             ))}
           </select>
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-bold text-ink">Дата доставки</span>
-          <input
-            className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
-            defaultValue={todayDateKey()}
-            name="delivery_date"
-            required
-            type="date"
-          />
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Временной слот</span>
@@ -314,4 +345,35 @@ function todayDateKey() {
   }).formatToParts(new Date());
   const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
   return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
+}
+
+function dateKeyFromNow(days: number) {
+  const date = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+  const parts = new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Europe/Moscow",
+    year: "numeric"
+  }).formatToParts(date);
+  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
+}
+
+function datePresets() {
+  return [
+    { label: "Сегодня", value: dateKeyFromNow(0) },
+    { label: "Завтра", value: dateKeyFromNow(1) },
+    { label: "Послезавтра", value: dateKeyFromNow(2) }
+  ];
+}
+
+function formatShortDate(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  if (!year || !month || !day) return "";
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "long",
+    timeZone: "Europe/Moscow",
+    weekday: "short"
+  }).format(new Date(Date.UTC(year, month - 1, day)));
 }
