@@ -6,7 +6,7 @@ meta:
     version: "20"
 build:
   buildDirectory: .
-  buildCommand: cd dispatcher_web && npm ci && npm run build
+  buildCommand: rm -f package-lock.json && cd dispatcher_web && npm ci && npm run build
 run:
   runCommand: cd dispatcher_web && npm run start
   persistenceMount: /data
