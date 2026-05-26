@@ -1,5 +1,8 @@
 meta:
   environment: nodejs
+  toolchain:
+    name: nodejs
+    version: 20
 
 build:
   nixPacks: false
