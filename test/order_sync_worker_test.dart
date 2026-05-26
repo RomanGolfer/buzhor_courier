@@ -22,6 +22,25 @@ void main() {
     expect(storage.savedSyncOperations.single.ackedAt, isNotNull);
   });
 
+  test('sync preserves rejected status from backend', () async {
+    final operation = OrderSyncOperation.fail('#1', reason: 'No answer');
+    final storage = _FakeOrderStorage(syncOperations: [operation]);
+    final dispatcher = _FakeOrderSyncDispatcher(
+      result: const OrderSyncDispatchResult(
+        status: OrderSyncOperationStatus.rejected,
+        lastError: 'order_not_assigned',
+      ),
+    );
+    final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
+
+    await worker.sync();
+
+    final saved = storage.savedSyncOperations.single;
+    expect(saved.status, OrderSyncOperationStatus.rejected);
+    expect(saved.lastError, 'order_not_assigned');
+    expect(saved.ackedAt, isNotNull);
+  });
+
   test('sync schedules retry after dispatch failure', () async {
     final operation = OrderSyncOperation.fail('#1', reason: 'No answer');
     final storage = _FakeOrderStorage(syncOperations: [operation]);
@@ -38,10 +57,14 @@ void main() {
   });
 
   test('sync marks operation as needsReview after max attempts', () async {
-    final operation = OrderSyncOperation.fail('#1', reason: 'No answer')
-        .copyWith(attemptCount: 4);
+    final operation = OrderSyncOperation.fail(
+      '#1',
+      reason: 'No answer',
+    ).copyWith(attemptCount: 4);
     final storage = _FakeOrderStorage(syncOperations: [operation]);
-    final dispatcher = _FakeOrderSyncDispatcher(error: Exception('network error'));
+    final dispatcher = _FakeOrderSyncDispatcher(
+      error: Exception('network error'),
+    );
     final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
 
     await worker.sync();
@@ -53,8 +76,10 @@ void main() {
   });
 
   test('sync skips operation whose nextAttemptAt is in the future', () async {
-    final operation = OrderSyncOperation.fail('#1', reason: 'No answer')
-        .copyWith(nextAttemptAt: DateTime.now().add(const Duration(hours: 1)));
+    final operation = OrderSyncOperation.fail(
+      '#1',
+      reason: 'No answer',
+    ).copyWith(nextAttemptAt: DateTime.now().add(const Duration(hours: 1)));
     final storage = _FakeOrderStorage(syncOperations: [operation]);
     final dispatcher = _FakeOrderSyncDispatcher();
     final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
@@ -66,10 +91,14 @@ void main() {
   });
 
   test('sync skips non-pending operations', () async {
-    final acked = OrderSyncOperation.fail('#1', reason: 'x')
-        .copyWith(status: OrderSyncOperationStatus.acked);
-    final needsReview = OrderSyncOperation.fail('#2', reason: 'y')
-        .copyWith(status: OrderSyncOperationStatus.needsReview);
+    final acked = OrderSyncOperation.fail(
+      '#1',
+      reason: 'x',
+    ).copyWith(status: OrderSyncOperationStatus.acked);
+    final needsReview = OrderSyncOperation.fail(
+      '#2',
+      reason: 'y',
+    ).copyWith(status: OrderSyncOperationStatus.needsReview);
     final storage = _FakeOrderStorage(syncOperations: [acked, needsReview]);
     final dispatcher = _FakeOrderSyncDispatcher();
     final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
@@ -98,18 +127,23 @@ void main() {
 class _FakeOrderSyncDispatcher implements OrderSyncDispatcher {
   final bool _canSync;
   final Object? error;
+  final OrderSyncDispatchResult result;
   final List<OrderSyncOperation> dispatched = [];
 
-  _FakeOrderSyncDispatcher({bool canSync = true, this.error})
-    : _canSync = canSync;
+  _FakeOrderSyncDispatcher({
+    bool canSync = true,
+    this.error,
+    this.result = const OrderSyncDispatchResult.acked(),
+  }) : _canSync = canSync;
 
   @override
   bool get canSync => _canSync;
 
   @override
-  Future<void> dispatch(OrderSyncOperation operation) async {
+  Future<OrderSyncDispatchResult> dispatch(OrderSyncOperation operation) async {
     if (error != null) throw error!;
     dispatched.add(operation);
+    return result;
   }
 }
 

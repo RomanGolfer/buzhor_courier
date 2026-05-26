@@ -10,6 +10,8 @@ enum OrderSyncOperationStatus {
   needsReview,
 }
 
+const Object _copyWithSentinel = Object();
+
 class OrderSyncOperation {
   final String operationId;
   final OrderSyncOperationType type;
@@ -115,9 +117,9 @@ class OrderSyncOperation {
   OrderSyncOperation copyWith({
     OrderSyncOperationStatus? status,
     int? attemptCount,
-    DateTime? nextAttemptAt,
-    String? lastError,
-    DateTime? ackedAt,
+    Object? nextAttemptAt = _copyWithSentinel,
+    Object? lastError = _copyWithSentinel,
+    Object? ackedAt = _copyWithSentinel,
   }) {
     return OrderSyncOperation(
       operationId: operationId,
@@ -128,9 +130,9 @@ class OrderSyncOperation {
       createdAt: createdAt,
       payload: payload,
       attemptCount: attemptCount ?? this.attemptCount,
-      nextAttemptAt: nextAttemptAt ?? this.nextAttemptAt,
-      lastError: lastError ?? this.lastError,
-      ackedAt: ackedAt ?? this.ackedAt,
+      nextAttemptAt: _copyNullable(nextAttemptAt, this.nextAttemptAt),
+      lastError: _copyNullable(lastError, this.lastError),
+      ackedAt: _copyNullable(ackedAt, this.ackedAt),
     );
   }
 
@@ -149,6 +151,11 @@ class OrderSyncOperation {
       'ackedAt': ackedAt?.toIso8601String(),
     };
   }
+}
+
+T? _copyNullable<T>(Object? value, T? fallback) {
+  if (identical(value, _copyWithSentinel)) return fallback;
+  return value as T?;
 }
 
 String _operationId(String orderId, OrderSyncOperationType type) {

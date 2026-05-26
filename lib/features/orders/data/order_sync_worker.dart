@@ -9,7 +9,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class OrderSyncDispatcher {
   bool get canSync;
-  Future<void> dispatch(OrderSyncOperation operation);
+  Future<OrderSyncDispatchResult> dispatch(OrderSyncOperation operation);
+}
+
+class OrderSyncDispatchResult {
+  final OrderSyncOperationStatus status;
+  final String? lastError;
+  final DateTime? ackedAt;
+
+  const OrderSyncDispatchResult({
+    required this.status,
+    this.lastError,
+    this.ackedAt,
+  });
+
+  const OrderSyncDispatchResult.acked()
+    : status = OrderSyncOperationStatus.acked,
+      lastError = null,
+      ackedAt = null;
 }
 
 class SupabaseOrderSyncDispatcher implements OrderSyncDispatcher {
@@ -21,25 +38,35 @@ class SupabaseOrderSyncDispatcher implements OrderSyncDispatcher {
   bool get canSync => _client?.auth.currentSession != null;
 
   @override
-  Future<void> dispatch(OrderSyncOperation operation) async {
+  Future<OrderSyncDispatchResult> dispatch(OrderSyncOperation operation) async {
     final client = _client;
     final userId = client?.auth.currentUser?.id;
     if (client == null || userId == null) {
       throw StateError('Supabase session is not available');
     }
 
-    await client.from('sync_operations').upsert({
-      'operation_id': operation.operationId,
-      'operation_type': operation.backendType,
-      'status': 'pending',
-      'order_id': operation.orderId,
-      'order_version': operation.orderVersion,
-      'actor_profile_id': userId,
-      'payload': operation.payload,
-      'attempt_count': operation.attemptCount,
-      'next_attempt_at': operation.nextAttemptAt?.toIso8601String(),
-      'last_error': operation.lastError,
-    }, onConflict: 'operation_id');
+    final row = await client
+        .from('sync_operations')
+        .upsert({
+          'operation_id': operation.operationId,
+          'operation_type': operation.backendType,
+          'status': 'pending',
+          'order_id': operation.orderId,
+          'order_version': operation.orderVersion,
+          'actor_profile_id': userId,
+          'payload': operation.payload,
+          'attempt_count': operation.attemptCount,
+          'next_attempt_at': operation.nextAttemptAt?.toIso8601String(),
+          'last_error': operation.lastError,
+        }, onConflict: 'operation_id')
+        .select('status,last_error,acked_at')
+        .single();
+
+    return OrderSyncDispatchResult(
+      status: _syncStatusFromBackend(row['status'] as String?),
+      lastError: row['last_error'] as String?,
+      ackedAt: _optionalDateTime(row['acked_at'] as String?),
+    );
   }
 }
 
@@ -119,10 +146,12 @@ class OrderSyncWorker {
         if (idx == -1) continue;
 
         try {
-          await _dispatcher.dispatch(op);
+          final result = await _dispatcher.dispatch(op);
           updated[idx] = op.copyWith(
-            status: OrderSyncOperationStatus.acked,
-            ackedAt: DateTime.now(),
+            status: result.status,
+            nextAttemptAt: null,
+            lastError: result.lastError,
+            ackedAt: result.ackedAt ?? DateTime.now(),
           );
         } catch (e) {
           final newCount = op.attemptCount + 1;
@@ -148,4 +177,19 @@ class OrderSyncWorker {
       _isSyncing = false;
     }
   }
+}
+
+OrderSyncOperationStatus _syncStatusFromBackend(String? value) {
+  return switch (value) {
+    'acked' => OrderSyncOperationStatus.acked,
+    'rejected' => OrderSyncOperationStatus.rejected,
+    'needs_review' => OrderSyncOperationStatus.needsReview,
+    'in_flight' => OrderSyncOperationStatus.inFlight,
+    _ => OrderSyncOperationStatus.pending,
+  };
+}
+
+DateTime? _optionalDateTime(String? value) {
+  if (value == null || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }

@@ -24,7 +24,7 @@ class _OrderCardFooterRow extends StatelessWidget {
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
-                  '${order.bottles} Р±СѓС‚.',
+                  '${order.bottles} \u0431\u0443\u0442.',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -103,7 +103,9 @@ class _OrderRouteButtonSlot extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    hasCoordinates ? 'РњР°СЂС€СЂСѓС‚' : 'РќРµС‚ РіРµРѕ',
+                    hasCoordinates
+                        ? '\u041c\u0430\u0440\u0448\u0440\u0443\u0442'
+                        : '\u041d\u0435\u0442 \u0433\u0435\u043e',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,

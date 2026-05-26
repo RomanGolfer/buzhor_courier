@@ -57,7 +57,7 @@ class _OrderCardHeaderRow extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${order.price.toInt()} в‚Ѕ',
+                '${order.price.toInt()} \u20bd',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -89,7 +89,7 @@ class _OrderOverdueBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        'РџСЂРѕСЃСЂРѕС‡РµРЅ',
+        '\u041f\u0440\u043e\u0441\u0440\u043e\u0447\u0435\u043d',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
@@ -143,7 +143,9 @@ class _OrderStatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        order.isFailed ? 'РќРµ РґРѕСЃС‚Р°РІР»РµРЅ' : 'Р’С‹РїРѕР»РЅРµРЅ',
+        order.isFailed
+            ? '\u041d\u0435 \u0434\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d'
+            : '\u0412\u044b\u043f\u043e\u043b\u043d\u0435\u043d',
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(

@@ -26,6 +26,8 @@ part 'home_map.dart';
 part 'home_tabs.dart';
 part 'home_order_list.dart';
 part 'home_completed.dart';
+part 'home_daily_scope.dart';
+part 'home_daily_report.dart';
 part 'home_bottom_nav.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -94,6 +96,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return _buildActiveList(ordersState);
       case 1:
         return _buildCompletedView(ordersState);
+      case 2:
+        return _buildDailyReport(ordersState);
       default:
         return _buildTabPlaceholder(ordersState.navIndex);
     }

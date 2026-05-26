@@ -18,6 +18,7 @@ extension OrderRepositoryActionApplier on OrderRepository {
           return order.copyWith(
             isDone: true,
             deliveryState: OrderDeliveryState.delivered,
+            updatedAt: DateTime.now().toUtc(),
             price: OrderPricingService.orderTotal(
               bottles: bottles,
               extras: extras,
@@ -48,6 +49,7 @@ extension OrderRepositoryActionApplier on OrderRepository {
           (order) => order.copyWith(
             isDone: false,
             deliveryState: OrderDeliveryState.failed,
+            updatedAt: DateTime.now().toUtc(),
             failureReason: _normalizeOptionalText(
               entry.payload['reason'] as String?,
             ),

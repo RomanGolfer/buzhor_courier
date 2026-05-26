@@ -10,16 +10,16 @@ import 'package:flutter_test/flutter_test.dart';
 const _longOrder = OrderItem(
   id: '#1234567890',
   orderNumber: '#1234567890',
-  clientName: 'Очень длинное имя клиента для проверки карточки',
+  clientName: 'Very long customer name used to check card constraints',
   address:
-      'Очень длинный адрес доставки, который должен занимать две строки без роста карточки',
-  district: 'Очень длинный район',
+      'Very long delivery address that should stay inside two lines without growing the card',
+  district: 'Very long district',
   price: 12840,
   payment: PaymentType.contract,
   bottles: 24,
   lat: 44.8951,
   lng: 37.3168,
-  comment: 'Длинный комментарий диспетчера, который не должен ломать карточку',
+  comment: 'Long dispatcher comment that should not break card layout',
 );
 
 void main() {
@@ -39,7 +39,7 @@ void main() {
     );
     await tester.pump();
 
-    await tester.tap(find.text('Обновить'));
+    await tester.tap(find.byIcon(Icons.refresh_rounded));
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(repository.reloadCount, 1);
@@ -78,6 +78,158 @@ void main() {
     );
 
     expect(find.byKey(const Key('orderNewBadge')), findsOneWidget);
+  });
+
+  testWidgets('daily report shows courier summary sections', (tester) async {
+    final repository = OrderRepository(
+      initialOrders: const [
+        OrderItem(
+          id: '#done',
+          clientName: 'Client',
+          address: 'Address',
+          district: 'District',
+          price: 600,
+          payment: PaymentType.cash,
+          bottles: 2,
+          lat: 44,
+          lng: 37,
+          isDone: true,
+          deliveredBottles: 2,
+          returnedBottles: 1,
+          confirmedPayment: PaymentType.cash,
+        ),
+        OrderItem(
+          id: '#active',
+          clientName: 'Client 2',
+          address: 'Address 2',
+          district: 'District',
+          price: 300,
+          payment: PaymentType.qr,
+          bottles: 1,
+          lat: 44,
+          lng: 37,
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          locationProvider.overrideWith((ref) => _NoopLocationNotifier()),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.bar_chart_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('dailyReportOrdersSection')), findsOneWidget);
+    expect(find.byKey(const Key('dailyReportPaymentsSection')), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -900));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('dailyReportReturnsSection')), findsOneWidget);
+    expect(find.byKey(const Key('dailyReportWaterSection')), findsOneWidget);
+    expect(
+      find.byKey(const Key('dailyReportOtherGoodsSection')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('completed tab shows only orders closed today', (tester) async {
+    final repository = OrderRepository(
+      initialOrders: [
+        OrderItem(
+          id: '#today',
+          clientName: 'Client',
+          address: 'Address',
+          district: 'District',
+          price: 600,
+          payment: PaymentType.cash,
+          bottles: 2,
+          lat: 44,
+          lng: 37,
+          isDone: true,
+          deliveryState: OrderDeliveryState.delivered,
+          updatedAt: DateTime.now().toUtc(),
+        ),
+        OrderItem(
+          id: '#old',
+          clientName: 'Old client',
+          address: 'Old address',
+          district: 'District',
+          price: 300,
+          payment: PaymentType.cash,
+          bottles: 1,
+          lat: 44,
+          lng: 37,
+          isDone: true,
+          deliveryState: OrderDeliveryState.delivered,
+          updatedAt: DateTime.now().toUtc().subtract(const Duration(days: 2)),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          locationProvider.overrideWith((ref) => _NoopLocationNotifier()),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.check_circle_outline_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OrderCard), findsOneWidget);
+    expect(find.text('#today'), findsOneWidget);
+    expect(find.text('#old'), findsNothing);
+  });
+
+  testWidgets('completed tab is empty when only older orders are closed', (
+    tester,
+  ) async {
+    final repository = OrderRepository(
+      initialOrders: [
+        OrderItem(
+          id: '#old',
+          clientName: 'Old client',
+          address: 'Old address',
+          district: 'District',
+          price: 300,
+          payment: PaymentType.cash,
+          bottles: 1,
+          lat: 44,
+          lng: 37,
+          isDone: true,
+          deliveryState: OrderDeliveryState.delivered,
+          updatedAt: DateTime.now().toUtc().subtract(const Duration(days: 2)),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          locationProvider.overrideWith((ref) => _NoopLocationNotifier()),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.check_circle_outline_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OrderCard), findsNothing);
+    expect(find.text('#old'), findsNothing);
   });
 }
 

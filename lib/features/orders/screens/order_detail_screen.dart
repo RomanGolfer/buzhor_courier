@@ -33,6 +33,7 @@ part 'order_detail/delivery_result_card.dart';
 part 'order_detail/comment_card.dart';
 part 'order_detail/bottom_buttons.dart';
 part 'order_detail/bottom_sheets.dart';
+part 'order_detail/delivery_sheet_actions.dart';
 part 'order_detail/delivery_sheet_sections.dart';
 part 'order_detail/delivery_sheet_payment_sections.dart';
 part 'order_detail/delivery_summary.dart';
@@ -41,11 +42,15 @@ part 'order_detail/shared_widgets.dart';
 part 'order_detail/payment_qr_panel.dart';
 part 'order_detail/payment_qr_full_screen.dart';
 part 'order_detail/payment_qr_full_screen_widgets.dart';
+part 'order_detail/payment_qr_share_actions.dart';
+part 'order_detail/payment_qr_status_polling.dart';
 part 'order_detail/payment_qr_cards.dart';
 part 'order_detail/payment_qr_payload.dart';
 part 'order_detail/order_detail_labels.dart';
 part 'order_detail/order_detail_confirmations.dart';
 part 'order_detail/order_detail_marking_helpers.dart';
+part 'order_detail/order_detail_actions.dart';
+part 'order_detail/order_detail_dispatcher_panel.dart';
 
 class OrderDetailScreen extends ConsumerStatefulWidget {
   final OrderItem order;
@@ -93,98 +98,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     }
   }
 
+  void _setOrderDetailState(VoidCallback fn) => setState(fn);
+
   @override
   void dispose() {
     _dispatcherHideTimer?.cancel();
     super.dispose();
-  }
-
-  void _onBottlesChanged(int value) {
-    setState(() => _bottles = value);
-    _syncToProvider();
-  }
-
-  void _onPaymentTypeChanged(PaymentType value) {
-    setState(() {
-      _paymentType = value;
-      _pendingPaymentType = value;
-    });
-    _syncToProvider(
-      failureMessage:
-          'Не удалось сразу сохранить способ оплаты. Выбор оставлен, попробуйте еще раз.',
-    );
-  }
-
-  void _onExtrasChanged(Map<String, int> value) {
-    setState(() {
-      _extras
-        ..clear()
-        ..addAll(value);
-    });
-    _syncToProvider();
-  }
-
-  void _onScannedItemsChanged(Map<String, int> value) {
-    setState(() {
-      _scannedItems
-        ..clear()
-        ..addAll(value);
-    });
-    _syncToProvider();
-  }
-
-  void _onMarkingCodesChanged(Map<String, List<String>> value) {
-    final markingCounts = _countsFromMarkingCodes(value);
-    setState(() {
-      _markingCodes
-        ..clear()
-        ..addAll(_copyMarkingCodes(value));
-      _scannedItems
-        ..clear()
-        ..addAll(markingCounts);
-    });
-    _syncToProvider();
-  }
-
-  void _syncToProvider({String? failureMessage}) {
-    final current = _resolveOrder(ref.read(ordersProvider));
-    if (current.isClosed) return;
-    final updatedOrder = current.copyWith(
-      payment: _paymentType,
-      deliveredBottles: _bottles,
-      extras: Map.of(_extras),
-      scannedItems: Map.of(_scannedItems),
-      markingCodes: _copyMarkingCodes(_markingCodes),
-    );
-
-    unawaited(
-      ref
-          .read(ordersProvider.notifier)
-          .updateOrder(updatedOrder)
-          .then((_) {
-            if (!mounted || _pendingPaymentType != updatedOrder.payment) {
-              return;
-            }
-            setState(() => _pendingPaymentType = null);
-          })
-          .catchError((Object error, StackTrace stackTrace) {
-            if (!mounted || failureMessage == null) return;
-            _showSyncError(failureMessage);
-          }),
-    );
-  }
-
-  void _showSyncError(String message) {
-    final messenger = ScaffoldMessenger.maybeOf(context);
-    if (messenger == null) return;
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          key: const Key('orderDetailSyncErrorSnackBar'),
-          content: Text(message),
-        ),
-      );
   }
 
   @override
@@ -194,24 +113,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         ref.watch(backendAppConfigProvider).valueOrNull ??
         BackendAppConfig.fallback;
 
-    ref.listen<OrdersState>(ordersProvider, (_, next) {
-      final updated = next.activeOrders.firstWhere(
-        (o) => o.id == widget.order.id,
-        orElse: () => widget.order,
-      );
-      if (updated.isClosed) return;
-      final pendingPaymentType = _pendingPaymentType;
-      if (pendingPaymentType != null) {
-        if (updated.payment == pendingPaymentType &&
-            pendingPaymentType == _paymentType) {
-          setState(() => _pendingPaymentType = null);
-        }
-        return;
-      }
-      if (updated.payment != _paymentType) {
-        setState(() => _paymentType = updated.payment);
-      }
-    });
+    _listenForOrderUpdates();
 
     final order = _resolveOrder(providerState);
 
@@ -295,51 +197,5 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               onFailed: _failOrder,
             ),
     );
-  }
-
-  Future<void> _completeOrder(_DeliveryConfirmation confirmation) {
-    return ref
-        .read(ordersProvider.notifier)
-        .completeOrder(
-          widget.order.id,
-          bottles: _bottles,
-          returnedBottles: confirmation.returnedBottles,
-          paymentType: confirmation.paymentType,
-          extras: _extras,
-          scannedItems: confirmation.scannedItems,
-          markingCodes: confirmation.markingCodes,
-          clientRating: confirmation.clientRating,
-          comment: confirmation.comment,
-        );
-  }
-
-  Future<void> _failOrder(_FailureConfirmation confirmation) {
-    return ref
-        .read(ordersProvider.notifier)
-        .failOrder(widget.order.id, reason: confirmation.reason);
-  }
-
-  void _toggleDispatcherPanel() {
-    if (_dispatcherReveal == 1) {
-      _hideDispatcherPanel();
-      return;
-    }
-    _dispatcherHideTimer?.cancel();
-    setState(() => _dispatcherReveal = 1);
-    _scheduleDispatcherHide();
-  }
-
-  void _scheduleDispatcherHide() {
-    _dispatcherHideTimer?.cancel();
-    _dispatcherHideTimer = Timer(
-      const Duration(seconds: 2),
-      _hideDispatcherPanel,
-    );
-  }
-
-  void _hideDispatcherPanel() {
-    _dispatcherHideTimer?.cancel();
-    if (!mounted || _dispatcherReveal == 0) return;
-    setState(() => _dispatcherReveal = 0);
   }
 }

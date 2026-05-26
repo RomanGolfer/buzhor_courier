@@ -2,7 +2,9 @@ part of 'home_screen.dart';
 
 extension _HomeCompleted on _HomeScreenState {
   Widget _buildCompletedView(OrdersState ordersState) {
-    if (ordersState.completedOrders.isEmpty) {
+    final completedToday = _todayCompletedOrders(ordersState);
+
+    if (completedToday.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -26,11 +28,11 @@ extension _HomeCompleted on _HomeScreenState {
       );
     }
 
-    final totalPrice = ordersState.completedOrders.fold<double>(
+    final totalPrice = completedToday.fold<double>(
       0,
       (sum, order) => sum + order.price,
     );
-    final totalBottles = ordersState.completedOrders.fold<int>(
+    final totalBottles = completedToday.fold<int>(
       0,
       (sum, order) =>
           sum + (order.isFailed ? 0 : order.deliveredBottles ?? order.bottles),
@@ -44,7 +46,7 @@ extension _HomeCompleted on _HomeScreenState {
           child: Row(
             children: [
               _buildStatChip(
-                '${ordersState.completedOrders.length}',
+                '${completedToday.length}',
                 'заказов',
                 AppColors.green,
               ),
@@ -58,15 +60,14 @@ extension _HomeCompleted on _HomeScreenState {
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            itemCount: ordersState.completedOrders.length,
+            itemCount: completedToday.length,
             itemBuilder: (context, i) => OrderCard(
-              order: ordersState.completedOrders[i],
+              order: completedToday[i],
               number: i + 1,
               showRouteButton: false,
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) =>
-                      OrderDetailScreen(order: ordersState.completedOrders[i]),
+                  builder: (_) => OrderDetailScreen(order: completedToday[i]),
                 ),
               ),
             ),

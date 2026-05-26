@@ -4,6 +4,6 @@
   "private": true,
   "scripts": {
     "build": "cd dispatcher_web && npm ci && npm run build",
-    "start": "cd dispatcher_web && npm run start"
+    "start": "cd dispatcher_web && node node_modules/next/dist/bin/next start -H 0.0.0.0 -p 3000"
   }
 }
