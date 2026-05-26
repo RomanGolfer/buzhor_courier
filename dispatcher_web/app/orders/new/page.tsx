@@ -11,7 +11,7 @@ export default async function NewOrderPage() {
 
   return (
     <AppShell profile={profile}>
-      <PageHeader title="Новый заказ" description="Создание заказа и назначение курьера на текущий день." />
+      <PageHeader title="Новый заказ" description="Создание заказа, выбор даты доставки и назначение курьера." />
       <NewOrderForm couriers={couriers} />
     </AppShell>
   );

@@ -108,6 +108,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       data: { user }
     } = await supabase.auth.getUser();
 
+    const deliveryDate = String(form.get("delivery_date") ?? "") || todayDateKey();
     const payload = {
       order_number: orderNumber,
       state: "assigned",
@@ -121,7 +122,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       price,
       payment_method: paymentMethod,
       time_slot: String(form.get("time_slot") ?? "") || null,
-      delivery_date: String(form.get("delivery_date") ?? "") || todayDateKey(),
+      delivery_date: deliveryDate,
       delivery_comment: String(form.get("delivery_comment") ?? "").trim() || null,
       assigned_courier_id: String(form.get("assigned_courier_id") ?? "") || null,
       created_by: user?.id ?? null,
@@ -142,7 +143,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       return;
     }
 
-    router.push("/");
+    router.push(`/?date=${encodeURIComponent(deliveryDate)}`);
     router.refresh();
   }
 
@@ -226,14 +227,17 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-sm font-bold text-ink">Временной слот</span>
+          <span className="mb-1 block text-sm font-bold text-ink">Дата доставки</span>
           <input
-            className="focus-ring mb-3 w-full rounded-md border border-line px-3 py-3 text-sm"
+            className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
             defaultValue={todayDateKey()}
             name="delivery_date"
             required
             type="date"
           />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-bold text-ink">Временной слот</span>
           <select className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm" name="time_slot">
             {timeSlots.map((slot) => (
               <option key={slot} value={slot}>
