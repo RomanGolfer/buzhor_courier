@@ -1,14 +1,18 @@
 meta:
   environment: nodejs
   toolchain:
-    name: nodejs
-    version: 20
-
+    name: npm
+    version: "20"
 build:
-  nixPacks: false
-  buildDirectory: dispatcher_web
-  buildCommand: npm ci && npm run build
-
+  skip: false
+  additionalCommands: cd dispatcher_web && npm ci && npm run build
+  artifacts:
+    "*": /
 run:
-  persistenceMount: /app/.next/cache
-  runCommand: npm run start
+  scriptName: null
+  scriptArguments: null
+  nodeArguments: null
+  command: cd dispatcher_web && npm run start
+  persistenceMount: /data
+  containerPort: "80"
+  servicePort: "80"
