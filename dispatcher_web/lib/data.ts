@@ -2,18 +2,6 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
 import type { Courier, CourierStats, Order, Profile } from "@/lib/types";
 
-const moscowOffsetMs = 3 * 60 * 60 * 1000;
-
-export function dateRange(dateKey?: string) {
-  const selectedDate = dateKey?.match(/^\d{4}-\d{2}-\d{2}$/)
-    ? dateKey
-    : moscowDateKey(new Date());
-  const [year, month, day] = selectedDate.split("-").map(Number);
-  const start = new Date(Date.UTC(year, month - 1, day) - moscowOffsetMs);
-  const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-  return { start: start.toISOString(), end: end.toISOString() };
-}
-
 function moscowDateKey(date: Date) {
   const parts = new Intl.DateTimeFormat("en", {
     day: "2-digit",
@@ -39,15 +27,14 @@ export async function getCouriers() {
 
 export async function getOrdersByDate(dateKey?: string) {
   const supabase = await createServerSupabaseClient();
-  const { start, end } = dateRange(dateKey);
+  const selectedDate = dateKey?.match(/^\d{4}-\d{2}-\d{2}$/) ? dateKey : moscowDateKey(new Date());
 
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)"
+      "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_date, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)"
     )
-    .gte("created_at", start)
-    .lt("created_at", end)
+    .eq("delivery_date", selectedDate)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
