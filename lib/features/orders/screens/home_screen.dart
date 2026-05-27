@@ -46,7 +46,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
     _mapController = MapController();
     _overdueRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+        ref.read(ordersProvider.notifier).refreshOrders();
+      }
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(locationProvider.notifier).refreshLocation();

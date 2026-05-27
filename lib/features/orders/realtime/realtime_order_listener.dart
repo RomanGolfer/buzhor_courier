@@ -81,7 +81,17 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
           table: 'orders',
           callback: _handleChange,
         )
-        .subscribe();
+        .subscribe((RealtimeSubscribeStatus status, Object? error) {
+          if (error != null) {
+            debugPrint('Realtime subscribe error: $error');
+          }
+          if (status == RealtimeSubscribeStatus.channelError ||
+              status == RealtimeSubscribeStatus.timedOut) {
+            Future.delayed(const Duration(seconds: 5), () {
+              if (mounted && _channel != null) _subscribe();
+            });
+          }
+        });
   }
 
   void _resetSubscription() {
@@ -91,12 +101,17 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
 
   void _handleChange(PostgresChangePayload payload) {
     if (!mounted) return;
-    final record = payload.newRecord;
-    if (record.isEmpty) return;
+    if (payload.newRecord.isEmpty) {
+      ref.read(ordersProvider.notifier).refreshOrders();
+      return;
+    }
 
     try {
-      final order = OrderItem.fromBackendJson(record);
+      final order = OrderItem.fromBackendJson(payload.newRecord);
       ref.read(ordersProvider.notifier).updateOrder(order);
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Realtime order parse error: $e — refreshing from backend');
+      ref.read(ordersProvider.notifier).refreshOrders();
+    }
   }
 }
