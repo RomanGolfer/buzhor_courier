@@ -279,6 +279,19 @@ void main() {
     }
   });
 
+  test('fromBackendJson accepts numeric fields returned as strings', () {
+    final order = OrderItem.fromBackendJson({
+      'id': 'numeric-strings',
+      'price': '400.00',
+      'lat': '44.8951000',
+      'lng': '37.3168000',
+    });
+
+    expect(order.price, 400);
+    expect(order.lat, 44.8951);
+    expect(order.lng, 37.3168);
+  });
+
   test('fromBackendJson uses defaults for missing optional fields', () {
     final order = OrderItem.fromBackendJson({'id': 'minimal'});
 

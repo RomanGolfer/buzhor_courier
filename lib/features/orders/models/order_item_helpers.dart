@@ -34,6 +34,12 @@ Map<String, int> _intMapFromJson(Object? value) {
   return map.map((key, value) => MapEntry(key, (value as num).toInt()));
 }
 
+double _doubleFromJson(Object? value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
+}
+
 Map<String, List<String>> _stringListMapFromJson(Object? value) {
   if (value == null) return const {};
   final map = value as Map<String, dynamic>;
