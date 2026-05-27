@@ -12,8 +12,8 @@
 
 body {
   margin: 0;
-  background: #f4f7fb;
-  color: #162033;
+  background: #fff;
+  color: #111827;
 }
 
 button,
@@ -25,4 +25,9 @@ textarea {
 
 .focus-ring {
   @apply focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand;
+}
+
+.app-scrollbar {
+  scrollbar-color: #c8c8c8 transparent;
+  scrollbar-width: thin;
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
@@ -24,13 +23,8 @@ export default async function DashboardPage({
   return (
     <AppShell profile={profile}>
       <PageHeader
-        title="Заказы"
-        description="Живая диспетчерская таблица с фильтрами по статусу и курьеру."
-        action={
-          <Link className="rounded-md bg-brand px-4 py-2.5 text-sm font-black text-white hover:bg-brandDark" href="/orders/new">
-            Создать заказ
-          </Link>
-        }
+        title={`Заказы ${orders.length}`}
+        action={<a className="text-sm font-semibold text-ink hover:text-brand" href="#">Скачать⌄</a>}
       />
       <OrdersDashboard
         initialDate={selectedDate}

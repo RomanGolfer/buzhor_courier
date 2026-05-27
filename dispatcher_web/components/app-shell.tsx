@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
+import { ShellNav } from "./shell-nav";
 
 type AppShellProps = {
   profile: Profile;
@@ -17,37 +17,23 @@ export function AppShell({ profile, children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb]">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
-          <div>
-            <div className="text-lg font-black text-ink">Buzhor Dispatcher</div>
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted">
-              {profile.role}
-            </div>
+    <div className="min-h-screen bg-white">
+      <aside className="fixed inset-y-0 left-0 z-30 flex w-24 flex-col border-r border-line bg-white">
+        <div className="flex h-20 items-center justify-center border-b border-line">
+          <div className="flex size-9 items-center justify-center rounded-full bg-brand text-sm font-black text-white">
+            {profile.full_name?.slice(0, 1).toUpperCase() || "A"}
           </div>
-          <nav className="flex items-center gap-2 text-sm font-semibold text-muted">
-            <Link className="rounded-md px-3 py-2 hover:bg-slate-100 hover:text-ink" href="/">
-              Заказы
-            </Link>
-            <Link className="rounded-md px-3 py-2 hover:bg-slate-100 hover:text-ink" href="/orders/new">
-              Новый заказ
-            </Link>
-            <Link className="rounded-md px-3 py-2 hover:bg-slate-100 hover:text-ink" href="/couriers">
-              Курьеры
-            </Link>
-            <Link className="rounded-md px-3 py-2 hover:bg-slate-100 hover:text-ink" href="/users">
-              Пользователи
-            </Link>
-            <form action={signOut}>
-              <button className="ml-2 rounded-md border border-line px-3 py-2 hover:border-brand hover:text-brand">
-                Выйти
-              </button>
-            </form>
-          </nav>
         </div>
-      </header>
-      <main className="mx-auto max-w-[1600px] px-5 py-6">{children}</main>
+        <ShellNav />
+        <form action={signOut} className="border-t border-line p-2">
+          <button className="w-full px-2 py-3 text-xs font-semibold text-ink hover:text-brand">
+            Выйти
+          </button>
+        </form>
+      </aside>
+      <main className="min-h-screen pl-24">
+        <div className="max-w-[1800px] px-8 py-8">{children}</div>
+      </main>
     </div>
   );
 }

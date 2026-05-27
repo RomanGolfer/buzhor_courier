@@ -184,7 +184,7 @@ export function OrdersDashboard({
 
   return (
     <>
-      <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="min-w-0">
         <OrdersTable
           courierFilter={courierFilter}
           couriers={couriers}
@@ -199,20 +199,16 @@ export function OrdersDashboard({
           selectedOrderId={selectedOrder?.id ?? ""}
           stateFilter={stateFilter}
         />
-
-        <div className="hidden xl:block">
-          <OrderInspector {...inspectorProps} />
-        </div>
       </div>
 
       {isDrawerOpen && (
         <>
           <div
             aria-hidden
-            className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+            className="fixed inset-0 z-40 bg-black/40"
             onClick={closeDrawer}
           />
-          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[400px] overflow-y-auto shadow-2xl xl:hidden">
+          <div className="fixed inset-y-0 right-0 z-50 w-full max-w-[440px] overflow-y-auto bg-white shadow-2xl">
             <OrderInspector {...inspectorProps} onClose={closeDrawer} />
           </div>
         </>
