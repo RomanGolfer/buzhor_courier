@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:buzhor_courier/features/orders/data/order_sync_worker.dart';
 import 'package:buzhor_courier/features/orders/data/order_repository.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
@@ -83,6 +84,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     await Future.delayed(const Duration(milliseconds: 300));
     state = state.copyWith(isLoading: true);
     try {
+      await OrderSyncWorker.instance.sync();
       final orders = await _repository.reloadOrders();
       _setOrders(orders);
     } catch (_) {
@@ -140,11 +142,13 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       comment: comment,
     );
     _setOrders(orders);
+    await OrderSyncWorker.instance.sync();
   }
 
   Future<void> failOrder(String orderId, {required String reason}) async {
     final orders = await _repository.failOrder(orderId, reason: reason);
     _setOrders(orders);
+    await OrderSyncWorker.instance.sync();
   }
 
   Future<void> upsertIncomingOrder(OrderItem order) async {

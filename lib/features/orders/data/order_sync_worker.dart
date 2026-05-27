@@ -102,6 +102,7 @@ class OrderSyncWorker {
   final Duration _pollInterval;
   Timer? _timer;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  StreamSubscription<AuthState>? _authSub;
   bool _isSyncing = false;
 
   void start() {
@@ -114,6 +115,11 @@ class OrderSyncWorker {
       if (hasNetwork) sync();
     });
 
+    _authSub?.cancel();
+    _authSub = SupabaseBackend.client?.auth.onAuthStateChange.listen((event) {
+      if (event.session != null) sync();
+    });
+
     sync();
   }
 
@@ -122,6 +128,8 @@ class OrderSyncWorker {
     _timer = null;
     _connectivitySub?.cancel();
     _connectivitySub = null;
+    _authSub?.cancel();
+    _authSub = null;
   }
 
   Future<void> sync() async {
@@ -135,7 +143,8 @@ class OrderSyncWorker {
       final pending = operations.where((op) {
         return op.status == OrderSyncOperationStatus.pending &&
             (op.nextAttemptAt == null || op.nextAttemptAt!.isBefore(now));
-      }).toList();
+      }).toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       if (pending.isEmpty) return;
 
@@ -170,9 +179,8 @@ class OrderSyncWorker {
             );
           }
         }
+        await _storage.saveSyncOperations(updated);
       }
-
-      await _storage.saveSyncOperations(updated);
     } finally {
       _isSyncing = false;
     }
