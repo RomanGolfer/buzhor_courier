@@ -171,8 +171,14 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   }
 
   void _setOrders(List<OrderItem> orders) {
-    final activeOrders = orders.where((order) => !order.isClosed).toList();
-    final completedOrders = orders.where((order) => order.isClosed).toList();
+    final activeOrders = orders
+        .where((order) => !order.isClosed)
+        .where(_isCurrentOrFutureDeliveryOrder)
+        .toList();
+    final completedOrders = orders
+        .where((order) => order.isClosed)
+        .where(_isClosedOrderInCurrentMoscowDay)
+        .toList();
     final activeIds = activeOrders.map((order) => order.id).toSet();
     state = state.copyWith(
       activeOrders: activeOrders,
@@ -260,6 +266,22 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     final date = order.deliveryDate;
     if (date == null) return _todayMoscowKey();
     return _dateKey(date);
+  }
+
+  bool _isCurrentOrFutureDeliveryOrder(OrderItem order) {
+    final deliveryDate = order.deliveryDate;
+    if (deliveryDate == null) return true;
+    return _dateKey(deliveryDate).compareTo(_todayMoscowKey()) >= 0;
+  }
+
+  bool _isClosedOrderInCurrentMoscowDay(OrderItem order) {
+    final deliveryDate = order.deliveryDate;
+    if (deliveryDate != null) return _isMoscowToday(deliveryDate);
+
+    final closedAt = order.updatedAt ?? order.createdAt;
+    if (closedAt == null) return false;
+    return _dateKey(closedAt.toUtc().add(const Duration(hours: 3))) ==
+        _todayMoscowKey();
   }
 
   bool _isMoscowToday(DateTime date) => _dateKey(date) == _todayMoscowKey();

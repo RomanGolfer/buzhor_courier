@@ -415,6 +415,40 @@ void main() {
     );
     expect(notifier.state.timeSlots.single.orders.single.id, futureOrder.id);
   });
+
+  test('hides active orders from past delivery dates', () async {
+    final yesterday = DateTime.now()
+        .toUtc()
+        .add(const Duration(hours: 3))
+        .subtract(const Duration(days: 1));
+    final staleOrder = _incomingOrder.copyWith(
+      deliveryDate: DateTime(yesterday.year, yesterday.month, yesterday.day),
+    );
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [staleOrder]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(notifier.state.activeOrders, isEmpty);
+    expect(notifier.state.timeSlots, isEmpty);
+  });
+
+  test('completed orders use delivery date before updated timestamp', () async {
+    final nowMoscow = DateTime.now().toUtc().add(const Duration(hours: 3));
+    final yesterday = nowMoscow.subtract(const Duration(days: 1));
+    final staleCompleted = _incomingOrder.copyWith(
+      deliveryDate: DateTime(yesterday.year, yesterday.month, yesterday.day),
+      deliveryState: OrderDeliveryState.delivered,
+      isDone: true,
+      updatedAt: DateTime.now().toUtc(),
+    );
+    final notifier = OrdersNotifier(
+      OrderRepository(initialOrders: [staleCompleted]),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(notifier.state.completedOrders, isEmpty);
+  });
 }
 
 class _FakeOrderBackendApi implements OrderBackendApi {

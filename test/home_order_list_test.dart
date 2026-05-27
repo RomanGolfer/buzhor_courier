@@ -160,6 +160,8 @@ void main() {
   });
 
   testWidgets('completed tab shows only orders closed today', (tester) async {
+    final nowMoscow = DateTime.now().toUtc().add(const Duration(hours: 3));
+    final yesterday = nowMoscow.subtract(const Duration(days: 1));
     final repository = OrderRepository(
       initialOrders: [
         OrderItem(
@@ -174,6 +176,11 @@ void main() {
           lng: 37,
           isDone: true,
           deliveryState: OrderDeliveryState.delivered,
+          deliveryDate: DateTime(
+            nowMoscow.year,
+            nowMoscow.month,
+            nowMoscow.day,
+          ),
           updatedAt: DateTime.now().toUtc(),
         ),
         OrderItem(
@@ -188,7 +195,12 @@ void main() {
           lng: 37,
           isDone: true,
           deliveryState: OrderDeliveryState.delivered,
-          updatedAt: DateTime.now().toUtc().subtract(const Duration(days: 2)),
+          deliveryDate: DateTime(
+            yesterday.year,
+            yesterday.month,
+            yesterday.day,
+          ),
+          updatedAt: DateTime.now().toUtc(),
         ),
       ],
     );

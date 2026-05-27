@@ -30,6 +30,7 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
       final rows = await client
           .from('orders')
           .select()
+          .gte('delivery_date', _todayMoscowKey())
           .order('updated_at', ascending: false);
       final orders = parseOrderRows(rows);
       return _attachHistoricalClientRatings(client, orders);
@@ -104,5 +105,12 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     }
     if (phone.length == 10) return '7$phone';
     return phone;
+  }
+
+  static String _todayMoscowKey() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 3));
+    final month = now.month.toString().padLeft(2, '0');
+    final day = now.day.toString().padLeft(2, '0');
+    return '${now.year}-$month-$day';
   }
 }
