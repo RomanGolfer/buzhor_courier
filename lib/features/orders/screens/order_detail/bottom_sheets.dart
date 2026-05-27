@@ -46,6 +46,10 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   void initState() {
     super.initState();
     _paymentType = widget.paymentType;
+    _returnedBottles = OrderPricingService.defaultReturnedBottles(
+      bottles: widget.bottles,
+      extras: widget.extras,
+    );
     _scannedItems.addAll(widget.scannedItems);
     _markingCodes.addAll(_copyMarkingCodes(widget.markingCodes));
     if (_scannedItems.isEmpty && _markingCodes.isNotEmpty) {

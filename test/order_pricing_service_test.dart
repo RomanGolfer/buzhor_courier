@@ -17,4 +17,32 @@ void main() {
       1500,
     );
   });
+
+  test('calculates default bottle returns from purchased tare', () {
+    expect(
+      OrderPricingService.defaultReturnedBottles(bottles: 2, extras: const {}),
+      2,
+    );
+    expect(
+      OrderPricingService.defaultReturnedBottles(
+        bottles: 2,
+        extras: const {OrderPricingService.petBottleDepositName: 1},
+      ),
+      1,
+    );
+    expect(
+      OrderPricingService.defaultReturnedBottles(
+        bottles: 2,
+        extras: const {OrderPricingService.petBottleDepositName: 2},
+      ),
+      0,
+    );
+    expect(
+      OrderPricingService.defaultReturnedBottles(
+        bottles: 2,
+        extras: const {OrderPricingService.mechanicalPumpName: 1},
+      ),
+      2,
+    );
+  });
 }
