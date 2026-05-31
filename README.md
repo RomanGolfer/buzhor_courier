@@ -17,6 +17,19 @@ flutter test
 flutter build apk --debug
 ```
 
+For iOS 15.5 or newer, install CocoaPods first, then regenerate Flutter's local
+iOS files:
+
+```sh
+flutter pub get
+cd ios
+pod install
+cd ..
+flutter build ios --no-codesign
+```
+
+Open `ios/Runner.xcworkspace` in Xcode after `pod install`.
+
 ## Supabase
 
 The app can run without Supabase credentials in local demo mode. To enable the
