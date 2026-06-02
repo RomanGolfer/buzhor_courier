@@ -1,5 +1,11 @@
 part of '../order_detail_screen.dart';
 
+void _logPaymentQrShare(String message) {
+  if (kDebugMode) {
+    debugPrint(message);
+  }
+}
+
 extension _PaymentQrShareActions on _PaymentQrFullScreenState {
   Future<void> _sharePaymentQr() async {
     if (_isSharing) return;
@@ -24,7 +30,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
     }
 
     if (imageFile == null) {
-      debugPrint('QR share failed: captured image is null');
+      _logPaymentQrShare('QR share failed: captured image is null');
       if (mounted) {
         _setPaymentQrState(() => _isSharing = false);
         ScaffoldMessenger.of(context)
@@ -38,7 +44,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
       return;
     }
 
-    debugPrint('QR share: image ready at ${imageFile.path}');
+    _logPaymentQrShare('QR share: image captured');
 
     // Navigate back to the orders list before opening the share sheet so that
     // when the courier returns from the messenger, they land on HomeScreen.
@@ -58,7 +64,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
           files: [XFile(imageFile.path)],
         ),
       );
-      debugPrint('QR share: completed successfully');
+      _logPaymentQrShare('QR share: completed successfully');
     } catch (e, st) {
       debugPrint('QR share error after navigation: $e\n$st');
       // Widget is already disposed at this point; no UI feedback needed.
@@ -78,52 +84,50 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
 
       // Wait for the next frame to ensure the RepaintBoundary is fully laid out
       await WidgetsBinding.instance.endOfFrame;
-      debugPrint('QR capture: waited for frame');
+      _logPaymentQrShare('QR capture: waited for frame');
       if (!mounted) return null;
 
       final boundaryContext = _paymentQrImageKey.currentContext;
       if (boundaryContext == null) {
-        debugPrint('QR capture: boundary context is null');
+        _logPaymentQrShare('QR capture: boundary context is null');
         return null;
       }
       if (!boundaryContext.mounted) return null;
 
       final renderObject = boundaryContext.findRenderObject();
       if (renderObject == null) {
-        debugPrint('QR capture: render object is null');
+        _logPaymentQrShare('QR capture: render object is null');
         return null;
       }
 
       if (renderObject is! RenderRepaintBoundary) {
-        debugPrint(
+        _logPaymentQrShare(
           'QR capture: render object is not RenderRepaintBoundary, got ${renderObject.runtimeType}',
         );
         return null;
       }
 
-      debugPrint('QR capture: capturing image with pixelRatio $pixelRatio');
+      _logPaymentQrShare('QR capture: capturing image');
       final image = await renderObject.toImage(pixelRatio: pixelRatio);
-      debugPrint('QR capture: image captured');
+      _logPaymentQrShare('QR capture: image captured');
 
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) {
-        debugPrint('QR capture: byteData is null after toByteData');
+        _logPaymentQrShare('QR capture: byteData is null after toByteData');
         return null;
       }
 
       final bytes = byteData.buffer.asUint8List();
-      debugPrint('QR capture: converted to bytes (${bytes.length} bytes)');
+      _logPaymentQrShare('QR capture: converted to bytes');
 
       final tempDir = await getTemporaryDirectory();
       final fileName =
           'payment_qr_${widget.order.displayId.replaceAll('#', '')}_${DateTime.now().millisecondsSinceEpoch}.png';
       final file = File('${tempDir.path}/$fileName');
-      debugPrint('QR capture: writing to ${file.path}');
+      _logPaymentQrShare('QR capture: writing image file');
 
       await file.writeAsBytes(bytes, flush: true);
-      debugPrint(
-        'QR capture: file written successfully (${file.lengthSync()} bytes)',
-      );
+      _logPaymentQrShare('QR capture: file written successfully');
       return file;
     } catch (e, st) {
       debugPrint('QR capture error: $e\n$st');

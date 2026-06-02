@@ -97,6 +97,7 @@ class OrderRepository {
 
   Future<List<OrderItem>> upsertOrder(OrderItem incomingOrder) async {
     await _ensureLoaded();
+    if (await _shouldKeepLocalOrder(incomingOrder)) return fetchOrders();
     await _commitAction(OrderActionJournalEntry.upsert(incomingOrder));
     return fetchOrders();
   }
@@ -129,6 +130,28 @@ class OrderRepository {
     _applyAction(entry);
     await _persist();
     await _storage?.clearActionJournal();
+  }
+
+  Future<bool> _shouldKeepLocalOrder(OrderItem incomingOrder) async {
+    if (!await _hasPendingSyncOperation(incomingOrder.id)) return false;
+
+    final localOrder = _findOrderById(incomingOrder.id);
+    return localOrder != null && localOrder.isClosed && !incomingOrder.isClosed;
+  }
+
+  OrderItem? _findOrderById(String orderId) {
+    for (final order in _orders) {
+      if (order.id == orderId) return order;
+    }
+    return null;
+  }
+
+  Future<bool> _hasPendingSyncOperation(String orderId) async {
+    final operations = await _storage?.loadSyncOperations() ?? const [];
+    return operations.any((operation) {
+      return operation.orderId == orderId &&
+          operation.status == OrderSyncOperationStatus.pending;
+    });
   }
 
   Future<void> _replayActionJournal() async {

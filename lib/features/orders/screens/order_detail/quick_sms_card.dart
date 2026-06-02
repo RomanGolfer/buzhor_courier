@@ -68,27 +68,30 @@ class _QuickSmsCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            tilePadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 2,
-            ),
-            childrenPadding: EdgeInsets.zero,
-            title: Text(
-              '💬 Сообщить клиенту',
-              style: TextStyle(
-                color: AppColors.textPrimary(context),
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+        child: Material(
+          color: Colors.transparent,
+          child: Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 2,
               ),
+              childrenPadding: EdgeInsets.zero,
+              title: Text(
+                '💬 Сообщить клиенту',
+                style: TextStyle(
+                  color: AppColors.textPrimary(context),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              trailing: const Icon(
+                Icons.expand_more_rounded,
+                color: AppColors.blue,
+              ),
+              children: [_buildChips(context)],
             ),
-            trailing: const Icon(
-              Icons.expand_more_rounded,
-              color: AppColors.blue,
-            ),
-            children: [_buildChips(context)],
           ),
         ),
       ),

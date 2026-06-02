@@ -27,7 +27,9 @@ part 'home_tabs.dart';
 part 'home_order_list.dart';
 part 'home_completed.dart';
 part 'home_daily_scope.dart';
+part 'home_daily_report_metrics.dart';
 part 'home_daily_report.dart';
+part 'home_daily_report_widgets.dart';
 part 'home_bottom_nav.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {

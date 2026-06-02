@@ -4,66 +4,10 @@ import 'package:buzhor_courier/features/orders/data/order_repository.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 
-class OrdersState {
-  final int navIndex;
-  final bool isMapView;
-  final bool isBuilding;
-  final bool isLowDataMode;
-  final bool isLoading;
-  final double listOpacity;
-  final List<OrderItem> activeOrders;
-  final List<OrderItem> completedOrders;
-  final List<TimeSlot> timeSlots;
-  final Set<String> newOrderIds;
-
-  const OrdersState({
-    this.navIndex = 0,
-    this.isMapView = false,
-    this.isBuilding = false,
-    this.isLowDataMode = false,
-    this.isLoading = false,
-    this.listOpacity = 1.0,
-    this.activeOrders = const [],
-    this.completedOrders = const [],
-    this.timeSlots = const [],
-    this.newOrderIds = const {},
-  });
-
-  OrdersState copyWith({
-    int? navIndex,
-    bool? isMapView,
-    bool? isBuilding,
-    bool? isLowDataMode,
-    bool? isLoading,
-    double? listOpacity,
-    List<OrderItem>? activeOrders,
-    List<OrderItem>? completedOrders,
-    List<TimeSlot>? timeSlots,
-    Set<String>? newOrderIds,
-  }) {
-    return OrdersState(
-      navIndex: navIndex ?? this.navIndex,
-      isMapView: isMapView ?? this.isMapView,
-      isBuilding: isBuilding ?? this.isBuilding,
-      isLowDataMode: isLowDataMode ?? this.isLowDataMode,
-      isLoading: isLoading ?? this.isLoading,
-      listOpacity: listOpacity ?? this.listOpacity,
-      activeOrders: activeOrders ?? this.activeOrders,
-      completedOrders: completedOrders ?? this.completedOrders,
-      timeSlots: timeSlots ?? this.timeSlots,
-      newOrderIds: newOrderIds ?? this.newOrderIds,
-    );
-  }
-}
+part 'orders_slot_grouping.dart';
+part 'orders_state.dart';
 
 class OrdersNotifier extends StateNotifier<OrdersState> {
-  static const _defaultSlotLabel = '10:00 - 14:00';
-  static const _knownSlotLabels = [
-    _defaultSlotLabel,
-    '14:00 - 18:00',
-    '18:00 - 21:00',
-  ];
-
   final OrderRepository _repository;
 
   OrdersNotifier(this._repository) : super(const OrdersState()) {
@@ -204,101 +148,6 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
 
   Set<String> _withoutNewOrderIds(Set<String> orderIds) {
     return state.newOrderIds.where((id) => !orderIds.contains(id)).toSet();
-  }
-
-  List<TimeSlot> _buildTimeSlots(List<OrderItem> activeOrders) {
-    final groupedOrders = <String, List<OrderItem>>{
-      for (final label in _knownSlotLabels) label: <OrderItem>[],
-    };
-
-    final sortedOrders = List<OrderItem>.of(activeOrders)
-      ..sort((a, b) {
-        final dateCompare = _deliveryDateKeyFor(
-          a,
-        ).compareTo(_deliveryDateKeyFor(b));
-        if (dateCompare != 0) return dateCompare;
-        return _slotSortIndex(
-          _slotLabelFor(a),
-        ).compareTo(_slotSortIndex(_slotLabelFor(b)));
-      });
-
-    for (final order in sortedOrders) {
-      final label = _slotLabelFor(order);
-      groupedOrders.putIfAbsent(label, () => <OrderItem>[]).add(order);
-    }
-
-    final slots = <TimeSlot>[];
-
-    for (final label in _knownSlotLabels) {
-      final orders = groupedOrders[label] ?? const <OrderItem>[];
-      if (orders.isNotEmpty) {
-        slots.add(TimeSlot(label: label, orders: orders));
-      }
-    }
-
-    for (final entry in groupedOrders.entries) {
-      if (_knownSlotLabels.contains(entry.key) || entry.value.isEmpty) {
-        continue;
-      }
-      slots.add(TimeSlot(label: entry.key, orders: entry.value));
-    }
-
-    return slots;
-  }
-
-  String _slotLabelFor(OrderItem order) {
-    final slot = _baseSlotLabelFor(order);
-    final deliveryDate = order.deliveryDate;
-    if (deliveryDate == null || _isMoscowToday(deliveryDate)) return slot;
-    return '${deliveryDate.day.toString().padLeft(2, '0')}.'
-        '${deliveryDate.month.toString().padLeft(2, '0')} · $slot';
-  }
-
-  String _baseSlotLabelFor(OrderItem order) {
-    final label = order.timeSlot?.trim();
-    if (label == null || label.isEmpty) return _defaultSlotLabel;
-    return label;
-  }
-
-  int _slotSortIndex(String label) {
-    final baseLabel = label.contains(' · ') ? label.split(' · ').last : label;
-    final index = _knownSlotLabels.indexOf(baseLabel);
-    return index == -1 ? _knownSlotLabels.length : index;
-  }
-
-  String _deliveryDateKeyFor(OrderItem order) {
-    final date = order.deliveryDate;
-    if (date == null) return _todayMoscowKey();
-    return _dateKey(date);
-  }
-
-  bool _isCurrentOrFutureDeliveryOrder(OrderItem order) {
-    final deliveryDate = order.deliveryDate;
-    if (deliveryDate == null) return true;
-    return _dateKey(deliveryDate).compareTo(_todayMoscowKey()) >= 0;
-  }
-
-  bool _isClosedOrderInCurrentMoscowDay(OrderItem order) {
-    final deliveryDate = order.deliveryDate;
-    if (deliveryDate != null) return _isMoscowToday(deliveryDate);
-
-    final closedAt = order.updatedAt ?? order.createdAt;
-    if (closedAt == null) return false;
-    return _dateKey(closedAt.toUtc().add(const Duration(hours: 3))) ==
-        _todayMoscowKey();
-  }
-
-  bool _isMoscowToday(DateTime date) => _dateKey(date) == _todayMoscowKey();
-
-  String _todayMoscowKey() {
-    final now = DateTime.now().toUtc().add(const Duration(hours: 3));
-    return _dateKey(now);
-  }
-
-  String _dateKey(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
   }
 }
 

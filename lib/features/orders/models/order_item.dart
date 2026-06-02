@@ -2,6 +2,7 @@ part 'client_rating.dart';
 part 'fiscal_receipt.dart';
 part 'order_delivery_state.dart';
 part 'order_item_helpers.dart';
+part 'order_item_mapping.dart';
 part 'payment_type.dart';
 
 class OrderItem {
@@ -88,123 +89,13 @@ class OrderItem {
     return isDone ? OrderDeliveryState.delivered : OrderDeliveryState.active;
   }
 
-  factory OrderItem.fromJson(Map<String, dynamic> json) {
-    final markingCodes = _stringListMapFromJson(json['markingCodes']);
-    final scannedItems = _intMapFromJson(json['scannedItems']);
-
-    return OrderItem(
-      id: json['id'] as String,
-      orderNumber: json['orderNumber'] as String?,
-      clientName: json['clientName'] as String,
-      address: json['address'] as String,
-      district: json['district'] as String,
-      price: (json['price'] as num).toDouble(),
-      payment: _paymentTypeFromName(json['payment'] as String),
-      bottles: json['bottles'] as int,
-      lat: (json['lat'] as num).toDouble(),
-      lng: (json['lng'] as num).toDouble(),
-      isDone: json['isDone'] as bool? ?? false,
-      deliveryState: _deliveryStateFromName(
-        json['deliveryState'] as String? ?? OrderDeliveryState.active.name,
-      ),
-      comment: json['comment'] as String?,
-      phone: json['phone'] as String?,
-      deliveredBottles: json['deliveredBottles'] as int?,
-      returnedBottles: json['returnedBottles'] as int?,
-      confirmedPayment: _optionalPaymentTypeFromName(
-        json['confirmedPayment'] as String?,
-      ),
-      extras: _intMapFromJson(json['extras']),
-      scannedItems: scannedItems.isEmpty
-          ? _countsFromMarkingCodes(markingCodes)
-          : scannedItems,
-      markingCodes: markingCodes,
-      fiscalReceipt: FiscalReceipt.fromJson(json['fiscalReceipt']),
-      clientRating: ClientRating.fromJson(json['clientRating']),
-      deliveryComment: json['deliveryComment'] as String?,
-      failureReason: json['failureReason'] as String?,
-      timeSlot: json['timeSlot'] as String?,
-      deliveryDate: _optionalDate(json['deliveryDate']),
-      createdAt: _optionalDateTime(json['createdAt']),
-      updatedAt: _optionalDateTime(json['updatedAt']),
-    );
-  }
+  factory OrderItem.fromJson(Map<String, dynamic> json) => _orderFromJson(json);
 
   factory OrderItem.fromBackendJson(Map<String, dynamic> json) {
-    final state = _deliveryStateFromBackend(json['state'] as String?);
-    final deliveredBottles = json['delivered_bottles'] as int?;
-    final returnedBottles = json['returned_bottles'] as int?;
-    final markingCodes = _stringListMapFromJson(json['marking_codes']);
-    final scannedItems = _intMapFromJson(json['scanned_items']);
-
-    return OrderItem(
-      id: json['id'] as String,
-      orderNumber: json['order_number'] as String?,
-      clientName: json['client_name'] as String? ?? '',
-      address: json['address'] as String? ?? '',
-      district: json['district'] as String? ?? '',
-      price: _doubleFromJson(json['price']),
-      payment: _paymentTypeFromName(
-        json['payment_method'] as String? ?? PaymentType.cash.name,
-      ),
-      bottles: json['bottles'] as int? ?? 0,
-      lat: _doubleFromJson(json['lat']),
-      lng: _doubleFromJson(json['lng']),
-      isDone: state == OrderDeliveryState.delivered,
-      deliveryState: state,
-      comment: json['comment'] as String?,
-      phone: json['client_phone'] as String?,
-      deliveredBottles: deliveredBottles,
-      returnedBottles: returnedBottles,
-      confirmedPayment: _optionalPaymentTypeFromName(
-        json['confirmed_payment'] as String?,
-      ),
-      extras: _intMapFromJson(json['extras']),
-      scannedItems: scannedItems.isEmpty
-          ? _countsFromMarkingCodes(markingCodes)
-          : scannedItems,
-      markingCodes: markingCodes,
-      fiscalReceipt: FiscalReceipt.fromJson(json['fiscal_receipt']),
-      clientRating: ClientRating.fromJson(json['client_rating']),
-      deliveryComment: json['delivery_comment'] as String?,
-      failureReason: json['failure_reason'] as String?,
-      timeSlot: json['time_slot'] as String?,
-      deliveryDate: _optionalDate(json['delivery_date']),
-      createdAt: _optionalDateTime(json['created_at']),
-      updatedAt: _optionalDateTime(json['updated_at']),
-    );
+    return _orderFromBackendJson(json);
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'orderNumber': orderNumber,
-    'clientName': clientName,
-    'address': address,
-    'district': district,
-    'price': price,
-    'payment': payment.name,
-    'bottles': bottles,
-    'lat': lat,
-    'lng': lng,
-    'isDone': isDone,
-    'deliveryState': deliveryState.name,
-    'comment': comment,
-    'phone': phone,
-    'deliveredBottles': deliveredBottles,
-    'returnedBottles': returnedBottles,
-    'confirmedPayment': confirmedPayment?.name,
-    'extras': extras,
-    'scannedItems': scannedItems,
-    'markingCodes': markingCodes,
-    'fiscalReceipt': fiscalReceipt.toJson(),
-    'clientRating': clientRating?.toJson(),
-    'deliveryComment': deliveryComment,
-    'failureReason': failureReason,
-    'timeSlot': timeSlot,
-    'deliveryDate': _dateKey(deliveryDate),
-    'createdAt': createdAt?.toIso8601String(),
-    'updatedAt': updatedAt?.toIso8601String(),
-  };
+  Map<String, dynamic> toJson() => _orderToJson(this);
 
   OrderItem copyWith({
     bool? isDone,
