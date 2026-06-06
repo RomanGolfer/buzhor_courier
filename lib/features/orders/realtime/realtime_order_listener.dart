@@ -55,7 +55,7 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
       _sessionUserId = userId;
       _resetSubscription();
       if (userId != null) {
-        _subscribe();
+        unawaited(_subscribe());
         if (mounted) {
           ref.read(ordersProvider.notifier).refreshOrders();
         }
@@ -65,13 +65,21 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
     final userId = client.auth.currentSession?.user.id;
     if (userId == null) return;
     _sessionUserId = userId;
-    _subscribe();
+    unawaited(_subscribe());
     ref.read(ordersProvider.notifier).refreshOrders();
   }
 
-  void _subscribe() {
+  Future<void> _subscribe() async {
     final client = SupabaseBackend.client;
     if (client == null || client.auth.currentSession == null) return;
+    final userId = client.auth.currentSession!.user.id;
+    final courierId = await _currentCourierId(client, userId);
+    if (!mounted || userId != _sessionUserId) return;
+
+    if (courierId == null) {
+      _logRealtimeDebug('Realtime subscription skipped: courier id not found');
+      return;
+    }
 
     _channel?.unsubscribe();
     _channel = client
@@ -80,12 +88,22 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
           event: PostgresChangeEvent.insert,
           schema: 'public',
           table: 'orders',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'assigned_courier_id',
+            value: courierId,
+          ),
           callback: _handleChange,
         )
         .onPostgresChanges(
           event: PostgresChangeEvent.update,
           schema: 'public',
           table: 'orders',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'assigned_courier_id',
+            value: courierId,
+          ),
           callback: _handleChange,
         )
         .subscribe((RealtimeSubscribeStatus status, Object? error) {
@@ -99,6 +117,24 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
             });
           }
         });
+  }
+
+  Future<String?> _currentCourierId(
+    SupabaseClient client,
+    String userId,
+  ) async {
+    try {
+      final row = await client
+          .from('couriers')
+          .select('id')
+          .eq('profile_id', userId)
+          .eq('is_active', true)
+          .maybeSingle();
+      return row?['id'] as String?;
+    } catch (error) {
+      _logRealtimeDebug('Failed to resolve realtime courier id: $error');
+      return null;
+    }
   }
 
   void _resetSubscription() {

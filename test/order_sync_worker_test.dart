@@ -22,6 +22,18 @@ void main() {
     expect(storage.savedSyncOperations.single.ackedAt, isNotNull);
   });
 
+  test('sync dispatches pending operations oldest first', () async {
+    final older = OrderSyncOperation.fail('#1', reason: 'old');
+    final newer = OrderSyncOperation.fail('#2', reason: 'new');
+    final storage = _FakeOrderStorage(syncOperations: [newer, older]);
+    final dispatcher = _FakeOrderSyncDispatcher();
+    final worker = OrderSyncWorker(storage: storage, dispatcher: dispatcher);
+
+    await worker.sync();
+
+    expect(dispatcher.dispatched.map((op) => op.orderId), ['#1', '#2']);
+  });
+
   test('sync preserves rejected status from backend', () async {
     final operation = OrderSyncOperation.fail('#1', reason: 'No answer');
     final storage = _FakeOrderStorage(syncOperations: [operation]);

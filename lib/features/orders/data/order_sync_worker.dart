@@ -143,7 +143,7 @@ class OrderSyncWorker {
       final pending = operations.where((op) {
         return op.status == OrderSyncOperationStatus.pending &&
             (op.nextAttemptAt == null || op.nextAttemptAt!.isBefore(now));
-      }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }).toList()..sort((a, b) => a.createdAt.compareTo(b.createdAt));
 
       if (pending.isEmpty) return;
 

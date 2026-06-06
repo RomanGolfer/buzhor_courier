@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -38,6 +39,23 @@ class DemoAuthRepository implements AuthRepository {
   }
 }
 
+class DisabledBackendAuthRepository implements AuthRepository {
+  const DisabledBackendAuthRepository();
+
+  @override
+  bool get isBackendEnabled => false;
+
+  @override
+  Future<AuthResult> signIn({
+    required String email,
+    required String password,
+  }) async {
+    return const AuthResult.failure(
+      'Приложение собрано без подключения к серверу. Обратитесь к администратору.',
+    );
+  }
+}
+
 class SupabaseAuthRepository implements AuthRepository {
   const SupabaseAuthRepository(this._client);
 
@@ -66,7 +84,7 @@ class SupabaseAuthRepository implements AuthRepository {
       }
       return const AuthResult.success(isBackendSession: true);
     } on AuthException catch (error) {
-      return AuthResult.failure(error.message);
+      return AuthResult.failure(authExceptionFailureMessage(error));
     } catch (_) {
       return const AuthResult.failure('Не удалось подключиться к серверу');
     }
@@ -75,6 +93,14 @@ class SupabaseAuthRepository implements AuthRepository {
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final client = SupabaseBackend.client;
-  if (client == null) return const DemoAuthRepository();
+  if (client == null) {
+    if (kReleaseMode) return const DisabledBackendAuthRepository();
+    return const DemoAuthRepository();
+  }
   return SupabaseAuthRepository(client);
 });
+
+@visibleForTesting
+String authExceptionFailureMessage(AuthException _) {
+  return 'Неверный email или пароль';
+}

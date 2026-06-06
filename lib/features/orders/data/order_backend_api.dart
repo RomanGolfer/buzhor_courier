@@ -35,9 +35,13 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
         await client.auth.refreshSession();
       }
 
+      final courierId = await _currentCourierId(client, session.user.id);
+      if (courierId == null) return const [];
+
       final rows = await client
           .from('orders')
           .select()
+          .eq('assigned_courier_id', courierId)
           .gte('delivery_date', _todayMoscowKey())
           .order('updated_at', ascending: false);
       final orders = parseOrderRows(rows);
@@ -112,6 +116,24 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     }
     if (phone.length == 10) return '7$phone';
     return phone;
+  }
+
+  static Future<String?> _currentCourierId(
+    SupabaseClient client,
+    String profileId,
+  ) async {
+    try {
+      final row = await client
+          .from('couriers')
+          .select('id')
+          .eq('profile_id', profileId)
+          .eq('is_active', true)
+          .maybeSingle();
+      return row?['id'] as String?;
+    } catch (error) {
+      _logBackendDebug('Failed to resolve courier id: $error');
+      return null;
+    }
   }
 
   static String _todayMoscowKey() {

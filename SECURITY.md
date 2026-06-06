@@ -32,6 +32,7 @@ These are publishable browser values, not service-role secrets. Never expose `SU
 - Flutter CI runs dependency install, static analysis, and tests.
 - Dispatcher web CI runs `npm audit --omit=dev` and TypeScript checks.
 - CodeQL scans JavaScript/TypeScript code.
+- Gitleaks scans commits for accidentally committed secrets.
 - Dependabot monitors Flutter Pub, npm, and GitHub Actions dependencies.
 
 ## Reporting
