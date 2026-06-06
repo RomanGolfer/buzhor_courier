@@ -1,6 +1,6 @@
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 
-enum OrderSyncOperationType { complete, fail }
+enum OrderSyncOperationType { complete, fail, setMarkingCodes }
 
 enum OrderSyncOperationStatus {
   pending,
@@ -43,7 +43,31 @@ class OrderSyncOperation {
     return switch (type) {
       OrderSyncOperationType.complete => 'complete',
       OrderSyncOperationType.fail => 'fail',
+      OrderSyncOperationType.setMarkingCodes => 'set_marking_codes',
     };
+  }
+
+  factory OrderSyncOperation.setMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> markingCodes,
+    int? orderVersion,
+  }) {
+    return OrderSyncOperation(
+      operationId: _operationId(
+        orderId,
+        OrderSyncOperationType.setMarkingCodes,
+      ),
+      type: OrderSyncOperationType.setMarkingCodes,
+      status: OrderSyncOperationStatus.pending,
+      orderId: orderId,
+      orderVersion: orderVersion,
+      createdAt: DateTime.now(),
+      payload: {
+        'markingCodes': markingCodes,
+        'scannedItems': _countsFromMarkingCodes(markingCodes),
+      },
+      attemptCount: 0,
+    );
   }
 
   factory OrderSyncOperation.complete(
@@ -180,4 +204,11 @@ OrderSyncOperationStatus _statusFromName(String name) {
 DateTime? _optionalDateTime(String? value) {
   if (value == null) return null;
   return DateTime.parse(value);
+}
+
+Map<String, int> _countsFromMarkingCodes(
+  Map<String, List<String>> markingCodes,
+) {
+  if (markingCodes.isEmpty) return const {};
+  return markingCodes.map((key, codes) => MapEntry(key, codes.length));
 }

@@ -12,6 +12,9 @@ concurrency:
   group: flutter-ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   analyze-and-test:
     name: Analyze and test
@@ -38,3 +41,30 @@ jobs:
 
       - name: Test
         run: flutter test
+
+  dispatcher-web-security:
+    name: Dispatcher web security
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dispatcher_web
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dispatcher_web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      - name: Typecheck
+        run: npm run typecheck

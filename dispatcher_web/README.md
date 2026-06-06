@@ -4,7 +4,8 @@ Next.js 14 dispatcher panel for Buzhor Courier.
 
 ## Environment
 
-Create `.env.local`:
+Create `.env.local`. These variables are required; the app does not ship with a
+fallback Supabase key.
 
 ```sh
 NEXT_PUBLIC_SUPABASE_URL=https://txzzkrqekynqansqvnbj.supabase.co

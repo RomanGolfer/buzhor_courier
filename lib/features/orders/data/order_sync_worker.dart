@@ -72,7 +72,7 @@ class SupabaseOrderSyncDispatcher implements OrderSyncDispatcher {
 
 class OrderSyncWorker {
   static final instance = OrderSyncWorker._(
-    storage: const SharedPreferencesOrderStorage(),
+    storage: const SecureOrderStorage(),
     dispatcher: const SupabaseOrderSyncDispatcher(),
   );
 
@@ -143,8 +143,7 @@ class OrderSyncWorker {
       final pending = operations.where((op) {
         return op.status == OrderSyncOperationStatus.pending &&
             (op.nextAttemptAt == null || op.nextAttemptAt!.isBefore(now));
-      }).toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
       if (pending.isEmpty) return;
 

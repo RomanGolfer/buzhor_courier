@@ -1,16 +1,65 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, rateLimitKey } from "@/lib/security/rate-limit";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import type { Profile } from "@/lib/types";
 
 type NominatimResult = {
   lat: string;
   lon: string;
 };
 
+const GEOCODE_RATE_LIMIT = 30;
+const GEOCODE_RATE_WINDOW_MS = 60_000;
+
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return geocodeResponse([], { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, is_active")
+    .eq("id", user.id)
+    .single();
+
+  const staffProfile = profile as Pick<Profile, "role" | "is_active"> | null;
+  if (
+    !staffProfile?.is_active ||
+    !["dispatcher", "admin"].includes(staffProfile.role)
+  ) {
+    return geocodeResponse([], { status: 403 });
+  }
+
+  const rateLimit = checkRateLimit({
+    key: rateLimitKey("geocode", request.headers, user.id),
+    limit: GEOCODE_RATE_LIMIT,
+    windowMs: GEOCODE_RATE_WINDOW_MS
+  });
+
+  if (rateLimit.limited) {
+    return geocodeResponse([], {
+      headers: {
+        "Retry-After": String(rateLimit.retryAfterSeconds)
+      },
+      status: 429
+    });
+  }
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim();
 
   if (!query) {
-    return NextResponse.json([]);
+    return geocodeResponse([]);
+  }
+  if (query.length < 3 || query.length > 120) {
+    return geocodeResponse([], { status: 400 });
   }
 
   const nominatimUrl = new URL("https://nominatim.openstreetmap.org/search");
@@ -28,9 +77,31 @@ export async function GET(request: Request) {
   });
 
   if (!response.ok) {
-    return NextResponse.json([], { status: response.status });
+    return geocodeResponse([], { status: response.status });
   }
 
-  const data = (await response.json()) as NominatimResult[];
-  return NextResponse.json(data);
+  const data = await response.json();
+  const coordinates = normalizeNominatimResults(data);
+  return geocodeResponse(coordinates);
+}
+
+function normalizeNominatimResults(data: unknown): NominatimResult[] {
+  if (!Array.isArray(data)) return [];
+
+  return data
+    .flatMap((item): NominatimResult[] => {
+      if (!item || typeof item !== "object") return [];
+      const lat = "lat" in item ? item.lat : null;
+      const lon = "lon" in item ? item.lon : null;
+      if (typeof lat !== "string" || typeof lon !== "string") return [];
+      if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))) return [];
+      return [{ lat, lon }];
+    })
+    .slice(0, 1);
+}
+
+function geocodeResponse(body: NominatimResult[], init: ResponseInit = {}) {
+  const headers = new Headers(init.headers);
+  headers.set("Cache-Control", "no-store");
+  return NextResponse.json(body, { ...init, headers });
 }

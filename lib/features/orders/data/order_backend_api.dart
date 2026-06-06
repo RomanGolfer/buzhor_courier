@@ -3,6 +3,14 @@ import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+void _logBackendDebug(String message, [StackTrace? stackTrace]) {
+  if (!kDebugMode) return;
+  debugPrint(message);
+  if (stackTrace != null) {
+    debugPrintStack(stackTrace: stackTrace);
+  }
+}
+
 abstract class OrderBackendApi {
   Future<List<OrderItem>?> fetchAssignedOrders();
 }
@@ -35,8 +43,7 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
       final orders = parseOrderRows(rows);
       return _attachHistoricalClientRatings(client, orders);
     } catch (error, stackTrace) {
-      debugPrint('Failed to fetch assigned orders: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      _logBackendDebug('Failed to fetch assigned orders: $error', stackTrace);
       return null;
     }
   }
@@ -92,7 +99,7 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
         );
       }).toList();
     } catch (error) {
-      debugPrint('Failed to load client ratings: $error');
+      _logBackendDebug('Failed to load client ratings: $error');
       return orders;
     }
   }

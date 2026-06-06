@@ -56,6 +56,24 @@ extension OrderRepositoryActionApplier on OrderRepository {
             deliveryComment: null,
           ),
         );
+      case OrderActionType.setMarkingCodes:
+        _replaceOrder(entry.orderId, (order) {
+          if (order.isClosed) return order;
+          final incomingMarkingCodes = _stringListMap(
+            entry.payload['markingCodes'],
+          );
+          final lockedMarkingCodes = _lockedMarkingCodes(
+            order.markingCodes,
+            incomingMarkingCodes,
+          );
+          return order.copyWith(
+            updatedAt: DateTime.now().toUtc(),
+            scannedItems: Map.unmodifiable(
+              _countsFromMarkingCodes(lockedMarkingCodes),
+            ),
+            markingCodes: _unmodifiableStringListMap(lockedMarkingCodes),
+          );
+        });
       case OrderActionType.upsert:
         final order = OrderItem.fromJson(
           entry.payload['order'] as Map<String, dynamic>,
@@ -150,6 +168,32 @@ Map<String, List<String>> _unmodifiableStringListMap(
   return Map.unmodifiable(
     value.map((key, codes) => MapEntry(key, List<String>.unmodifiable(codes))),
   );
+}
+
+Map<String, List<String>> _lockedMarkingCodes(
+  Map<String, List<String>> current,
+  Map<String, List<String>> incoming,
+) {
+  if (current.isEmpty) return incoming;
+  if (incoming.isEmpty || !_sameStringListMap(current, incoming)) {
+    return current;
+  }
+  return incoming;
+}
+
+bool _sameStringListMap(
+  Map<String, List<String>> left,
+  Map<String, List<String>> right,
+) {
+  if (left.length != right.length) return false;
+  for (final entry in left.entries) {
+    final other = right[entry.key];
+    if (other == null || other.length != entry.value.length) return false;
+    for (var i = 0; i < entry.value.length; i += 1) {
+      if (entry.value[i] != other[i]) return false;
+    }
+  }
+  return true;
 }
 
 String _fiscalOperationId(String orderId) {

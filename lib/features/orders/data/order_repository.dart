@@ -46,6 +46,14 @@ class OrderRepository {
     String? comment,
   }) async {
     await _ensureLoaded();
+    final currentOrder = _findOrderById(orderId);
+    final lockedMarkingCodes = _lockedMarkingCodes(
+      currentOrder?.markingCodes ?? const {},
+      markingCodes,
+    );
+    final lockedScannedItems = lockedMarkingCodes.isEmpty
+        ? scannedItems
+        : _countsFromMarkingCodes(lockedMarkingCodes);
     final fiscalReceipt = _fiscalReceiptForCompletion(orderId, paymentType);
     await _storage?.appendSyncOperation(
       OrderSyncOperation.complete(
@@ -54,8 +62,8 @@ class OrderRepository {
         returnedBottles: returnedBottles,
         paymentType: paymentType,
         extras: extras,
-        scannedItems: scannedItems,
-        markingCodes: markingCodes,
+        scannedItems: lockedScannedItems,
+        markingCodes: lockedMarkingCodes,
         fiscalReceipt: fiscalReceipt,
         clientRating: clientRating,
         comment: comment,
@@ -68,11 +76,40 @@ class OrderRepository {
         returnedBottles: returnedBottles,
         paymentType: paymentType,
         extras: extras,
-        scannedItems: scannedItems,
-        markingCodes: markingCodes,
+        scannedItems: lockedScannedItems,
+        markingCodes: lockedMarkingCodes,
         fiscalReceipt: fiscalReceipt,
         clientRating: clientRating,
         comment: comment,
+      ),
+    );
+    return fetchOrders();
+  }
+
+  Future<List<OrderItem>> setMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> markingCodes,
+  }) async {
+    await _ensureLoaded();
+    final currentOrder = _findOrderById(orderId);
+    if (currentOrder == null || currentOrder.isClosed) return fetchOrders();
+
+    final lockedMarkingCodes = _lockedMarkingCodes(
+      currentOrder.markingCodes,
+      markingCodes,
+    );
+    if (lockedMarkingCodes.isEmpty) return fetchOrders();
+
+    await _storage?.appendSyncOperation(
+      OrderSyncOperation.setMarkingCodes(
+        orderId,
+        markingCodes: lockedMarkingCodes,
+      ),
+    );
+    await _commitAction(
+      OrderActionJournalEntry.setMarkingCodes(
+        orderId,
+        markingCodes: lockedMarkingCodes,
       ),
     );
     return fetchOrders();
@@ -168,7 +205,7 @@ class OrderRepository {
 
 final orderRepositoryProvider = Provider<OrderRepository>(
   (ref) => OrderRepository(
-    storage: const SharedPreferencesOrderStorage(),
+    storage: const SecureOrderStorage(),
     backendApi: const SupabaseOrderBackendApi(),
   ),
 );

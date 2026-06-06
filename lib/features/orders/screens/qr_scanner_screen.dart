@@ -18,11 +18,13 @@ class MarkingScanResult {
 class QrScannerScreen extends StatefulWidget {
   final String itemName;
   final int requiredCount;
+  final List<String> initialCodes;
 
   const QrScannerScreen({
     super.key,
     required this.itemName,
     required this.requiredCount,
+    this.initialCodes = const [],
   });
 
   @override
@@ -44,6 +46,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   @override
   void initState() {
     super.initState();
+    _scannedCodes.addAll(widget.initialCodes);
     if (_requiredCount == 0) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) Navigator.of(context).pop(const MarkingScanResult.empty());

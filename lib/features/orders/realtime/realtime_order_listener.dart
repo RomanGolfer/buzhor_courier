@@ -3,9 +3,16 @@ import 'dart:async';
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+void _logRealtimeDebug(String message) {
+  if (kDebugMode) {
+    debugPrint(message);
+  }
+}
 
 class RealtimeOrderListener extends ConsumerStatefulWidget {
   final Widget child;
@@ -83,7 +90,7 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
         )
         .subscribe((RealtimeSubscribeStatus status, Object? error) {
           if (error != null) {
-            debugPrint('Realtime subscribe error: $error');
+            _logRealtimeDebug('Realtime subscribe error: $error');
           }
           if (status == RealtimeSubscribeStatus.channelError ||
               status == RealtimeSubscribeStatus.timedOut) {
@@ -110,7 +117,7 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
       final order = OrderItem.fromBackendJson(payload.newRecord);
       ref.read(ordersProvider.notifier).updateOrder(order);
     } catch (e) {
-      debugPrint('Realtime order parse error: $e — refreshing from backend');
+      _logRealtimeDebug('Realtime order parse error: $e');
       ref.read(ordersProvider.notifier).refreshOrders();
     }
   }

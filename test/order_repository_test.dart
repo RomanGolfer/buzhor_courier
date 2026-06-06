@@ -131,6 +131,64 @@ void main() {
   });
 
   test(
+    'setMarkingCodes stores pending sync operation and local count',
+    () async {
+      final storage = _FakeOrderStorage();
+      final repository = OrderRepository(
+        initialOrders: [_activeOrder],
+        storage: storage,
+      );
+
+      final orders = await repository.setMarkingCodes(
+        _activeOrder.id,
+        markingCodes: const {
+          'water': ['010460123456789021A1', '010460123456789021A2'],
+        },
+      );
+
+      final operation = storage.savedSyncOperations.single;
+      expect(operation.type, OrderSyncOperationType.setMarkingCodes);
+      expect(operation.status, OrderSyncOperationStatus.pending);
+      expect(operation.orderId, _activeOrder.id);
+      expect(operation.backendType, 'set_marking_codes');
+      expect(operation.payload['markingCodes'], {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      });
+      expect(orders.single.scannedItems, {'water': 2});
+      expect(orders.single.markingCodes['water'], hasLength(2));
+    },
+  );
+
+  test('completeOrder keeps already stored marking codes', () async {
+    final repository = OrderRepository(
+      initialOrders: [
+        _activeOrder.copyWith(
+          markingCodes: const {
+            'water': ['010460123456789021OLD1', '010460123456789021OLD2'],
+          },
+        ),
+      ],
+    );
+
+    final orders = await repository.completeOrder(
+      _activeOrder.id,
+      bottles: 2,
+      returnedBottles: 0,
+      paymentType: PaymentType.cash,
+      extras: const {},
+      scannedItems: const {'water': 2},
+      markingCodes: const {
+        'water': ['010460123456789021NEW1', '010460123456789021NEW2'],
+      },
+    );
+
+    expect(orders.single.markingCodes['water'], [
+      '010460123456789021OLD1',
+      '010460123456789021OLD2',
+    ]);
+  });
+
+  test(
     'completeOrder does not require fiscal receipt for contract payment',
     () async {
       final repository = OrderRepository(initialOrders: [_activeOrder]);

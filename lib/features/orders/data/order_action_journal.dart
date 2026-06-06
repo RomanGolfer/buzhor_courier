@@ -1,6 +1,6 @@
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 
-enum OrderActionType { complete, fail, upsert }
+enum OrderActionType { complete, fail, setMarkingCodes, upsert }
 
 class OrderActionJournalEntry {
   final String id;
@@ -61,6 +61,22 @@ class OrderActionJournalEntry {
     );
   }
 
+  factory OrderActionJournalEntry.setMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> markingCodes,
+  }) {
+    return OrderActionJournalEntry(
+      id: _entryId(orderId, OrderActionType.setMarkingCodes),
+      type: OrderActionType.setMarkingCodes,
+      orderId: orderId,
+      createdAt: DateTime.now(),
+      payload: {
+        'markingCodes': markingCodes,
+        'scannedItems': _countsFromMarkingCodes(markingCodes),
+      },
+    );
+  }
+
   factory OrderActionJournalEntry.upsert(OrderItem order) {
     return OrderActionJournalEntry(
       id: _entryId(order.id, OrderActionType.upsert),
@@ -102,4 +118,11 @@ OrderActionType _typeFromName(String name) {
     (type) => type.name == name,
     orElse: () => OrderActionType.upsert,
   );
+}
+
+Map<String, int> _countsFromMarkingCodes(
+  Map<String, List<String>> markingCodes,
+) {
+  if (markingCodes.isEmpty) return const {};
+  return markingCodes.map((key, codes) => MapEntry(key, codes.length));
 }

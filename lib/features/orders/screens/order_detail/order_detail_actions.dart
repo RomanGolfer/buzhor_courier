@@ -36,6 +36,23 @@ extension _OrderDetailActions on _OrderDetailScreenState {
   }
 
   void _onMarkingCodesChanged(Map<String, List<String>> value) {
+    final current = _resolveOrder(ref.read(ordersProvider));
+    if (current.markingCodes.isNotEmpty &&
+        !_sameMarkingCodes(current.markingCodes, value)) {
+      _setOrderDetailState(() {
+        _markingCodes
+          ..clear()
+          ..addAll(_copyMarkingCodes(current.markingCodes));
+        _scannedItems
+          ..clear()
+          ..addAll(_countsFromMarkingCodes(current.markingCodes));
+      });
+      _showSyncError(
+        'Маркировка уже сохранена на другом устройстве. Новые коды не заменили заказ.',
+      );
+      return;
+    }
+
     final markingCounts = _countsFromMarkingCodes(value);
     _setOrderDetailState(() {
       _markingCodes
@@ -45,7 +62,26 @@ extension _OrderDetailActions on _OrderDetailScreenState {
         ..clear()
         ..addAll(markingCounts);
     });
-    _syncToProvider();
+    unawaited(
+      ref
+          .read(ordersProvider.notifier)
+          .setMarkingCodes(
+            widget.order.id,
+            markingCodes: _copyMarkingCodes(value),
+          )
+          .catchError((Object error, StackTrace stackTrace) {
+            if (!mounted) return;
+            _showSyncError(
+              'Не удалось сохранить маркировку. Проверьте связь и обновите заказ.',
+            );
+          }),
+    );
+  }
+
+  Future<OrderItem?> _refreshOrderBeforeScan() async {
+    await ref.read(ordersProvider.notifier).refreshOrders();
+    if (!mounted) return null;
+    return _resolveOrder(ref.read(ordersProvider));
   }
 
   void _syncToProvider({String? failureMessage}) {
@@ -129,6 +165,32 @@ extension _OrderDetailActions on _OrderDetailScreenState {
       if (updated.payment != _paymentType) {
         _setOrderDetailState(() => _paymentType = updated.payment);
       }
+      if (!_sameMarkingCodes(updated.markingCodes, _markingCodes)) {
+        final markingCodes = _copyMarkingCodes(updated.markingCodes);
+        _setOrderDetailState(() {
+          _markingCodes
+            ..clear()
+            ..addAll(markingCodes);
+          _scannedItems
+            ..clear()
+            ..addAll(_countsFromMarkingCodes(markingCodes));
+        });
+      }
     });
+  }
+
+  bool _sameMarkingCodes(
+    Map<String, List<String>> left,
+    Map<String, List<String>> right,
+  ) {
+    if (left.length != right.length) return false;
+    for (final entry in left.entries) {
+      final other = right[entry.key];
+      if (other == null || other.length != entry.value.length) return false;
+      for (var i = 0; i < entry.value.length; i += 1) {
+        if (entry.value[i] != other[i]) return false;
+      }
+    }
+    return true;
   }
 }

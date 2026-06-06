@@ -11,6 +11,7 @@ class _DeliverySheet extends StatefulWidget {
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final ValueChanged<Map<String, int>> onScannedItemsChanged;
   final ValueChanged<Map<String, List<String>>> onMarkingCodesChanged;
+  final Future<OrderItem?> Function() onRefreshOrderBeforeScan;
   final Future<void> Function(_DeliveryConfirmation confirmation) onConfirm;
 
   const _DeliverySheet({
@@ -24,6 +25,7 @@ class _DeliverySheet extends StatefulWidget {
     required this.onPaymentTypeChanged,
     required this.onScannedItemsChanged,
     required this.onMarkingCodesChanged,
+    required this.onRefreshOrderBeforeScan,
     required this.onConfirm,
   });
 

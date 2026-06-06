@@ -11,6 +11,7 @@ class _BottomButtons extends StatelessWidget {
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final ValueChanged<Map<String, int>> onScannedItemsChanged;
   final ValueChanged<Map<String, List<String>>> onMarkingCodesChanged;
+  final Future<OrderItem?> Function() onRefreshOrderBeforeScan;
   final Future<void> Function(_DeliveryConfirmation confirmation) onDelivered;
   final Future<void> Function(_FailureConfirmation confirmation) onFailed;
 
@@ -25,6 +26,7 @@ class _BottomButtons extends StatelessWidget {
     required this.onPaymentTypeChanged,
     required this.onScannedItemsChanged,
     required this.onMarkingCodesChanged,
+    required this.onRefreshOrderBeforeScan,
     required this.onDelivered,
     required this.onFailed,
   });
@@ -94,6 +96,7 @@ class _BottomButtons extends StatelessWidget {
                     onPaymentTypeChanged: onPaymentTypeChanged,
                     onScannedItemsChanged: onScannedItemsChanged,
                     onMarkingCodesChanged: onMarkingCodesChanged,
+                    onRefreshOrderBeforeScan: onRefreshOrderBeforeScan,
                     onConfirm: onDelivered,
                   ),
                 ),

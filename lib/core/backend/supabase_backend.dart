@@ -26,7 +26,7 @@ class SupabaseBackend {
 
     await Supabase.initialize(
       url: projectUrl,
-      anonKey: clientKey,
+      publishableKey: clientKey,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
         autoRefreshToken: true,

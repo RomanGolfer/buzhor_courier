@@ -12,6 +12,10 @@
 .swiftpm/
 .claude/
 migrate_working_dir/
+.env
+.env.*
+!.env.example
+!dispatcher_web/.env.example
 
 # IntelliJ related
 *.iml

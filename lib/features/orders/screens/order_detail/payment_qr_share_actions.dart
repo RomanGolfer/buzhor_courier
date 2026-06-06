@@ -15,7 +15,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
     try {
       imageFile = await _capturePaymentQrImage();
     } catch (e, st) {
-      debugPrint('QR capture error: $e\n$st');
+      _logPaymentQrShare('QR capture error: $e\n$st');
       if (mounted) {
         _setPaymentQrState(() => _isSharing = false);
         ScaffoldMessenger.of(context)
@@ -66,7 +66,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
       );
       _logPaymentQrShare('QR share: completed successfully');
     } catch (e, st) {
-      debugPrint('QR share error after navigation: $e\n$st');
+      _logPaymentQrShare('QR share error after navigation: $e\n$st');
       // Widget is already disposed at this point; no UI feedback needed.
     }
   }
@@ -130,7 +130,7 @@ extension _PaymentQrShareActions on _PaymentQrFullScreenState {
       _logPaymentQrShare('QR capture: file written successfully');
       return file;
     } catch (e, st) {
-      debugPrint('QR capture error: $e\n$st');
+      _logPaymentQrShare('QR capture error: $e\n$st');
       return null;
     }
   }

@@ -86,6 +86,7 @@ extension _DeliverySheetSections on _DeliverySheetState {
     final scannedCount =
         _markingCodes['water']?.length ?? _scannedItems['water'] ?? 0;
     final isComplete = scannedCount == widget.bottles;
+    final canScan = !isComplete;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,9 +140,11 @@ extension _DeliverySheetSections on _DeliverySheetState {
                 const SizedBox(width: 4),
               ],
               IconButton(
-                onPressed: _openWaterScanner,
-                tooltip: scannedCount > 0
-                    ? 'Пересканировать'
+                onPressed: canScan ? _openWaterScanner : null,
+                tooltip: isComplete
+                    ? 'Маркировка уже отсканирована'
+                    : scannedCount > 0
+                    ? 'Досканировать маркировку'
                     : 'Сканировать маркировку',
                 icon: Icon(
                   isComplete
@@ -159,16 +162,41 @@ extension _DeliverySheetSections on _DeliverySheetState {
   }
 
   Future<void> _openWaterScanner() async {
+    final latestOrder = await widget.onRefreshOrderBeforeScan();
+    if (!mounted) return;
+
+    if (latestOrder?.isClosed ?? false) {
+      _showMarkingSnackBar('Заказ уже закрыт. Сканирование отменено.');
+      return;
+    }
+
+    final latestCodes = latestOrder?.markingCodes['water'] ?? const [];
+    if (latestCodes.isNotEmpty) {
+      _setWaterMarkingCodes(latestCodes);
+      _showMarkingSnackBar('Маркировка уже сохранена на другом устройстве.');
+      return;
+    }
+
+    final initialCodes = List<String>.of(_markingCodes['water'] ?? const []);
     final result = await Navigator.push<MarkingScanResult>(
       context,
       MaterialPageRoute(
         builder: (_) => QrScannerScreen(
           itemName: 'Вода Бужор 19л',
           requiredCount: widget.bottles,
+          initialCodes: initialCodes,
         ),
       ),
     );
     if (result == null || !mounted) return;
     _setWaterMarkingCodes(result.codes);
+  }
+
+  void _showMarkingSnackBar(String message) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 }
