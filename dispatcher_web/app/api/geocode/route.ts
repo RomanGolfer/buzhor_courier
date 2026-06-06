@@ -11,6 +11,11 @@ type NominatimResult = {
 const GEOCODE_RATE_LIMIT = 30;
 const GEOCODE_RATE_WINDOW_MS = 60_000;
 
+// TODO: replace with your actual deployed domain and a real contact address
+// as required by the Nominatim Usage Policy (https://operations.osmfoundation.org/policies/nominatim/).
+const NOMINATIM_USER_AGENT =
+  "buzhor-dispatcher/1.0 (https://buzhor.example.com; contact@buzhor.example.com)";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -37,7 +42,7 @@ export async function GET(request: Request) {
     return geocodeResponse([], { status: 403 });
   }
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: rateLimitKey("geocode", request.headers, user.id),
     limit: GEOCODE_RATE_LIMIT,
     windowMs: GEOCODE_RATE_WINDOW_MS
@@ -72,7 +77,7 @@ export async function GET(request: Request) {
     cache: "no-store",
     headers: {
       Accept: "application/json",
-      "User-Agent": "buzhor-dispatcher/1.0"
+      "User-Agent": NOMINATIM_USER_AGENT
     }
   });
 

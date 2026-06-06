@@ -14,6 +14,10 @@ export type LoginState = {
 const LOGIN_RATE_LIMIT = 8;
 const LOGIN_RATE_WINDOW_MS = 10 * 60 * 1000;
 
+// Neutral message for both bad credentials and missing access.
+// Deliberately avoids leaking whether the credentials were valid.
+const ACCESS_DENIED_MSG = "Неверные данные или нет доступа";
+
 export async function login(_state: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -23,7 +27,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   }
 
   const requestHeaders = await headers();
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: rateLimitKey("dispatcher-login", requestHeaders, email),
     limit: LOGIN_RATE_LIMIT,
     windowMs: LOGIN_RATE_WINDOW_MS
@@ -40,7 +44,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   });
 
   if (loginError || !data.user) {
-    return { error: "Неверный email или пароль" };
+    return { error: ACCESS_DENIED_MSG };
   }
 
   const { data: profile, error: profileError } = await supabase
@@ -53,7 +57,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
 
   if (profileError || !staffProfile || !staffProfile.is_active || !["dispatcher", "admin"].includes(staffProfile.role)) {
     await supabase.auth.signOut();
-    return { error: "У пользователя нет доступа к диспетчерской панели" };
+    return { error: ACCESS_DENIED_MSG };
   }
 
   revalidatePath("/", "layout");
