@@ -3,6 +3,8 @@ import { fileURLToPath } from "node:url";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === "production";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 const enableHstsPreload = process.env.ENABLE_HSTS_PRELOAD === "true";
 const hstsHeaderValue = [
   "max-age=31536000",
@@ -14,6 +16,10 @@ const hstsHeaderValue = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
+  },
   outputFileTracingRoot: appDir,
   typedRoutes: true,
   async headers() {
