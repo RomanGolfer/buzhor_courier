@@ -6,6 +6,34 @@ import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('sync operation factories generate UUID v4 operation ids', () {
+    final uuidV4 = RegExp(
+      r'^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$',
+    );
+
+    final operations = [
+      OrderSyncOperation.complete(
+        '#1',
+        bottles: 2,
+        returnedBottles: 0,
+        paymentType: PaymentType.cash,
+        extras: const {},
+        scannedItems: const {'water': 2},
+      ),
+      OrderSyncOperation.fail('#1', reason: 'No answer'),
+      OrderSyncOperation.setMarkingCodes(
+        '#1',
+        markingCodes: const {
+          'water': ['010460123456789021A1'],
+        },
+      ),
+    ];
+
+    for (final operation in operations) {
+      expect(operation.operationId, matches(uuidV4));
+    }
+  });
+
   test('sync marks pending operation as acked after dispatch', () async {
     final operation = OrderSyncOperation.fail('#1', reason: 'No answer');
     final storage = _FakeOrderStorage(syncOperations: [operation]);

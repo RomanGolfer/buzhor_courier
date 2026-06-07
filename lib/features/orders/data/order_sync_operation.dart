@@ -1,4 +1,5 @@
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
+import 'package:uuid/uuid.dart';
 
 enum OrderSyncOperationType { complete, fail, setMarkingCodes }
 
@@ -53,10 +54,7 @@ class OrderSyncOperation {
     int? orderVersion,
   }) {
     return OrderSyncOperation(
-      operationId: _operationId(
-        orderId,
-        OrderSyncOperationType.setMarkingCodes,
-      ),
+      operationId: _operationId(),
       type: OrderSyncOperationType.setMarkingCodes,
       status: OrderSyncOperationStatus.pending,
       orderId: orderId,
@@ -84,7 +82,7 @@ class OrderSyncOperation {
     int? orderVersion,
   }) {
     return OrderSyncOperation(
-      operationId: _operationId(orderId, OrderSyncOperationType.complete),
+      operationId: _operationId(),
       type: OrderSyncOperationType.complete,
       status: OrderSyncOperationStatus.pending,
       orderId: orderId,
@@ -111,7 +109,7 @@ class OrderSyncOperation {
     int? orderVersion,
   }) {
     return OrderSyncOperation(
-      operationId: _operationId(orderId, OrderSyncOperationType.fail),
+      operationId: _operationId(),
       type: OrderSyncOperationType.fail,
       status: OrderSyncOperationStatus.pending,
       orderId: orderId,
@@ -182,10 +180,7 @@ T? _copyNullable<T>(Object? value, T? fallback) {
   return value as T?;
 }
 
-String _operationId(String orderId, OrderSyncOperationType type) {
-  final timestamp = DateTime.now().microsecondsSinceEpoch;
-  return '${type.name}-$orderId-$timestamp';
-}
+String _operationId() => const Uuid().v4();
 
 OrderSyncOperationType _typeFromName(String name) {
   return OrderSyncOperationType.values.firstWhere(
