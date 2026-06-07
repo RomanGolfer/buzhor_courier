@@ -33,8 +33,8 @@ const rlCache = new Map<string, Ratelimit>();
 function getRedis(): Redis | null {
   if (upstashRedis !== null) return upstashRedis;
 
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 
   if (url && token) {
     upstashRedis = new Redis({ url, token });
@@ -45,6 +45,7 @@ function getRedis(): Redis | null {
     inMemoryWarningLogged = true;
     console.warn(
       "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN not configured — " +
+        "or Vercel KV_REST_API_URL/TOKEN not available — " +
         "falling back to in-memory rate limiting. " +
         "State resets on cold starts; not suitable for production."
     );

@@ -25,6 +25,9 @@ UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 ```
 
+When Upstash is connected through Vercel KV, the app also accepts Vercel's
+generated `KV_REST_API_URL` and `KV_REST_API_TOKEN` variables.
+
 HSTS is enabled in production with `max-age=31536000`. Enable subdomains and
 preload only after the final domain and every subdomain are permanently HTTPS:
 
