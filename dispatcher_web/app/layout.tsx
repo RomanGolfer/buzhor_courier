@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -7,12 +6,10 @@ export const metadata: Metadata = {
   description: "Dispatcher control panel for Buzhor Courier"
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // Next.js 14+ automatically applies x-nonce to its own hydration <script>
-  // tags when the CSP response header contains a nonce. Reading it here makes
-  // it available for any future <Script nonce={nonce}> third-party inclusions.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  // The nonce is applied automatically by Next.js to its own hydration
+  // <script> tags, because proxy.ts puts a nonce-bearing Content-Security-Policy
+  // on the request headers. Nothing to wire up here.
   return (
     <html lang="ru">
       <body>{children}</body>

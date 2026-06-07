@@ -4,14 +4,25 @@ import { updateSession } from "@/lib/supabase/middleware";
 const isProduction = process.env.NODE_ENV === "production";
 
 export async function proxy(request: NextRequest) {
-  // Generate a per-request nonce. Buffer is available in the Next.js proxy
-  // runtime; the nonce is passed to server components via x-nonce so that
-  // any <Script nonce={nonce}> tags get the correct value, and Next.js 16
-  // automatically applies it to its own hydration <script> tags.
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  // Generate a per-request nonce using Web-standard APIs only. The proxy runs
+  // on the Edge runtime where Node's Buffer is not guaranteed, so use
+  // crypto.getRandomValues + btoa (both available on Edge).
+  const randomBytes = crypto.getRandomValues(new Uint8Array(16));
+  const nonce = btoa(String.fromCharCode(...randomBytes));
 
-  const response = await updateSession(request, { "x-nonce": nonce });
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  const csp = buildCsp(nonce);
+
+  // The CSP must be set on the REQUEST headers too: Next.js reads the nonce
+  // from the request's Content-Security-Policy header to stamp it onto its own
+  // hydration/bootstrap <script> tags. Setting it only on the response is not
+  // enough — with 'strict-dynamic' in production, un-nonced scripts are blocked
+  // and the panel fails to hydrate. x-nonce is exposed for any future
+  // first-party <Script nonce={nonce}> usage.
+  const response = await updateSession(request, {
+    "x-nonce": nonce,
+    "Content-Security-Policy": csp,
+  });
+  response.headers.set("Content-Security-Policy", csp);
 
   return response;
 }
