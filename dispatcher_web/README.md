@@ -1,6 +1,6 @@
 # Buzhor Dispatcher Web
 
-Next.js 14 dispatcher panel for Buzhor Courier.
+Next.js 16 dispatcher panel for Buzhor Courier.
 
 ## Environment
 
@@ -10,6 +10,27 @@ fallback Supabase key.
 ```sh
 NEXT_PUBLIC_SUPABASE_URL=https://txzzkrqekynqansqvnbj.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_publishable_or_anon_key
+```
+
+For production geocoding, also set a real Nominatim contact identity:
+
+```sh
+NOMINATIM_USER_AGENT="buzhor-dispatcher/1.0 (https://your-domain.example; ops@your-domain.example)"
+```
+
+Production rate limiting should use durable Upstash Redis storage:
+
+```sh
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+HSTS is enabled in production with `max-age=31536000`. Enable subdomains and
+preload only after the final domain and every subdomain are permanently HTTPS:
+
+```sh
+ENABLE_HSTS_SUBDOMAINS=true
+ENABLE_HSTS_PRELOAD=true
 ```
 
 ## Commands

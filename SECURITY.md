@@ -15,8 +15,8 @@
 - iOS App Transport Security blocks arbitrary network loads.
 - Dispatcher web uses authenticated Supabase sessions, role (`dispatcher`/`admin`) and `is_active` checks on every request.
 - Rate limiting on login (8 req / 10 min) and geocode (30 req / min) endpoints; backed by Upstash Redis in production, in-memory fallback for local dev only.
-- **HSTS** (`max-age=63072000; includeSubDomains; preload`) is set in production to enforce HTTPS.
-- **Content-Security-Policy** is generated per-request in middleware with a cryptographic nonce; `script-src` uses `'nonce-<n>' 'strict-dynamic'` in production (no `unsafe-inline`).
+- **HSTS** (`max-age=31536000`) is set in production to enforce HTTPS; `includeSubDomains` and `preload` require explicit opt-in after the final domain is ready.
+- **Content-Security-Policy** is generated per-request in `proxy.ts` with a cryptographic nonce; `script-src` uses `'nonce-<n>' 'strict-dynamic'` in production (no `unsafe-inline`).
 - Static security headers on all responses: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Permissions-Policy`.
 - Login error messages are intentionally generic to prevent user-enumeration attacks.
 - Nominatim geocoding requests include a policy-compliant `User-Agent` with contact information.
@@ -37,6 +37,19 @@ Optional — enables durable rate limiting (required in production):
 ```text
 UPSTASH_REDIS_REST_URL
 UPSTASH_REDIS_REST_TOKEN
+```
+
+Required for production geocoding:
+
+```text
+NOMINATIM_USER_AGENT
+```
+
+Optional HSTS hardening after the deployed domain and every subdomain are permanently HTTPS:
+
+```text
+ENABLE_HSTS_SUBDOMAINS=true
+ENABLE_HSTS_PRELOAD=true
 ```
 
 These are publishable browser values, not service-role secrets. Never expose `SUPABASE_SERVICE_ROLE_KEY` in the Flutter app or dispatcher web client.

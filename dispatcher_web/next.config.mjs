@@ -3,6 +3,14 @@ import { fileURLToPath } from "node:url";
 
 const appDir = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === "production";
+const enableHstsPreload = process.env.ENABLE_HSTS_PRELOAD === "true";
+const hstsHeaderValue = [
+  "max-age=31536000",
+  ...(enableHstsPreload || process.env.ENABLE_HSTS_SUBDOMAINS === "true"
+    ? ["includeSubDomains"]
+    : []),
+  ...(enableHstsPreload ? ["preload"] : []),
+].join("; ");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -14,7 +22,7 @@ const nextConfig = {
         source: "/:path*",
         headers: [
           // CSP is intentionally absent here — it is set per-request with a
-          // cryptographic nonce by middleware.ts to eliminate 'unsafe-inline'.
+          // cryptographic nonce by proxy.ts to eliminate 'unsafe-inline'.
           {
             key: "X-Frame-Options",
             value: "DENY",
@@ -35,7 +43,7 @@ const nextConfig = {
             ? [
                 {
                   key: "Strict-Transport-Security",
-                  value: "max-age=63072000; includeSubDomains; preload",
+                  value: hstsHeaderValue,
                 },
               ]
             : []),

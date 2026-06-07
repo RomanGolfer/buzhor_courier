@@ -11,11 +11,6 @@ type NominatimResult = {
 const GEOCODE_RATE_LIMIT = 30;
 const GEOCODE_RATE_WINDOW_MS = 60_000;
 
-// TODO: replace with your actual deployed domain and a real contact address
-// as required by the Nominatim Usage Policy (https://operations.osmfoundation.org/policies/nominatim/).
-const NOMINATIM_USER_AGENT =
-  "buzhor-dispatcher/1.0 (https://buzhor.example.com; contact@buzhor.example.com)";
-
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -67,6 +62,11 @@ export async function GET(request: Request) {
     return geocodeResponse([], { status: 400 });
   }
 
+  const userAgent = getNominatimUserAgent();
+  if (!userAgent) {
+    return geocodeResponse([], { status: 503 });
+  }
+
   const nominatimUrl = new URL("https://nominatim.openstreetmap.org/search");
   nominatimUrl.searchParams.set("q", query);
   nominatimUrl.searchParams.set("format", "json");
@@ -77,7 +77,7 @@ export async function GET(request: Request) {
     cache: "no-store",
     headers: {
       Accept: "application/json",
-      "User-Agent": NOMINATIM_USER_AGENT
+      "User-Agent": userAgent
     }
   });
 
@@ -103,6 +103,18 @@ function normalizeNominatimResults(data: unknown): NominatimResult[] {
       return [{ lat, lon }];
     })
     .slice(0, 1);
+}
+
+function getNominatimUserAgent(): string | null {
+  const configured = process.env.NOMINATIM_USER_AGENT?.trim();
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV !== "production") {
+    return "buzhor-dispatcher-dev/1.0";
+  }
+
+  console.error("NOMINATIM_USER_AGENT must be configured for production geocoding.");
+  return null;
 }
 
 function geocodeResponse(body: NominatimResult[], init: ResponseInit = {}) {
