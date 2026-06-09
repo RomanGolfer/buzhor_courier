@@ -139,6 +139,7 @@ extension _LoginFormCard on _LoginScreenState {
                             await ref
                                 .read(authCredentialsStorageProvider)
                                 .saveEmail(_emailController.text.trim());
+                            if (!mounted) return;
                             ref.invalidate(backendAppConfigProvider);
                             // In demo mode AuthGate is absent, so navigate manually.
                             // In Supabase mode, onAuthStateChange in AuthGate handles it.
