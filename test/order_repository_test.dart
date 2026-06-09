@@ -253,6 +253,17 @@ void main() {
     expect(storage.savedOrders?.single.id, _incomingOrder.id);
   });
 
+  test(
+    'starts empty without backend storage or explicit initial orders',
+    () async {
+      final repository = OrderRepository();
+
+      final orders = await repository.fetchOrders();
+
+      expect(orders, isEmpty);
+    },
+  );
+
   test('purges expired active orders restored from local storage', () async {
     final storage = _FakeOrderStorage();
     final yesterday = DateTime.now()
@@ -267,6 +278,20 @@ void main() {
     final repository = OrderRepository(
       initialOrders: [_activeOrder],
       storage: storage,
+    );
+
+    final orders = await repository.fetchOrders();
+
+    expect(orders, isEmpty);
+    expect(storage.savedOrders, isEmpty);
+  });
+
+  test('purges undated active orders from production local storage', () async {
+    final storage = _FakeOrderStorage();
+    await storage.saveOrders([_incomingOrder]);
+    final repository = OrderRepository(
+      storage: storage,
+      purgeUndatedActiveOrders: true,
     );
 
     final orders = await repository.fetchOrders();

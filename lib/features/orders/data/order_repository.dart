@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/order_action_journal.dart';
 import 'package:buzhor_courier/features/orders/data/order_backend_api.dart';
-import 'package:buzhor_courier/features/orders/data/sample_orders.dart';
 import 'package:buzhor_courier/features/orders/data/order_storage.dart';
 import 'package:buzhor_courier/features/orders/data/order_sync_operation.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
@@ -14,13 +13,18 @@ class OrderRepository {
     List<OrderItem>? initialOrders,
     OrderStorage? storage,
     OrderBackendApi? backendApi,
-  }) : _fallbackOrders = List<OrderItem>.of(initialOrders ?? sampleOrders),
+    bool purgeUndatedActiveOrders = false,
+  }) : _fallbackOrders = List<OrderItem>.of(
+         initialOrders ?? const <OrderItem>[],
+       ),
        _storage = storage,
-       _backendApi = backendApi;
+       _backendApi = backendApi,
+       _purgeUndatedActiveOrders = purgeUndatedActiveOrders;
 
   final List<OrderItem> _fallbackOrders;
   final OrderStorage? _storage;
   final OrderBackendApi? _backendApi;
+  final bool _purgeUndatedActiveOrders;
   final List<OrderItem> _orders = [];
   bool _hasLoaded = false;
 
@@ -147,18 +151,27 @@ class OrderRepository {
         ? await _storage?.loadOrders()
         : null;
     final orders =
-        backendOrders ??
-        savedOrders ??
-        (currentOrders.isEmpty ? _fallbackOrders : currentOrders);
-    final scopedOrders = _removeExpiredLocalCacheOrders(orders);
+        backendOrders ?? savedOrders ?? _fallbackOrdersFor(currentOrders);
+    final scopedOrders = _removeExpiredLocalCacheOrders(
+      orders,
+      dropUndatedActiveOrders:
+          _purgeUndatedActiveOrders && backendOrders == null,
+    );
     _orders
       ..clear()
       ..addAll(scopedOrders.map((order) => _normalizePrice(order)));
     if (backendOrders != null || scopedOrders.length != orders.length) {
       await _persist();
     }
-    await _replayActionJournal();
+    await _replayActionJournal(
+      dropUndatedActiveOrders:
+          _purgeUndatedActiveOrders && backendOrders == null,
+    );
     _hasLoaded = true;
+  }
+
+  List<OrderItem> _fallbackOrdersFor(List<OrderItem> currentOrders) {
+    return currentOrders.isEmpty ? _fallbackOrders : currentOrders;
   }
 
   Future<void> _persist() async {
@@ -168,7 +181,9 @@ class OrderRepository {
   Future<void> _commitAction(OrderActionJournalEntry entry) async {
     await _storage?.appendActionJournalEntry(entry);
     _applyAction(entry);
-    _dropExpiredLocalCacheOrders();
+    _dropExpiredLocalCacheOrders(
+      dropUndatedActiveOrders: _purgeUndatedActiveOrders,
+    );
     await _persist();
     await _storage?.clearActionJournal();
   }
@@ -195,30 +210,52 @@ class OrderRepository {
     });
   }
 
-  Future<void> _replayActionJournal() async {
+  Future<void> _replayActionJournal({
+    required bool dropUndatedActiveOrders,
+  }) async {
     final entries = await _storage?.loadActionJournal() ?? const [];
     if (entries.isEmpty) return;
 
     for (final entry in entries) {
       _applyAction(entry);
     }
-    _dropExpiredLocalCacheOrders();
+    _dropExpiredLocalCacheOrders(
+      dropUndatedActiveOrders: dropUndatedActiveOrders,
+    );
     await _persist();
     await _storage?.clearActionJournal();
   }
 
-  void _dropExpiredLocalCacheOrders() {
-    _orders.removeWhere(_isExpiredLocalCacheOrder);
+  void _dropExpiredLocalCacheOrders({required bool dropUndatedActiveOrders}) {
+    _orders.removeWhere(
+      (order) => _isExpiredLocalCacheOrder(
+        order,
+        dropUndatedActiveOrders: dropUndatedActiveOrders,
+      ),
+    );
   }
 
-  List<OrderItem> _removeExpiredLocalCacheOrders(List<OrderItem> orders) {
-    return orders.where((order) => !_isExpiredLocalCacheOrder(order)).toList();
+  List<OrderItem> _removeExpiredLocalCacheOrders(
+    List<OrderItem> orders, {
+    required bool dropUndatedActiveOrders,
+  }) {
+    return orders
+        .where(
+          (order) => !_isExpiredLocalCacheOrder(
+            order,
+            dropUndatedActiveOrders: dropUndatedActiveOrders,
+          ),
+        )
+        .toList();
   }
 
-  bool _isExpiredLocalCacheOrder(OrderItem order) {
+  bool _isExpiredLocalCacheOrder(
+    OrderItem order, {
+    required bool dropUndatedActiveOrders,
+  }) {
     if (order.isClosed) return false;
     final deliveryDate = order.deliveryDate;
-    if (deliveryDate == null) return false;
+    if (deliveryDate == null) return dropUndatedActiveOrders;
     return _dateKey(deliveryDate).compareTo(_todayMoscowKey()) < 0;
   }
 
@@ -238,5 +275,6 @@ final orderRepositoryProvider = Provider<OrderRepository>(
   (ref) => OrderRepository(
     storage: const SecureOrderStorage(),
     backendApi: const SupabaseOrderBackendApi(),
+    purgeUndatedActiveOrders: true,
   ),
 );
