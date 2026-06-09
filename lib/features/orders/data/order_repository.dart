@@ -150,10 +150,13 @@ class OrderRepository {
         backendOrders ??
         savedOrders ??
         (currentOrders.isEmpty ? _fallbackOrders : currentOrders);
+    final scopedOrders = _removeExpiredLocalCacheOrders(orders);
     _orders
       ..clear()
-      ..addAll(orders.map((order) => _normalizePrice(order)));
-    if (backendOrders != null) await _persist();
+      ..addAll(scopedOrders.map((order) => _normalizePrice(order)));
+    if (backendOrders != null || scopedOrders.length != orders.length) {
+      await _persist();
+    }
     await _replayActionJournal();
     _hasLoaded = true;
   }
@@ -165,6 +168,7 @@ class OrderRepository {
   Future<void> _commitAction(OrderActionJournalEntry entry) async {
     await _storage?.appendActionJournalEntry(entry);
     _applyAction(entry);
+    _dropExpiredLocalCacheOrders();
     await _persist();
     await _storage?.clearActionJournal();
   }
@@ -198,8 +202,35 @@ class OrderRepository {
     for (final entry in entries) {
       _applyAction(entry);
     }
+    _dropExpiredLocalCacheOrders();
     await _persist();
     await _storage?.clearActionJournal();
+  }
+
+  void _dropExpiredLocalCacheOrders() {
+    _orders.removeWhere(_isExpiredLocalCacheOrder);
+  }
+
+  List<OrderItem> _removeExpiredLocalCacheOrders(List<OrderItem> orders) {
+    return orders.where((order) => !_isExpiredLocalCacheOrder(order)).toList();
+  }
+
+  bool _isExpiredLocalCacheOrder(OrderItem order) {
+    if (order.isClosed) return false;
+    final deliveryDate = order.deliveryDate;
+    if (deliveryDate == null) return false;
+    return _dateKey(deliveryDate).compareTo(_todayMoscowKey()) < 0;
+  }
+
+  String _todayMoscowKey() {
+    final now = DateTime.now().toUtc().add(const Duration(hours: 3));
+    return _dateKey(now);
+  }
+
+  String _dateKey(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 }
 

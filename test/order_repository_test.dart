@@ -253,6 +253,48 @@ void main() {
     expect(storage.savedOrders?.single.id, _incomingOrder.id);
   });
 
+  test('purges expired active orders restored from local storage', () async {
+    final storage = _FakeOrderStorage();
+    final yesterday = DateTime.now()
+        .toUtc()
+        .add(const Duration(hours: 3))
+        .subtract(const Duration(days: 1));
+    final staleOrder = _incomingOrder.copyWith(
+      deliveryDate: DateTime(yesterday.year, yesterday.month, yesterday.day),
+    );
+    await storage.saveOrders([staleOrder]);
+
+    final repository = OrderRepository(
+      initialOrders: [_activeOrder],
+      storage: storage,
+    );
+
+    final orders = await repository.fetchOrders();
+
+    expect(orders, isEmpty);
+    expect(storage.savedOrders, isEmpty);
+  });
+
+  test('drops expired active realtime orders before caching', () async {
+    final storage = _FakeOrderStorage();
+    final yesterday = DateTime.now()
+        .toUtc()
+        .add(const Duration(hours: 3))
+        .subtract(const Duration(days: 1));
+    final staleOrder = _incomingOrder.copyWith(
+      deliveryDate: DateTime(yesterday.year, yesterday.month, yesterday.day),
+    );
+    final repository = OrderRepository(
+      initialOrders: const [],
+      storage: storage,
+    );
+
+    final orders = await repository.upsertOrder(staleOrder);
+
+    expect(orders, isEmpty);
+    expect(storage.savedOrders, isEmpty);
+  });
+
   test(
     'stale active realtime update does not reopen locally completed order',
     () async {
