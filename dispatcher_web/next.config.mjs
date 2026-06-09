@@ -1,7 +1,3 @@
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const appDir = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === "production";
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -20,8 +16,9 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: supabaseUrl,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: supabaseAnonKey,
   },
-  outputFileTracingRoot: appDir,
-  typedRoutes: true,
+  experimental: {
+    typedRoutes: true,
+  },
   async headers() {
     return [
       {
