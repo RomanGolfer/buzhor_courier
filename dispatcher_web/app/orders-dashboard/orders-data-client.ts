@@ -1,4 +1,5 @@
 ﻿import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
+import { notifyOrderPush } from "@/lib/order-push";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { Order, OrderState } from "@/lib/types";
 
@@ -72,6 +73,10 @@ export async function saveDispatcherOrderUpdate({
     .eq("id", order.id);
 
   if (error) return { error: error.message };
+
+  if (nextCourierId && nextCourierId !== order.assigned_courier_id) {
+    await notifyOrderPush(supabase, order.id, "assigned");
+  }
 
   await supabase.from("order_events").insert({
     order_id: order.id,

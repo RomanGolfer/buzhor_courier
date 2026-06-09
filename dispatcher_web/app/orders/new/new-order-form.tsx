@@ -4,6 +4,7 @@ import type { FormEvent, InputHTMLAttributes } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/ui";
+import { notifyOrderPush } from "@/lib/order-push";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { Courier, PaymentMethod } from "@/lib/types";
 
@@ -136,12 +137,16 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
       return;
     }
 
-    const { error: insertError } = await supabase.from("orders").insert(payload);
+    const { data: createdOrder, error: insertError } = await supabase.from("orders").insert(payload).select("id").single();
 
     if (insertError) {
       setError(insertError.message);
       setIsSaving(false);
       return;
+    }
+
+    if (createdOrder?.id) {
+      await notifyOrderPush(supabase, createdOrder.id, "created");
     }
 
     router.push(`/?date=${encodeURIComponent(selectedDeliveryDate)}`);
