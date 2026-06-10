@@ -31,10 +31,9 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     try {
       final session = client.auth.currentSession;
       if (session == null) return null;
-      if (session.isExpired) {
-        await client.auth.refreshSession();
-      }
 
+      // Do not manually refresh the session — autoRefreshToken handles it
+      // transparently before each request and is more resilient on Android.
       final courierId = await _currentCourierId(client, session.user.id);
       if (courierId == null) return const [];
 

@@ -51,7 +51,16 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
 
     _authSubscription = client.auth.onAuthStateChange.listen((data) {
       final userId = data.session?.user.id;
-      if (userId == _sessionUserId) return;
+      if (userId == _sessionUserId) {
+        // Session refreshed for the same user (e.g. after Android background expiry).
+        // Re-subscribe and reload so orders that arrived while the token was
+        // expired are not silently missed.
+        if (data.event == AuthChangeEvent.tokenRefreshed && mounted) {
+          unawaited(_subscribe());
+          unawaited(ref.read(ordersProvider.notifier).refreshOrders());
+        }
+        return;
+      }
       _sessionUserId = userId;
       _resetSubscription();
       if (userId != null) {

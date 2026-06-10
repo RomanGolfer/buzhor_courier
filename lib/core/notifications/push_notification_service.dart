@@ -145,10 +145,21 @@ class FirebasePushNotificationService implements PushNotificationService {
   }
 
   void _handleRemoteMessage(RemoteMessage message) {
-    final type = message.data['type'];
-    final orderId = message.data['order_id'];
-    if (type != 'new_order' || orderId == null || orderId.isEmpty) return;
-    unawaited(_emitOrder(orderId));
+    final type = message.data['type'] as String?;
+    final orderId = message.data['order_id'] as String?;
+
+    if (type == 'new_order' && orderId != null && orderId.isNotEmpty) {
+      unawaited(_emitOrder(orderId));
+      return;
+    }
+
+    // On Android, notification messages received while the app is in the
+    // background may arrive with an empty data map — the system shows the
+    // notification but strips the data payload.  Trigger a full refresh so
+    // the new order still appears when the user opens the app.
+    if (type == null && message.data.isEmpty) {
+      _events.add(NewOrderRefreshRequestedEvent(orderId: orderId ?? ''));
+    }
   }
 
   Future<void> _emitOrder(String orderId) async {
@@ -169,14 +180,11 @@ class FirebasePushNotificationService implements PushNotificationService {
 
   Future<OrderItem?> _loadPushedOrder(String orderId) async {
     final client = SupabaseBackend.client;
-    final session = client?.auth.currentSession;
-    if (client == null || session == null) return null;
+    if (client == null || client.auth.currentSession == null) return null;
 
     try {
-      if (session.isExpired) {
-        await client.auth.refreshSession();
-      }
-
+      // Do not manually refresh the session — autoRefreshToken handles it
+      // transparently before the request and is more resilient on Android.
       final row = await client
           .from('orders')
           .select()
