@@ -127,7 +127,9 @@ Deno.serve(async (req: Request) => {
   }
 
   const results = await Promise.allSettled(
-    tokens.map((token) => sendFcmMessage(accessToken, token, order, body.event)),
+    tokens.map((token) =>
+      sendFcmMessage(accessToken, token, order, body.event)
+    ),
   );
   const sent = results.filter((result) => result.status === "fulfilled").length;
   const failed = results.length - sent;
@@ -174,9 +176,11 @@ async function getFirebaseAccessToken() {
     exp: now + 3600,
   };
 
-  const unsignedJwt = `${base64Url(JSON.stringify(header))}.${base64Url(
-    JSON.stringify(claimSet),
-  )}`;
+  const unsignedJwt = `${base64Url(JSON.stringify(header))}.${
+    base64Url(
+      JSON.stringify(claimSet),
+    )
+  }`;
   const privateKey = await importPrivateKey(serviceAccount.private_key);
   const signature = await crypto.subtle.sign(
     "RSASSA-PKCS1-v1_5",
@@ -229,7 +233,9 @@ async function importPrivateKey(privateKeyPem: string) {
 }
 
 function base64Url(value: string | Uint8Array) {
-  const bytes = typeof value === "string" ? new TextEncoder().encode(value) : value;
+  const bytes = typeof value === "string"
+    ? new TextEncoder().encode(value)
+    : value;
   let binary = "";
 
   for (const byte of bytes) {
@@ -271,10 +277,9 @@ function buildMessageBody(
   order: OrderRow,
   event: OrderPushRequest["event"],
 ) {
-  const title =
-    event === "assigned"
-      ? `Назначен заказ ${order.order_number}`
-      : `Новый заказ ${order.order_number}`;
+  const title = event === "assigned"
+    ? `Назначен заказ ${order.order_number}`
+    : `Новый заказ ${order.order_number}`;
   const details = [order.address, order.time_slot].filter(Boolean).join(" · ");
 
   return {
