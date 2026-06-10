@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +24,7 @@ enum CourierAppAccessStatus { allowed, denied, unavailable }
 
 const courierAppAccessDeniedMessage = 'Нет доступа к приложению курьера';
 const courierAppAccessUnavailableMessage = 'Не удалось проверить доступ';
+const courierAppAccessCheckTimeout = Duration(seconds: 12);
 
 abstract class AuthRepository {
   bool get isBackendEnabled;
@@ -110,29 +113,39 @@ Future<CourierAppAccessStatus> checkCourierAppAccess(
   String userId,
 ) async {
   try {
-    final profile = await client
-        .from('profiles')
-        .select('role, is_active')
-        .eq('id', userId)
-        .maybeSingle();
-
-    if (!courierProfileCanUseApp(profile)) {
-      return CourierAppAccessStatus.denied;
-    }
-
-    final courier = await client
-        .from('couriers')
-        .select('id, is_active')
-        .eq('profile_id', userId)
-        .eq('is_active', true)
-        .maybeSingle();
-
-    return courier == null
-        ? CourierAppAccessStatus.denied
-        : CourierAppAccessStatus.allowed;
+    return await _loadCourierAppAccess(
+      client,
+      userId,
+    ).timeout(courierAppAccessCheckTimeout);
   } catch (_) {
     return CourierAppAccessStatus.unavailable;
   }
+}
+
+Future<CourierAppAccessStatus> _loadCourierAppAccess(
+  SupabaseClient client,
+  String userId,
+) async {
+  final profile = await client
+      .from('profiles')
+      .select('role, is_active')
+      .eq('id', userId)
+      .maybeSingle();
+
+  if (!courierProfileCanUseApp(profile)) {
+    return CourierAppAccessStatus.denied;
+  }
+
+  final courier = await client
+      .from('couriers')
+      .select('id, is_active')
+      .eq('profile_id', userId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+  return courier == null
+      ? CourierAppAccessStatus.denied
+      : CourierAppAccessStatus.allowed;
 }
 
 Future<void> signOutSilently(SupabaseClient client) async {
