@@ -176,7 +176,7 @@ class FirebasePushNotificationService implements PushNotificationService {
       _handleRemoteMessage(initialMessage);
     }
 
-    await _registerCurrentDevice(client.auth.currentSession);
+    await _registerCurrentDevice(SupabaseBackend.currentSession);
   }
 
   Future<void> _registerCurrentDevice(Session? session) async {
@@ -196,9 +196,9 @@ class FirebasePushNotificationService implements PushNotificationService {
     if (client == null || token.isEmpty) return;
 
     try {
-      await SupabaseBackend.refreshSessionIfNeeded();
-      final user = client.auth.currentUser;
-      if (user == null) return;
+      final session = await SupabaseBackend.refreshSessionIfNeeded();
+      if (session == null) return;
+      final user = session.user;
 
       final courierId = await _currentCourierId(client, user.id);
       await client.from('device_push_tokens').upsert({
@@ -293,10 +293,11 @@ class FirebasePushNotificationService implements PushNotificationService {
 
   Future<OrderItem?> _loadPushedOrder(String orderId) async {
     final client = SupabaseBackend.client;
-    if (client == null || client.auth.currentSession == null) return null;
+    if (client == null || SupabaseBackend.currentSession == null) return null;
 
     try {
-      await SupabaseBackend.refreshSessionIfNeeded();
+      final session = await SupabaseBackend.refreshSessionIfNeeded();
+      if (session == null) return null;
       final row = await client
           .from('orders')
           .select()

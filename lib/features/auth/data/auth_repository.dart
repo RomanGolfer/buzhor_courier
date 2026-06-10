@@ -113,6 +113,7 @@ Future<CourierAppAccessStatus> checkCourierAppAccess(
   String userId,
 ) async {
   try {
+    await SupabaseBackend.refreshSessionIfNeeded();
     return await _loadCourierAppAccess(
       client,
       userId,

@@ -79,7 +79,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     // backgrounded (Doze mode freezes the autoRefreshToken timer).
     // Force a session refresh so the subsequent order fetch uses a valid token.
     try {
-      await SupabaseBackend.client?.auth.refreshSession();
+      await SupabaseBackend.refreshSessionIfNeeded(
+        margin: const Duration(days: 365),
+      );
     } catch (_) {
       // Ignore — network may be temporarily unavailable; proceed anyway.
     }

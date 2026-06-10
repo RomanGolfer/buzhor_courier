@@ -25,7 +25,7 @@ class AuthGate extends StatelessWidget {
       builder: (context, snapshot) {
         final session = snapshot.hasData
             ? snapshot.data!.session
-            : client.auth.currentSession;
+            : SupabaseBackend.currentSession;
         return session != null
             ? _CourierAccessGate(client: client, session: session)
             : const LoginScreen();

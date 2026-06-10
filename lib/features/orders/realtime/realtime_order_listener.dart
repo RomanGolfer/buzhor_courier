@@ -68,7 +68,7 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
       }
     });
 
-    final userId = client.auth.currentSession?.user.id;
+    final userId = SupabaseBackend.currentSession?.user.id;
     if (userId == null) return;
     _sessionUserId = userId;
     unawaited(_subscribe());
@@ -77,14 +77,15 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
 
   Future<void> _subscribe() async {
     final client = SupabaseBackend.client;
-    if (client == null || client.auth.currentSession == null) return;
+    if (client == null || SupabaseBackend.currentSession == null) return;
     try {
       await SupabaseBackend.refreshSessionIfNeeded();
     } catch (error) {
       _logRealtimeDebug('Failed to refresh session before realtime: $error');
     }
-    if (client.auth.currentSession == null) return;
-    final userId = client.auth.currentSession!.user.id;
+    final session = SupabaseBackend.currentSession;
+    if (session == null) return;
+    final userId = session.user.id;
     final courierId = await _currentCourierId(client, userId);
     if (!mounted || userId != _sessionUserId) return;
 

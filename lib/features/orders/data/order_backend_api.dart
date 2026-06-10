@@ -27,13 +27,12 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     if (client == null) {
       return null;
     }
-    if (client.auth.currentSession == null) {
+    if (SupabaseBackend.currentSession == null) {
       return null;
     }
 
     try {
-      await SupabaseBackend.refreshSessionIfNeeded();
-      final session = client.auth.currentSession;
+      final session = await SupabaseBackend.refreshSessionIfNeeded();
       if (session == null) return null;
 
       final courierId = await _currentCourierId(client, session.user.id);

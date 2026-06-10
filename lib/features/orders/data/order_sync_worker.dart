@@ -39,16 +39,16 @@ class SupabaseOrderSyncDispatcher implements OrderSyncDispatcher {
   SupabaseClient? get _client => SupabaseBackend.client;
 
   @override
-  bool get canSync => _client?.auth.currentSession != null;
+  bool get canSync => _client != null && SupabaseBackend.currentSession != null;
 
   @override
   Future<OrderSyncDispatchResult> dispatch(OrderSyncOperation operation) async {
     final client = _client;
-    final userId = client?.auth.currentUser?.id;
-    if (client == null || userId == null) {
+    final session = await SupabaseBackend.refreshSessionIfNeeded();
+    final userId = session?.user.id;
+    if (client == null || session == null || userId == null) {
       throw StateError('Supabase session is not available');
     }
-    final session = client.auth.currentSession;
     final deviceId = await _loadOrCreateSyncDeviceId();
 
     final payload = {
@@ -63,7 +63,7 @@ class SupabaseOrderSyncDispatcher implements OrderSyncDispatcher {
       'next_attempt_at': operation.nextAttemptAt?.toIso8601String(),
       'last_error': operation.lastError,
       'device_id': deviceId,
-      'session_id': _sessionIdFromAccessToken(session?.accessToken),
+      'session_id': _sessionIdFromAccessToken(session.accessToken),
       'client_platform': defaultTargetPlatform.name,
     };
 

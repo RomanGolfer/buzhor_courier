@@ -69,7 +69,7 @@ class BackendAppConfigRepository {
 
   Future<BackendAppConfig> fetch() async {
     final client = SupabaseBackend.client;
-    if (client == null || client.auth.currentSession == null) {
+    if (client == null || SupabaseBackend.currentSession == null) {
       return BackendAppConfig.fallback;
     }
 
