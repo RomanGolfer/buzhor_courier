@@ -71,6 +71,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
     ref.read(locationProvider.notifier).refreshLocation();
+    unawaited(_refreshOnResume());
+  }
+
+  Future<void> _refreshOnResume() async {
+    // On Android the access token may have expired while the app was
+    // backgrounded (Doze mode freezes the autoRefreshToken timer).
+    // Force a session refresh so the subsequent order fetch uses a valid token.
+    try {
+      await SupabaseBackend.client?.auth.refreshSession();
+    } catch (_) {
+      // Ignore — network may be temporarily unavailable; proceed anyway.
+    }
+    if (!mounted) return;
     unawaited(ref.read(ordersProvider.notifier).refreshOrders());
   }
 

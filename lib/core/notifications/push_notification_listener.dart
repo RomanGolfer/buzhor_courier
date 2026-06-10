@@ -35,14 +35,18 @@ class _PushNotificationListenerState
   Widget build(BuildContext context) => widget.child;
 
   Future<void> _subscribe() async {
-    final service = ref.read(pushNotificationServiceProvider);
-    await service.initialize();
     if (!mounted) return;
-
+    final service = ref.read(pushNotificationServiceProvider);
+    // Subscribe before initialize() so events emitted during initialization
+    // (e.g. getInitialMessage on cold start from a notification tap) are not
+    // dropped by the broadcast stream before the listener is registered.
+    _subscription?.cancel();
     _subscription = service.events.listen(_handleEvent);
+    await service.initialize();
   }
 
   Future<void> _handleEvent(PushNotificationEvent event) async {
+    if (!mounted) return;
     switch (event) {
       case NewOrderPushEvent(:final order):
         await ref.read(ordersProvider.notifier).upsertIncomingOrder(order);
