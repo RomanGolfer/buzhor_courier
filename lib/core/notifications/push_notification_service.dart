@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
@@ -6,7 +7,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+const _pendingPushOrderIdsKey = 'pending_push_order_ids_v1';
+const _pendingPushRefreshKey = 'pending_push_refresh_v1';
+const _debugPushLogs = bool.fromEnvironment('ORDER_DEBUG_LOGS');
 
 sealed class PushNotificationEvent {
   const PushNotificationEvent();
@@ -43,6 +49,84 @@ void _logPushDebug(String message) {
   debugPrint('[PushService] $message');
 }
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  DartPluginRegistrant.ensureInitialized();
+  if (!await _ensureFirebasePushInitialized(logErrors: false)) return;
+  await _rememberBackgroundPush(message);
+}
+
+Future<bool> initializeFirebasePushBackgroundHandling() async {
+  if (kIsWeb) return false;
+  final initialized = await _ensureFirebasePushInitialized();
+  if (!initialized) return false;
+
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  return true;
+}
+
+Future<bool> _ensureFirebasePushInitialized({bool logErrors = true}) async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+    return true;
+  } catch (error) {
+    if (logErrors) _logPushDebug('Firebase push disabled: $error');
+    return false;
+  }
+}
+
+String? _orderIdFromMessage(RemoteMessage message) {
+  final orderId = message.data['order_id'] as String?;
+  if (orderId == null || orderId.isEmpty) return null;
+  return orderId;
+}
+
+Future<void> _rememberBackgroundPush(RemoteMessage message) async {
+  final prefs = await SharedPreferences.getInstance();
+  final orderId = _orderIdFromMessage(message);
+  if (orderId == null) {
+    if (message.data.isEmpty && message.notification != null) {
+      await prefs.setBool(_pendingPushRefreshKey, true);
+    }
+    return;
+  }
+
+  final pendingOrderIds = prefs.getStringList(_pendingPushOrderIdsKey) ?? [];
+  if (!pendingOrderIds.contains(orderId)) {
+    pendingOrderIds.add(orderId);
+    await prefs.setStringList(_pendingPushOrderIdsKey, pendingOrderIds);
+  }
+}
+
+Future<_PendingBackgroundPushes> _takePendingBackgroundPushes() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final orderIds = prefs.getStringList(_pendingPushOrderIdsKey) ?? const [];
+    final needsRefresh = prefs.getBool(_pendingPushRefreshKey) ?? false;
+    await prefs.remove(_pendingPushOrderIdsKey);
+    await prefs.remove(_pendingPushRefreshKey);
+    return _PendingBackgroundPushes(
+      orderIds: orderIds.toSet().toList(growable: false),
+      needsRefresh: needsRefresh,
+    );
+  } catch (error) {
+    _logPushDebug('Failed to drain background push queue: $error');
+    return const _PendingBackgroundPushes();
+  }
+}
+
+class _PendingBackgroundPushes {
+  final List<String> orderIds;
+  final bool needsRefresh;
+
+  const _PendingBackgroundPushes({
+    this.orderIds = const [],
+    this.needsRefresh = false,
+  });
+}
+
 class FirebasePushNotificationService implements PushNotificationService {
   static const _orderLoadRetryDelays = [
     Duration.zero,
@@ -66,12 +150,7 @@ class FirebasePushNotificationService implements PushNotificationService {
     final client = SupabaseBackend.client;
     if (client == null || kIsWeb) return;
 
-    try {
-      await Firebase.initializeApp();
-    } catch (error) {
-      _logPushDebug('Firebase push disabled: $error');
-      return;
-    }
+    if (!await initializeFirebasePushBackgroundHandling()) return;
 
     final messaging = FirebaseMessaging.instance;
     await messaging.requestPermission(alert: true, badge: true, sound: true);
@@ -89,6 +168,8 @@ class FirebasePushNotificationService implements PushNotificationService {
     });
     FirebaseMessaging.onMessage.listen(_handleRemoteMessage);
     FirebaseMessaging.onMessageOpenedApp.listen(_handleRemoteMessage);
+
+    await _emitPendingBackgroundPushes();
 
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
@@ -112,10 +193,13 @@ class FirebasePushNotificationService implements PushNotificationService {
 
   Future<void> _registerToken(String token) async {
     final client = SupabaseBackend.client;
-    final user = client?.auth.currentUser;
-    if (client == null || user == null || token.isEmpty) return;
+    if (client == null || token.isEmpty) return;
 
     try {
+      await SupabaseBackend.refreshSessionIfNeeded();
+      final user = client.auth.currentUser;
+      if (user == null) return;
+
       final courierId = await _currentCourierId(client, user.id);
       await client.from('device_push_tokens').upsert({
         'profile_id': user.id,
@@ -144,7 +228,15 @@ class FirebasePushNotificationService implements PushNotificationService {
 
   void _handleRemoteMessage(RemoteMessage message) {
     final type = message.data['type'] as String?;
-    final orderId = message.data['order_id'] as String?;
+    final orderId = _orderIdFromMessage(message);
+
+    if (_debugPushLogs) {
+      _logPushDebug(
+        'Message received type=${type ?? '-'} orderId=${orderId ?? '-'} '
+        'dataKeys=${message.data.keys.join(',')} '
+        'hasNotification=${message.notification != null}',
+      );
+    }
 
     if (type == 'new_order' && orderId != null && orderId.isNotEmpty) {
       unawaited(_emitOrder(orderId));
@@ -160,6 +252,23 @@ class FirebasePushNotificationService implements PushNotificationService {
     }
   }
 
+  Future<void> _emitPendingBackgroundPushes() async {
+    final pending = await _takePendingBackgroundPushes();
+    if (_debugPushLogs &&
+        (pending.orderIds.isNotEmpty || pending.needsRefresh)) {
+      _logPushDebug(
+        'Drained background pushes ids=${pending.orderIds.length} '
+        'needsRefresh=${pending.needsRefresh}',
+      );
+    }
+    for (final orderId in pending.orderIds) {
+      unawaited(_emitOrder(orderId));
+    }
+    if (pending.needsRefresh) {
+      _events.add(const NewOrderRefreshRequestedEvent(orderId: ''));
+    }
+  }
+
   Future<void> _emitOrder(String orderId) async {
     for (final delay in _orderLoadRetryDelays) {
       if (delay > Duration.zero) {
@@ -169,10 +278,16 @@ class FirebasePushNotificationService implements PushNotificationService {
       final order = await _loadPushedOrder(orderId);
       if (order == null) continue;
 
+      if (_debugPushLogs) {
+        _logPushDebug('Loaded pushed order ${order.displayId}');
+      }
       _events.add(NewOrderPushEvent(order: order));
       return;
     }
 
+    if (_debugPushLogs) {
+      _logPushDebug('Pushed order $orderId could not be loaded, refreshing');
+    }
     _events.add(NewOrderRefreshRequestedEvent(orderId: orderId));
   }
 
@@ -181,8 +296,7 @@ class FirebasePushNotificationService implements PushNotificationService {
     if (client == null || client.auth.currentSession == null) return null;
 
     try {
-      // Do not manually refresh the session — autoRefreshToken handles it
-      // transparently before the request and is more resilient on Android.
+      await SupabaseBackend.refreshSessionIfNeeded();
       final row = await client
           .from('orders')
           .select()

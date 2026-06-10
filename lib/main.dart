@@ -7,11 +7,13 @@ import 'package:buzhor_courier/features/auth/widgets/auth_gate.dart';
 import 'package:buzhor_courier/core/theme/app_theme.dart';
 import 'package:buzhor_courier/core/theme/theme_mode_provider.dart';
 import 'package:buzhor_courier/core/notifications/push_notification_listener.dart';
+import 'package:buzhor_courier/core/notifications/push_notification_service.dart';
 import 'package:buzhor_courier/features/orders/realtime/realtime_order_listener.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseBackend.initialize();
+  await initializeFirebasePushBackgroundHandling();
   OrderSyncWorker.instance.start();
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(

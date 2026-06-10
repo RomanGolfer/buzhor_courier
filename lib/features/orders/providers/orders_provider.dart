@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/orders/data/order_sync_worker.dart';
 import 'package:buzhor_courier/features/orders/data/order_repository.dart';
@@ -7,10 +8,17 @@ import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 part 'orders_slot_grouping.dart';
 part 'orders_state.dart';
 
+typedef OrdersSyncCallback = Future<void> Function();
+
+const _debugOrdersProviderLogs = bool.fromEnvironment('ORDER_DEBUG_LOGS');
+
 class OrdersNotifier extends StateNotifier<OrdersState> {
   final OrderRepository _repository;
+  final OrdersSyncCallback _syncPendingActions;
 
-  OrdersNotifier(this._repository) : super(const OrdersState()) {
+  OrdersNotifier(this._repository, {OrdersSyncCallback? syncPendingActions})
+    : _syncPendingActions = syncPendingActions ?? OrderSyncWorker.instance.sync,
+      super(const OrdersState()) {
     _loadOrders();
   }
 
@@ -27,8 +35,8 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   Future<void> refreshOrders() async {
     await Future.delayed(const Duration(milliseconds: 300));
     state = state.copyWith(isLoading: true);
+    await _syncPendingActionsSafely();
     try {
-      await OrderSyncWorker.instance.sync();
       final orders = await _repository.reloadOrders();
       _setOrders(orders);
     } catch (_) {
@@ -86,7 +94,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       comment: comment,
     );
     _setOrders(orders);
-    await OrderSyncWorker.instance.sync();
+    await _syncPendingActionsSafely();
   }
 
   Future<void> setMarkingCodes(
@@ -98,7 +106,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       markingCodes: markingCodes,
     );
     _setOrders(orders);
-    await OrderSyncWorker.instance.sync();
+    await _syncPendingActionsSafely();
     final refreshed = await _repository.reloadOrders();
     _setOrders(refreshed);
   }
@@ -106,7 +114,7 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
   Future<void> failOrder(String orderId, {required String reason}) async {
     final orders = await _repository.failOrder(orderId, reason: reason);
     _setOrders(orders);
-    await OrderSyncWorker.instance.sync();
+    await _syncPendingActionsSafely();
   }
 
   Future<void> upsertIncomingOrder(OrderItem order) async {
@@ -142,6 +150,12 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
         .where(_isClosedOrderInCurrentMoscowDay)
         .toList();
     final activeIds = activeOrders.map((order) => order.id).toSet();
+    if (_debugOrdersProviderLogs) {
+      debugPrint(
+        '[OrdersProvider] Loaded ${orders.length} orders, '
+        '${activeOrders.length} active, ${completedOrders.length} completed',
+      );
+    }
     state = state.copyWith(
       activeOrders: activeOrders,
       completedOrders: completedOrders,
@@ -149,6 +163,14 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
       newOrderIds: state.newOrderIds.intersection(activeIds),
       isLoading: false,
     );
+  }
+
+  Future<void> _syncPendingActionsSafely() async {
+    try {
+      await _syncPendingActions();
+    } catch (error) {
+      debugPrint('[OrdersProvider] Sync before order refresh failed: $error');
+    }
   }
 
   void _rememberNewOrderIfNeeded(OrderItem order) {

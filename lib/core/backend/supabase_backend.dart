@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseBackend {
+  static const sessionRefreshMargin = Duration(minutes: 2);
   static const defaultProjectUrl = 'https://txzzkrqekynqansqvnbj.supabase.co';
   static const _projectUrl = String.fromEnvironment(
     'SUPABASE_URL',
@@ -33,5 +34,22 @@ class SupabaseBackend {
       ),
     );
     _isInitialized = true;
+  }
+
+  static Future<void> refreshSessionIfNeeded({
+    Duration margin = sessionRefreshMargin,
+  }) async {
+    final client = SupabaseBackend.client;
+    final session = client?.auth.currentSession;
+    if (client == null || session == null) return;
+
+    final expiresAt = session.expiresAt;
+    if (expiresAt == null) return;
+
+    final expiresAtTime = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    final shouldRefresh = DateTime.now().add(margin).isAfter(expiresAtTime);
+    if (!shouldRefresh) return;
+
+    await client.auth.refreshSession();
   }
 }

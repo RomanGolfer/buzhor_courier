@@ -12,6 +12,8 @@ void _logBackendDebug(String message, [StackTrace? stackTrace]) {
   }
 }
 
+const _debugBackendLogs = bool.fromEnvironment('ORDER_DEBUG_LOGS');
+
 abstract class OrderBackendApi {
   Future<List<OrderItem>?> fetchAssignedOrders();
 }
@@ -30,11 +32,10 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     }
 
     try {
+      await SupabaseBackend.refreshSessionIfNeeded();
       final session = client.auth.currentSession;
       if (session == null) return null;
 
-      // Do not manually refresh the session — autoRefreshToken handles it
-      // transparently before each request and is more resilient on Android.
       final courierId = await _currentCourierId(client, session.user.id);
       if (courierId == null) return const [];
 
@@ -45,6 +46,9 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
           .or('delivery_date.gte.${_todayMoscowKey()},delivery_date.is.null')
           .order('updated_at', ascending: false);
       final orders = parseOrderRows(rows);
+      if (_debugBackendLogs) {
+        _logBackendDebug('Fetched ${orders.length} assigned orders');
+      }
       return _attachHistoricalClientRatings(client, orders);
     } catch (error, stackTrace) {
       _logBackendDebug('Failed to fetch assigned orders: $error', stackTrace);

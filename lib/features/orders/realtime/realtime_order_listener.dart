@@ -78,6 +78,12 @@ class _RealtimeOrderListenerState extends ConsumerState<RealtimeOrderListener> {
   Future<void> _subscribe() async {
     final client = SupabaseBackend.client;
     if (client == null || client.auth.currentSession == null) return;
+    try {
+      await SupabaseBackend.refreshSessionIfNeeded();
+    } catch (error) {
+      _logRealtimeDebug('Failed to refresh session before realtime: $error');
+    }
+    if (client.auth.currentSession == null) return;
     final userId = client.auth.currentSession!.user.id;
     final courierId = await _currentCourierId(client, userId);
     if (!mounted || userId != _sessionUserId) return;

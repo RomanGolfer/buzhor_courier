@@ -149,6 +149,23 @@ void main() {
     );
   });
 
+  test('refreshOrders reloads orders even when pending sync fails', () async {
+    final repository = _ReloadingOrderRepository();
+    final notifier = OrdersNotifier(
+      repository,
+      syncPendingActions: () => throw Exception('sync storage failed'),
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    await notifier.refreshOrders();
+
+    expect(repository.reloadCount, 1);
+    expect(notifier.state.activeOrders.map((order) => order.id), [
+      _incomingOrder.id,
+    ]);
+    expect(notifier.state.isLoading, isFalse);
+  });
+
   test('toggleLowDataMode switches global low data mode', () async {
     final notifier = OrdersNotifier(
       OrderRepository(initialOrders: [_activeOrder]),
@@ -281,4 +298,16 @@ void main() {
 
     expect(notifier.state.completedOrders, isEmpty);
   });
+}
+
+class _ReloadingOrderRepository extends OrderRepository {
+  _ReloadingOrderRepository() : super(initialOrders: const []);
+
+  int reloadCount = 0;
+
+  @override
+  Future<List<OrderItem>> reloadOrders() async {
+    reloadCount += 1;
+    return const [_incomingOrder];
+  }
 }

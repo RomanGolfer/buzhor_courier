@@ -217,6 +217,8 @@ class OrderSyncWorker {
         }
         await _storage.saveSyncOperations(updated);
       }
+    } catch (error) {
+      debugPrint('[OrderSyncWorker] Sync failed: $error');
     } finally {
       _isSyncing = false;
     }
