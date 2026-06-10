@@ -86,7 +86,7 @@ extension _DeliverySheetSections on _DeliverySheetState {
     final scannedCount =
         _markingCodes['water']?.length ?? _scannedItems['water'] ?? 0;
     final isComplete = scannedCount == widget.bottles;
-    final canScan = !isComplete;
+    final canScan = !isComplete && !_isResettingMarkingCodes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,8 +134,12 @@ extension _DeliverySheetSections on _DeliverySheetState {
               ),
               if (scannedCount > 0) ...[
                 TextButton(
-                  onPressed: _resetWaterScanResult,
-                  child: const Text('Сбросить'),
+                  onPressed: _isResettingMarkingCodes
+                      ? null
+                      : () => unawaited(_resetWaterScanResult()),
+                  child: Text(
+                    _isResettingMarkingCodes ? 'Сбрасываем...' : 'Сбросить',
+                  ),
                 ),
                 const SizedBox(width: 4),
               ],

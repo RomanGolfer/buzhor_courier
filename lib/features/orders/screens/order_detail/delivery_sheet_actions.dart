@@ -40,29 +40,33 @@ extension _DeliverySheetActions on _DeliverySheetState {
     widget.onMarkingCodesChanged(_copyMarkingCodes(_markingCodes));
   }
 
-  void _resetWaterScanResult() {
+  Future<void> _resetWaterScanResult() async {
+    if (_isResettingMarkingCodes) return;
+
+    final expectedMarkingCodes = _copyMarkingCodes(_markingCodes);
     final updatedMarkingCodes = _copyMarkingCodes(_markingCodes)
       ..remove('water');
     _setDeliverySheetState(() {
+      _isResettingMarkingCodes = true;
       _markingCodes
         ..clear()
         ..addAll(updatedMarkingCodes);
+      _scannedItems
+        ..clear()
+        ..addAll(_countsFromMarkingCodes(updatedMarkingCodes));
     });
-    widget.onMarkingCodesChanged(_copyMarkingCodes(_markingCodes));
-    _setScannedItems({});
+
+    try {
+      await widget.onMarkingCodesReset(expectedMarkingCodes);
+    } finally {
+      if (mounted) {
+        _setDeliverySheetState(() => _isResettingMarkingCodes = false);
+      }
+    }
   }
 
   void _setClientRating(int value) {
     _setDeliverySheetState(() => _clientRating = value);
-  }
-
-  void _setScannedItems(Map<String, int> value) {
-    _setDeliverySheetState(() {
-      _scannedItems
-        ..clear()
-        ..addAll(value);
-    });
-    widget.onScannedItemsChanged(Map.unmodifiable(_scannedItems));
   }
 
   void _selectQrPaymentAndOpen() {

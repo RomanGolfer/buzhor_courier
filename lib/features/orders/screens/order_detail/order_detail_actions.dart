@@ -78,6 +78,46 @@ extension _OrderDetailActions on _OrderDetailScreenState {
     );
   }
 
+  Future<void> _onMarkingCodesReset(
+    Map<String, List<String>> expectedMarkingCodes,
+  ) async {
+    final current = _resolveOrder(ref.read(ordersProvider));
+    if (current.markingCodes.isNotEmpty &&
+        !_sameMarkingCodes(current.markingCodes, expectedMarkingCodes)) {
+      _setOrderDetailState(() {
+        _markingCodes
+          ..clear()
+          ..addAll(_copyMarkingCodes(current.markingCodes));
+        _scannedItems
+          ..clear()
+          ..addAll(_countsFromMarkingCodes(current.markingCodes));
+      });
+      _showSyncError(
+        'Маркировка уже изменена на другом устройстве. Сброс отменен.',
+      );
+      return;
+    }
+
+    _setOrderDetailState(() {
+      _markingCodes.clear();
+      _scannedItems.clear();
+    });
+
+    try {
+      await ref
+          .read(ordersProvider.notifier)
+          .resetMarkingCodes(
+            widget.order.id,
+            expectedMarkingCodes: _copyMarkingCodes(expectedMarkingCodes),
+          );
+    } catch (_) {
+      if (!mounted) return;
+      _showSyncError(
+        'Не удалось сбросить маркировку. Проверьте связь и попробуйте еще раз.',
+      );
+    }
+  }
+
   Future<OrderItem?> _refreshOrderBeforeScan() async {
     await ref.read(ordersProvider.notifier).refreshOrders();
     if (!mounted) return null;

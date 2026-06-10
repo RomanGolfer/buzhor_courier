@@ -11,6 +11,8 @@ class _DeliverySheet extends StatefulWidget {
   final ValueChanged<PaymentType> onPaymentTypeChanged;
   final ValueChanged<Map<String, int>> onScannedItemsChanged;
   final ValueChanged<Map<String, List<String>>> onMarkingCodesChanged;
+  final Future<void> Function(Map<String, List<String>> expectedMarkingCodes)
+  onMarkingCodesReset;
   final Future<OrderItem?> Function() onRefreshOrderBeforeScan;
   final Future<void> Function(_DeliveryConfirmation confirmation) onConfirm;
 
@@ -25,6 +27,7 @@ class _DeliverySheet extends StatefulWidget {
     required this.onPaymentTypeChanged,
     required this.onScannedItemsChanged,
     required this.onMarkingCodesChanged,
+    required this.onMarkingCodesReset,
     required this.onRefreshOrderBeforeScan,
     required this.onConfirm,
   });
@@ -37,6 +40,7 @@ class _DeliverySheetState extends State<_DeliverySheet> {
   int _returnedBottles = 0;
   int _clientRating = 5;
   bool _isSubmitting = false;
+  bool _isResettingMarkingCodes = false;
   final Map<String, int> _scannedItems = {};
   final Map<String, List<String>> _markingCodes = {};
   final _commentController = TextEditingController();

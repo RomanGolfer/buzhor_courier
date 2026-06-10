@@ -291,6 +291,35 @@ void main() {
     expect(find.text('2 / 3 отсканировано'), findsOneWidget);
   });
 
+  testWidgets('resets stored marking codes before rescanning', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(
+            OrderRepository(initialOrders: [_activeMarkingCodesOnlyOrder]),
+          ),
+        ],
+        child: const MaterialApp(
+          home: OrderDetailScreen(order: _activeMarkingCodesOnlyOrder),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('Доставлен'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('2 / 3 отсканировано'), findsWidgets);
+    expect(find.text('Сбросить'), findsOneWidget);
+
+    await tester.tap(find.text('Сбросить'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 / 3 отсканировано'), findsOneWidget);
+    expect(find.text('Сбросить'), findsNothing);
+    expect(find.byKey(const Key('orderDetailSyncErrorSnackBar')), findsNothing);
+  });
+
   testWidgets('copies order number from payment QR screen', (tester) async {
     final clipboardWrites = <String>[];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

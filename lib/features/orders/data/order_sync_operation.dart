@@ -68,6 +68,28 @@ class OrderSyncOperation {
     );
   }
 
+  factory OrderSyncOperation.resetMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> expectedMarkingCodes,
+    int? orderVersion,
+  }) {
+    return OrderSyncOperation(
+      operationId: _operationId(),
+      type: OrderSyncOperationType.setMarkingCodes,
+      status: OrderSyncOperationStatus.pending,
+      orderId: orderId,
+      orderVersion: orderVersion,
+      createdAt: DateTime.now(),
+      payload: {
+        'resetMarkingCodes': true,
+        'expectedMarkingCodes': expectedMarkingCodes,
+        'markingCodes': const <String, List<String>>{},
+        'scannedItems': const <String, int>{},
+      },
+      attemptCount: 0,
+    );
+  }
+
   factory OrderSyncOperation.complete(
     String orderId, {
     required int bottles,

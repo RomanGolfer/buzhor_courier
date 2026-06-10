@@ -1,12 +1,15 @@
 "use client";
 
-import type { FormEvent, InputHTMLAttributes } from "react";
-import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Panel } from "@/components/ui";
 import { notifyOrderPush } from "@/lib/order-push";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { Courier, PaymentMethod } from "@/lib/types";
+import { datePresets, formatShortDate, todayDateKey } from "./new-order-date-utils";
+import { Field, Spinner } from "./new-order-form-fields";
+import { useAddressGeocoding } from "./new-order-geocoding";
 
 const paymentOptions: Array<{ value: PaymentMethod; label: string }> = [
   { value: "cash", label: "Наличные" },
@@ -17,8 +20,6 @@ const paymentOptions: Array<{ value: PaymentMethod; label: string }> = [
 ];
 
 const timeSlots = ["10:00 - 14:00", "14:00 - 18:00", "18:00 - 21:00"];
-const defaultLat = "44.8951000";
-const defaultLng = "37.3168000";
 
 export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const router = useRouter();
@@ -27,72 +28,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [bottles, setBottles] = useState(2);
   const [deliveryDate, setDeliveryDate] = useState(todayDateKey);
-  const [lat, setLat] = useState(defaultLat);
-  const [lng, setLng] = useState(defaultLng);
-  const [geocoding, setGeocoding] = useState(false);
-  const [geocodeHint, setGeocodeHint] = useState<string | null>(null);
-  const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const geocodeAbortController = useRef<AbortController | null>(null);
-  const geocodeRequestId = useRef(0);
-
-  useEffect(() => {
-    return () => {
-      if (geocodeTimer.current) {
-        clearTimeout(geocodeTimer.current);
-      }
-      geocodeAbortController.current?.abort();
-    };
-  }, []);
-
-  function geocodeAddress(address: string) {
-    if (geocodeTimer.current) {
-      clearTimeout(geocodeTimer.current);
-    }
-
-    geocodeAbortController.current?.abort();
-    const trimmedAddress = address.trim();
-
-    if (!trimmedAddress) {
-      setGeocoding(false);
-      setGeocodeHint(null);
-      return;
-    }
-
-    setGeocoding(true);
-    const requestId = geocodeRequestId.current + 1;
-    geocodeRequestId.current = requestId;
-
-    geocodeTimer.current = setTimeout(async () => {
-      const controller = new AbortController();
-      geocodeAbortController.current = controller;
-
-      try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(trimmedAddress)}`, {
-          signal: controller.signal
-        });
-        const data: Array<{ lat: string; lon: string }> = await res.json();
-
-        if (requestId !== geocodeRequestId.current) return;
-
-        if (data.length > 0) {
-          setLat(Number(data[0].lat).toFixed(7));
-          setLng(Number(data[0].lon).toFixed(7));
-          setGeocodeHint("Координаты определены автоматически");
-        } else {
-          setGeocodeHint("Адрес не найден — введите координаты вручную");
-        }
-      } catch (fetchError) {
-        if (fetchError instanceof DOMException && fetchError.name === "AbortError") return;
-        if (requestId === geocodeRequestId.current) {
-          setGeocodeHint("Адрес не найден — введите координаты вручную");
-        }
-      } finally {
-        if (requestId === geocodeRequestId.current) {
-          setGeocoding(false);
-        }
-      }
-    }, 800);
-  }
+  const { lat, setLat, lng, setLng, geocoding, geocodeHint, geocodeAddress } = useAddressGeocoding();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -294,92 +230,8 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   );
 }
 
-function Field({
-  label,
-  name,
-  placeholder,
-  required,
-  inputMode,
-  defaultValue,
-  onChange
-}: {
-  label: string;
-  name: string;
-  placeholder: string;
-  required?: boolean;
-  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
-  defaultValue?: string;
-  onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
-}) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-bold text-ink">{label}</span>
-      <input
-        className="focus-ring w-full rounded-md border border-line px-3 py-3 text-sm"
-        inputMode={inputMode}
-        name={name}
-        placeholder={placeholder}
-        required={required}
-        defaultValue={defaultValue}
-        onChange={onChange}
-      />
-    </label>
-  );
-}
-
-function Spinner() {
-  return (
-    <svg className="size-3.5 animate-spin text-gray-400" viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-    </svg>
-  );
-}
-
 function nullableNumber(value: FormDataEntryValue | null) {
   if (value === null || String(value).trim() === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
-}
-
-function todayDateKey() {
-  const parts = new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "Europe/Moscow",
-    year: "numeric"
-  }).formatToParts(new Date());
-  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
-}
-
-function dateKeyFromNow(days: number) {
-  const date = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
-  const parts = new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "Europe/Moscow",
-    year: "numeric"
-  }).formatToParts(date);
-  const getPart = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  return `${getPart("year")}-${getPart("month")}-${getPart("day")}`;
-}
-
-function datePresets() {
-  return [
-    { label: "Сегодня", value: dateKeyFromNow(0) },
-    { label: "Завтра", value: dateKeyFromNow(1) },
-    { label: "Послезавтра", value: dateKeyFromNow(2) }
-  ];
-}
-
-function formatShortDate(dateKey: string) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  if (!year || !month || !day) return "";
-  return new Intl.DateTimeFormat("ru-RU", {
-    day: "2-digit",
-    month: "long",
-    timeZone: "Europe/Moscow",
-    weekday: "short"
-  }).format(new Date(Date.UTC(year, month - 1, day)));
 }

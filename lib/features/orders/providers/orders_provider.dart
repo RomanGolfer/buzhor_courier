@@ -111,6 +111,20 @@ class OrdersNotifier extends StateNotifier<OrdersState> {
     _setOrders(refreshed);
   }
 
+  Future<void> resetMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> expectedMarkingCodes,
+  }) async {
+    final orders = await _repository.resetMarkingCodes(
+      orderId,
+      expectedMarkingCodes: expectedMarkingCodes,
+    );
+    _setOrders(orders);
+    await _syncPendingActionsSafely();
+    final refreshed = await _repository.reloadOrders();
+    _setOrders(refreshed);
+  }
+
   Future<void> failOrder(String orderId, {required String reason}) async {
     final orders = await _repository.failOrder(orderId, reason: reason);
     _setOrders(orders);

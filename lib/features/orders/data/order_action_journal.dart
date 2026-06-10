@@ -77,6 +77,24 @@ class OrderActionJournalEntry {
     );
   }
 
+  factory OrderActionJournalEntry.resetMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> expectedMarkingCodes,
+  }) {
+    return OrderActionJournalEntry(
+      id: _entryId(orderId, OrderActionType.setMarkingCodes),
+      type: OrderActionType.setMarkingCodes,
+      orderId: orderId,
+      createdAt: DateTime.now(),
+      payload: {
+        'resetMarkingCodes': true,
+        'expectedMarkingCodes': expectedMarkingCodes,
+        'markingCodes': const <String, List<String>>{},
+        'scannedItems': const <String, int>{},
+      },
+    );
+  }
+
   factory OrderActionJournalEntry.upsert(OrderItem order) {
     return OrderActionJournalEntry(
       id: _entryId(order.id, OrderActionType.upsert),

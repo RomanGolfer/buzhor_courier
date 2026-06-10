@@ -159,6 +159,106 @@ void main() {
     },
   );
 
+  test(
+    'resetMarkingCodes clears stored codes with expected-code guard',
+    () async {
+      final storage = _FakeOrderStorage();
+      final repository = OrderRepository(
+        initialOrders: [
+          _activeOrder.copyWith(
+            markingCodes: const {
+              'water': ['010460123456789021A1', '010460123456789021A2'],
+            },
+          ),
+        ],
+        storage: storage,
+      );
+
+      final orders = await repository.resetMarkingCodes(
+        _activeOrder.id,
+        expectedMarkingCodes: const {
+          'water': ['010460123456789021A1', '010460123456789021A2'],
+        },
+      );
+
+      final operation = storage.savedSyncOperations.single;
+      expect(operation.type, OrderSyncOperationType.setMarkingCodes);
+      expect(operation.backendType, 'set_marking_codes');
+      expect(operation.payload['resetMarkingCodes'], isTrue);
+      expect(operation.payload['expectedMarkingCodes'], {
+        'water': ['010460123456789021A1', '010460123456789021A2'],
+      });
+      expect(operation.payload['markingCodes'], isEmpty);
+      expect(orders.single.scannedItems, isEmpty);
+      expect(orders.single.markingCodes, isEmpty);
+    },
+  );
+
+  test('resetMarkingCodes keeps codes when expected codes are stale', () async {
+    final storage = _FakeOrderStorage();
+    final repository = OrderRepository(
+      initialOrders: [
+        _activeOrder.copyWith(
+          markingCodes: const {
+            'water': ['010460123456789021LIVE1'],
+          },
+        ),
+      ],
+      storage: storage,
+    );
+
+    final orders = await repository.resetMarkingCodes(
+      _activeOrder.id,
+      expectedMarkingCodes: const {
+        'water': ['010460123456789021STALE1'],
+      },
+    );
+
+    expect(storage.savedSyncOperations, isEmpty);
+    expect(orders.single.markingCodes['water'], ['010460123456789021LIVE1']);
+  });
+
+  test('setMarkingCodes can save new codes after an explicit reset', () async {
+    final storage = _FakeOrderStorage();
+    final repository = OrderRepository(
+      initialOrders: [
+        _activeOrder.copyWith(
+          markingCodes: const {
+            'water': ['010460123456789021OLD1', '010460123456789021OLD2'],
+          },
+        ),
+      ],
+      storage: storage,
+    );
+
+    await repository.resetMarkingCodes(
+      _activeOrder.id,
+      expectedMarkingCodes: const {
+        'water': ['010460123456789021OLD1', '010460123456789021OLD2'],
+      },
+    );
+    final orders = await repository.setMarkingCodes(
+      _activeOrder.id,
+      markingCodes: const {
+        'water': ['010460123456789021NEW1', '010460123456789021NEW2'],
+      },
+    );
+
+    expect(storage.savedSyncOperations, hasLength(2));
+    expect(
+      storage.savedSyncOperations.first.payload['resetMarkingCodes'],
+      true,
+    );
+    expect(storage.savedSyncOperations.last.payload['markingCodes'], {
+      'water': ['010460123456789021NEW1', '010460123456789021NEW2'],
+    });
+    expect(orders.single.scannedItems, {'water': 2});
+    expect(orders.single.markingCodes['water'], [
+      '010460123456789021NEW1',
+      '010460123456789021NEW2',
+    ]);
+  });
+
   test('completeOrder keeps already stored marking codes', () async {
     final repository = OrderRepository(
       initialOrders: [

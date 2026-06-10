@@ -27,6 +27,12 @@ void main() {
           'water': ['010460123456789021A1'],
         },
       ),
+      OrderSyncOperation.resetMarkingCodes(
+        '#1',
+        expectedMarkingCodes: const {
+          'water': ['010460123456789021A1'],
+        },
+      ),
     ];
 
     for (final operation in operations) {

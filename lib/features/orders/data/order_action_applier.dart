@@ -59,6 +59,20 @@ extension OrderRepositoryActionApplier on OrderRepository {
       case OrderActionType.setMarkingCodes:
         _replaceOrder(entry.orderId, (order) {
           if (order.isClosed) return order;
+          if (entry.payload['resetMarkingCodes'] == true) {
+            final expectedMarkingCodes = _stringListMap(
+              entry.payload['expectedMarkingCodes'],
+            );
+            if (order.markingCodes.isNotEmpty &&
+                !_sameStringListMap(order.markingCodes, expectedMarkingCodes)) {
+              return order;
+            }
+            return order.copyWith(
+              updatedAt: DateTime.now().toUtc(),
+              scannedItems: const {},
+              markingCodes: const {},
+            );
+          }
           final incomingMarkingCodes = _stringListMap(
             entry.payload['markingCodes'],
           );

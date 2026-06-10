@@ -194,6 +194,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               onPaymentTypeChanged: _onPaymentTypeChanged,
               onScannedItemsChanged: _onScannedItemsChanged,
               onMarkingCodesChanged: _onMarkingCodesChanged,
+              onMarkingCodesReset: _onMarkingCodesReset,
               onRefreshOrderBeforeScan: _refreshOrderBeforeScan,
               onDelivered: _completeOrder,
               onFailed: _failOrder,

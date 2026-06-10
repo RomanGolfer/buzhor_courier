@@ -119,6 +119,34 @@ class OrderRepository {
     return fetchOrders();
   }
 
+  Future<List<OrderItem>> resetMarkingCodes(
+    String orderId, {
+    required Map<String, List<String>> expectedMarkingCodes,
+  }) async {
+    await _ensureLoaded();
+    final currentOrder = _findOrderById(orderId);
+    if (currentOrder == null || currentOrder.isClosed) return fetchOrders();
+
+    if (currentOrder.markingCodes.isNotEmpty &&
+        !_sameStringListMap(currentOrder.markingCodes, expectedMarkingCodes)) {
+      return fetchOrders();
+    }
+
+    await _storage?.appendSyncOperation(
+      OrderSyncOperation.resetMarkingCodes(
+        orderId,
+        expectedMarkingCodes: expectedMarkingCodes,
+      ),
+    );
+    await _commitAction(
+      OrderActionJournalEntry.resetMarkingCodes(
+        orderId,
+        expectedMarkingCodes: expectedMarkingCodes,
+      ),
+    );
+    return fetchOrders();
+  }
+
   Future<List<OrderItem>> failOrder(
     String orderId, {
     required String reason,
