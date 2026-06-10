@@ -3,15 +3,12 @@ import 'dart:async';
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/providers/orders_provider.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void _logRealtimeDebug(String message) {
-  if (kDebugMode) {
-    debugPrint(message);
-  }
+  debugPrint('[Realtime] $message');
 }
 
 class RealtimeOrderListener extends ConsumerStatefulWidget {

@@ -40,9 +40,7 @@ class NoopPushNotificationService implements PushNotificationService {
 }
 
 void _logPushDebug(String message) {
-  if (kDebugMode) {
-    debugPrint(message);
-  }
+  debugPrint('[PushService] $message');
 }
 
 class FirebasePushNotificationService implements PushNotificationService {

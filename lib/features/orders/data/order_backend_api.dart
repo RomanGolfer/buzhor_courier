@@ -4,9 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void _logBackendDebug(String message, [StackTrace? stackTrace]) {
-  if (!kDebugMode) return;
-  debugPrint(message);
-  if (stackTrace != null) {
+  // Use debugPrintThrottled so logs show up in logcat on Android even when
+  // system-level debug filters are active (e.g. Huawei EMUI).
+  debugPrint('[OrderBackend] $message');
+  if (stackTrace != null && kDebugMode) {
     debugPrintStack(stackTrace: stackTrace);
   }
 }
@@ -121,18 +122,21 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
     SupabaseClient client,
     String profileId,
   ) async {
-    try {
-      final row = await client
-          .from('couriers')
-          .select('id')
-          .eq('profile_id', profileId)
-          .eq('is_active', true)
-          .maybeSingle();
-      return row?['id'] as String?;
-    } catch (error) {
-      _logBackendDebug('Failed to resolve courier id: $error');
-      return null;
-    }
+    // Do NOT catch exceptions here. If the query fails (e.g. expired token,
+    // transient network error), the exception propagates to the outer try/catch
+    // in fetchAssignedOrders(), which returns null. null tells _ensureLoaded()
+    // to fall back to the local cache — preserving the existing order list.
+    //
+    // Returning null *here* would instead cause fetchAssignedOrders() to return
+    // [] (empty list), which _ensureLoaded() treats as a successful empty fetch
+    // and clears all orders from the UI.
+    final row = await client
+        .from('couriers')
+        .select('id')
+        .eq('profile_id', profileId)
+        .eq('is_active', true)
+        .maybeSingle();
+    return row?['id'] as String?;
   }
 
   static String _todayMoscowKey() {
