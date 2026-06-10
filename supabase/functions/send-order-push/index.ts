@@ -122,10 +122,8 @@ Deno.serve(async (req: Request) => {
   try {
     accessToken = await getFirebaseAccessToken();
   } catch (error) {
-    return jsonResponse(
-      { error: "firebase_credentials_failed", details: String(error) },
-      500,
-    );
+    logInternalError("Firebase access token creation failed", error);
+    return jsonResponse({ error: "firebase_credentials_failed" }, 500);
   }
 
   const results = await Promise.allSettled(
@@ -145,6 +143,11 @@ function jsonResponse(body: JsonObject, status = 200) {
       "Content-Type": "application/json",
     },
   });
+}
+
+function logInternalError(message: string, error: unknown) {
+  const detail = error instanceof Error ? error.message : String(error);
+  console.error(message, detail);
 }
 
 async function getFirebaseAccessToken() {
@@ -192,7 +195,8 @@ async function getFirebaseAccessToken() {
   });
 
   if (!tokenResponse.ok) {
-    throw new Error(`firebase_token_failed:${await tokenResponse.text()}`);
+    console.error("Firebase OAuth token request failed", tokenResponse.status);
+    throw new Error("firebase_token_failed");
   }
 
   const tokenJson = await tokenResponse.json();
