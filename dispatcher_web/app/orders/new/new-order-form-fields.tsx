@@ -7,7 +7,9 @@ export function Field({
   required,
   inputMode,
   defaultValue,
-  onChange
+  onChange,
+  onBlur,
+  value
 }: {
   label: string;
   name: string;
@@ -16,6 +18,8 @@ export function Field({
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   defaultValue?: string;
   onChange?: InputHTMLAttributes<HTMLInputElement>["onChange"];
+  onBlur?: InputHTMLAttributes<HTMLInputElement>["onBlur"];
+  value?: string;
 }) {
   return (
     <label className="block">
@@ -28,6 +32,8 @@ export function Field({
         required={required}
         defaultValue={defaultValue}
         onChange={onChange}
+        onBlur={onBlur}
+        value={value}
       />
     </label>
   );
