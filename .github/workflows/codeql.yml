@@ -24,6 +24,9 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Use default CodeQL feature flags
+        run: echo '{}' > "$RUNNER_TEMP/cached-feature-flags.json"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
