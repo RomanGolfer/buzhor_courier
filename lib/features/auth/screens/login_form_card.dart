@@ -127,9 +127,11 @@ extension _LoginFormCard on _LoginScreenState {
                                 .signIn(
                                   email: _emailController.text,
                                   password: _passwordController.text,
+                                )
+                                .whenComplete(
+                                  () => loginNotifier.setLoading(false),
                                 );
                             if (!mounted) return;
-                            loginNotifier.setLoading(false);
                             if (!result.isSuccess) {
                               messenger.showSnackBar(
                                 SnackBar(content: Text(result.errorMessage!)),

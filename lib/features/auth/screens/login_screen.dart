@@ -80,10 +80,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       });
     });
 
-    Future.delayed(
-      const Duration(milliseconds: 100),
-      () => _logoController.forward(),
-    );
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!mounted) return;
+      _logoController.forward();
+    });
   }
 
   @override
