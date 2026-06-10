@@ -84,7 +84,8 @@ export function UsersManager({
       .eq("id", selectedProfile.id);
 
     if (profileError) {
-      setError(profileError.message);
+      console.warn("Profile update failed", profileError);
+      setError("Не удалось сохранить профиль. Попробуйте еще раз.");
       setIsSaving(false);
       return;
     }
@@ -104,7 +105,8 @@ export function UsersManager({
         : await supabase.from("couriers").insert(payload);
 
       if (courierError) {
-        setError(courierError.message);
+        console.warn("Courier profile save failed", courierError);
+        setError("Не удалось сохранить карточку курьера. Попробуйте еще раз.");
         setIsSaving(false);
         return;
       }

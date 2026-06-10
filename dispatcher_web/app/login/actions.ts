@@ -33,6 +33,10 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
     windowMs: LOGIN_RATE_WINDOW_MS
   });
 
+  if (rateLimit.unavailable) {
+    return { error: "Вход временно недоступен. Сообщите администратору." };
+  }
+
   if (rateLimit.limited) {
     return { error: `Слишком много попыток входа. Попробуйте через ${rateLimit.retryAfterSeconds} сек.` };
   }

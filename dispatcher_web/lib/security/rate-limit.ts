@@ -21,6 +21,7 @@ export type RateLimitResult = {
   remaining: number;
   resetAt: number;
   retryAfterSeconds: number;
+  unavailable?: boolean;
 };
 
 // ─── Upstash setup ───────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ export type RateLimitResult = {
 
 let upstashRedis: Redis | null = null;
 let inMemoryWarningLogged = false;
+let productionConfigErrorLogged = false;
 const rlCache = new Map<string, Ratelimit>();
 
 function getRedis(): Redis | null {
@@ -41,7 +43,7 @@ function getRedis(): Redis | null {
     return upstashRedis;
   }
 
-  if (!inMemoryWarningLogged) {
+  if (!isProductionRuntime() && !inMemoryWarningLogged) {
     inMemoryWarningLogged = true;
     console.warn(
       "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN not configured — " +
@@ -51,6 +53,10 @@ function getRedis(): Redis | null {
     );
   }
   return null;
+}
+
+function isProductionRuntime() {
+  return process.env.NODE_ENV === "production";
 }
 
 function getUpstashRatelimit(redis: Redis, limit: number, windowMs: number): Ratelimit {
@@ -140,6 +146,23 @@ export async function checkRateLimit({
       remaining: result.remaining,
       resetAt: result.reset,
       retryAfterSeconds,
+    };
+  }
+
+  if (isProductionRuntime()) {
+    if (!productionConfigErrorLogged) {
+      productionConfigErrorLogged = true;
+      console.error(
+        "[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN must be configured in production. " +
+          "Failing closed instead of using in-memory rate limiting."
+      );
+    }
+    return {
+      limited: true,
+      remaining: 0,
+      resetAt: now + windowMs,
+      retryAfterSeconds: Math.max(1, Math.ceil(windowMs / 1000)),
+      unavailable: true
     };
   }
 

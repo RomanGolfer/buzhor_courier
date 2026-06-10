@@ -25,4 +25,31 @@ void main() {
     expect(result.isSuccess, isFalse);
     expect(result.isBackendSession, isFalse);
   });
+
+  test('courier app access requires an active courier profile', () {
+    expect(
+      courierProfileCanUseApp({'role': 'courier', 'is_active': true}),
+      isTrue,
+    );
+    expect(
+      courierProfileCanUseApp({'role': 'dispatcher', 'is_active': true}),
+      isFalse,
+    );
+    expect(
+      courierProfileCanUseApp({'role': 'courier', 'is_active': false}),
+      isFalse,
+    );
+    expect(courierProfileCanUseApp(null), isFalse);
+  });
+
+  test('courier access failure messages are neutral', () {
+    expect(
+      courierAccessFailureMessage(CourierAppAccessStatus.denied),
+      'Нет доступа к приложению курьера',
+    );
+    expect(
+      courierAccessFailureMessage(CourierAppAccessStatus.unavailable),
+      'Не удалось проверить доступ',
+    );
+  });
 }

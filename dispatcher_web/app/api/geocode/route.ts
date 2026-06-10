@@ -43,6 +43,10 @@ export async function GET(request: Request) {
     windowMs: GEOCODE_RATE_WINDOW_MS
   });
 
+  if (rateLimit.unavailable) {
+    return geocodeResponse([], { status: 503 });
+  }
+
   if (rateLimit.limited) {
     return geocodeResponse([], {
       headers: {

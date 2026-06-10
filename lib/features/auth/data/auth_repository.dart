@@ -18,6 +18,11 @@ class AuthResult {
   bool get isSuccess => errorMessage == null;
 }
 
+enum CourierAppAccessStatus { allowed, denied, unavailable }
+
+const courierAppAccessDeniedMessage = 'Нет доступа к приложению курьера';
+const courierAppAccessUnavailableMessage = 'Не удалось проверить доступ';
+
 abstract class AuthRepository {
   bool get isBackendEnabled;
   Future<AuthResult> signIn({required String email, required String password});
@@ -82,13 +87,58 @@ class SupabaseAuthRepository implements AuthRepository {
       if (response.session == null) {
         return const AuthResult.failure('Не удалось открыть сессию');
       }
+      final accessStatus = await checkCourierAppAccess(
+        _client,
+        response.session!.user.id,
+      );
+      if (accessStatus != CourierAppAccessStatus.allowed) {
+        await signOutSilently(_client);
+        return AuthResult.failure(courierAccessFailureMessage(accessStatus));
+      }
       return const AuthResult.success(isBackendSession: true);
     } on AuthException catch (error) {
       return AuthResult.failure(authExceptionFailureMessage(error));
     } catch (_) {
+      await signOutSilently(_client);
       return const AuthResult.failure('Не удалось подключиться к серверу');
     }
   }
+}
+
+Future<CourierAppAccessStatus> checkCourierAppAccess(
+  SupabaseClient client,
+  String userId,
+) async {
+  try {
+    final profile = await client
+        .from('profiles')
+        .select('role, is_active')
+        .eq('id', userId)
+        .maybeSingle();
+
+    if (!courierProfileCanUseApp(profile)) {
+      return CourierAppAccessStatus.denied;
+    }
+
+    final courier = await client
+        .from('couriers')
+        .select('id, is_active')
+        .eq('profile_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+    return courier == null
+        ? CourierAppAccessStatus.denied
+        : CourierAppAccessStatus.allowed;
+  } catch (_) {
+    return CourierAppAccessStatus.unavailable;
+  }
+}
+
+Future<void> signOutSilently(SupabaseClient client) async {
+  try {
+    await client.auth.signOut();
+  } catch (_) {}
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -103,4 +153,18 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 @visibleForTesting
 String authExceptionFailureMessage(AuthException _) {
   return 'Неверный email или пароль';
+}
+
+@visibleForTesting
+bool courierProfileCanUseApp(Map<String, dynamic>? profile) {
+  return profile?['is_active'] == true && profile?['role'] == 'courier';
+}
+
+@visibleForTesting
+String courierAccessFailureMessage(CourierAppAccessStatus status) {
+  return switch (status) {
+    CourierAppAccessStatus.allowed => '',
+    CourierAppAccessStatus.denied => courierAppAccessDeniedMessage,
+    CourierAppAccessStatus.unavailable => courierAppAccessUnavailableMessage,
+  };
 }

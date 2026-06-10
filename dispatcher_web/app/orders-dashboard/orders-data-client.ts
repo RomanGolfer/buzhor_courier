@@ -72,7 +72,10 @@ export async function saveDispatcherOrderUpdate({
     })
     .eq("id", order.id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    console.warn("Order update failed", error);
+    return { error: "Не удалось сохранить заказ. Попробуйте еще раз." };
+  }
 
   if (nextCourierId && nextCourierId !== order.assigned_courier_id) {
     await notifyOrderPush(supabase, order.id, "assigned");

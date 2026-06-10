@@ -140,7 +140,8 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
     const { data: createdOrder, error: insertError } = await supabase.from("orders").insert(payload).select("id").single();
 
     if (insertError) {
-      setError(insertError.message);
+      console.warn("Order creation failed", insertError);
+      setError("Не удалось создать заказ. Попробуйте еще раз.");
       setIsSaving(false);
       return;
     }
