@@ -23,9 +23,8 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<AuthState>(
       stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        final session = snapshot.hasData
-            ? snapshot.data!.session
-            : SupabaseBackend.currentSession;
+        final session =
+            snapshot.data?.session ?? SupabaseBackend.currentSession;
         return session != null
             ? _CourierAccessGate(client: client, session: session)
             : const LoginScreen();
@@ -46,7 +45,6 @@ class _CourierAccessGate extends StatefulWidget {
 
 class _CourierAccessGateState extends State<_CourierAccessGate> {
   late Future<CourierAppAccessStatus> _accessFuture;
-  bool _signedOutDeniedSession = false;
 
   @override
   void initState() {
@@ -63,20 +61,10 @@ class _CourierAccessGateState extends State<_CourierAccessGate> {
   }
 
   void _loadAccessStatus() {
-    _signedOutDeniedSession = false;
     _accessFuture = checkCourierAppAccess(
       widget.client,
       widget.session.user.id,
     );
-  }
-
-  void _signOutDeniedSession() {
-    if (_signedOutDeniedSession) return;
-    _signedOutDeniedSession = true;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      unawaited(signOutSilently(widget.client));
-    });
   }
 
   @override
@@ -92,8 +80,9 @@ class _CourierAccessGateState extends State<_CourierAccessGate> {
           case CourierAppAccessStatus.allowed:
             return const HomeScreen();
           case CourierAppAccessStatus.denied:
-            _signOutDeniedSession();
-            return const LoginScreen();
+            return _AccessDeniedScreen(
+              onSignOut: () => unawaited(signOutSilently(widget.client)),
+            );
           case CourierAppAccessStatus.unavailable:
             return _AccessCheckErrorScreen(
               onRetry: () {
@@ -102,6 +91,36 @@ class _CourierAccessGateState extends State<_CourierAccessGate> {
             );
         }
       },
+    );
+  }
+}
+
+class _AccessDeniedScreen extends StatelessWidget {
+  const _AccessDeniedScreen({required this.onSignOut});
+
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'У этого аккаунта нет доступа к приложению курьера. Проверьте, что профиль активен и привязан к активному курьеру.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: onSignOut, child: const Text('Выйти')),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

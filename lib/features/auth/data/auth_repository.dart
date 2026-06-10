@@ -90,14 +90,7 @@ class SupabaseAuthRepository implements AuthRepository {
       if (response.session == null) {
         return const AuthResult.failure('Не удалось открыть сессию');
       }
-      final accessStatus = await checkCourierAppAccess(
-        _client,
-        response.session!.user.id,
-      );
-      if (accessStatus != CourierAppAccessStatus.allowed) {
-        await signOutSilently(_client);
-        return AuthResult.failure(courierAccessFailureMessage(accessStatus));
-      }
+      await SupabaseBackend.refreshSessionIfNeeded();
       return const AuthResult.success(isBackendSession: true);
     } on AuthException catch (error) {
       return AuthResult.failure(authExceptionFailureMessage(error));
