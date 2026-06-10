@@ -26,13 +26,21 @@ void main() {
     expect(result.isBackendSession, isFalse);
   });
 
-  test('courier app access requires an active courier profile', () {
+  test('courier app access allows active staff or courier profiles', () {
     expect(
       courierProfileCanUseApp({'role': 'courier', 'is_active': true}),
       isTrue,
     );
     expect(
       courierProfileCanUseApp({'role': 'dispatcher', 'is_active': true}),
+      isTrue,
+    );
+    expect(
+      courierProfileCanUseApp({'role': 'admin', 'is_active': true}),
+      isTrue,
+    );
+    expect(
+      courierProfileCanUseApp({'role': 'customer', 'is_active': true}),
       isFalse,
     );
     expect(

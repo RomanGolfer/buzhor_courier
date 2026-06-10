@@ -164,7 +164,8 @@ String authExceptionFailureMessage(AuthException _) {
 
 @visibleForTesting
 bool courierProfileCanUseApp(Map<String, dynamic>? profile) {
-  return profile?['is_active'] == true && profile?['role'] == 'courier';
+  return profile?['is_active'] == true &&
+      {'admin', 'dispatcher', 'courier'}.contains(profile?['role']);
 }
 
 @visibleForTesting
