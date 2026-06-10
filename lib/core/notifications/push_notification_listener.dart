@@ -46,12 +46,15 @@ class _PushNotificationListenerState
     switch (event) {
       case NewOrderPushEvent(:final order):
         await ref.read(ordersProvider.notifier).upsertIncomingOrder(order);
+        unawaited(ref.read(ordersProvider.notifier).refreshOrders());
         if (!mounted) return;
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(
             SnackBar(content: Text('Новый заказ ${order.displayId}')),
           );
+      case NewOrderRefreshRequestedEvent():
+        await ref.read(ordersProvider.notifier).refreshOrders();
     }
   }
 }

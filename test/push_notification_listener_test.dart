@@ -55,6 +55,41 @@ void main() {
     expect(ordersState.activeOrders.single.id, _incomingOrder.id);
     expect(find.text('Новый заказ #99'), findsOneWidget);
   });
+
+  testWidgets('refreshes orders when pushed order payload cannot be loaded', (
+    tester,
+  ) async {
+    final service = _FakePushNotificationService();
+    final repository = _ReloadingOrderRepository();
+    late ProviderContainer container;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          pushNotificationServiceProvider.overrideWithValue(service),
+          orderRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) {
+              container = ProviderScope.containerOf(context);
+              return const PushNotificationListener(
+                child: Scaffold(body: SizedBox()),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    service.add(const NewOrderRefreshRequestedEvent(orderId: '#99'));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+
+    expect(repository.reloadCount, 1);
+    expect(container.read(ordersProvider).activeOrders.single.id, '#99');
+  });
 }
 
 class _FakePushNotificationService implements PushNotificationService {
@@ -68,5 +103,17 @@ class _FakePushNotificationService implements PushNotificationService {
 
   void add(PushNotificationEvent event) {
     _controller.add(event);
+  }
+}
+
+class _ReloadingOrderRepository extends OrderRepository {
+  _ReloadingOrderRepository() : super(initialOrders: const []);
+
+  int reloadCount = 0;
+
+  @override
+  Future<List<OrderItem>> reloadOrders() async {
+    reloadCount += 1;
+    return const [_incomingOrder];
   }
 }

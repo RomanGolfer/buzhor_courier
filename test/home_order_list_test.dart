@@ -46,6 +46,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('orders refresh when app returns to foreground', (tester) async {
+    final repository = _CountingOrderRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(repository),
+          locationProvider.overrideWith((ref) => _NoopLocationNotifier()),
+        ],
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    await tester.pump();
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+
+    expect(repository.reloadCount, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('order card keeps long text inside a narrow card', (
     tester,
   ) async {

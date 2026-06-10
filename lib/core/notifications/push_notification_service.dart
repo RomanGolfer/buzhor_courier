@@ -18,6 +18,12 @@ class NewOrderPushEvent extends PushNotificationEvent {
   const NewOrderPushEvent({required this.order});
 }
 
+class NewOrderRefreshRequestedEvent extends PushNotificationEvent {
+  final String orderId;
+
+  const NewOrderRefreshRequestedEvent({required this.orderId});
+}
+
 abstract class PushNotificationService {
   Stream<PushNotificationEvent> get events;
   Future<void> initialize();
@@ -40,6 +46,13 @@ void _logPushDebug(String message) {
 }
 
 class FirebasePushNotificationService implements PushNotificationService {
+  static const _orderLoadRetryDelays = [
+    Duration.zero,
+    Duration(milliseconds: 600),
+    Duration(seconds: 2),
+    Duration(seconds: 5),
+  ];
+
   final _events = StreamController<PushNotificationEvent>.broadcast();
 
   bool _initialized = false;
@@ -139,20 +152,42 @@ class FirebasePushNotificationService implements PushNotificationService {
   }
 
   Future<void> _emitOrder(String orderId) async {
+    for (final delay in _orderLoadRetryDelays) {
+      if (delay > Duration.zero) {
+        await Future<void>.delayed(delay);
+      }
+
+      final order = await _loadPushedOrder(orderId);
+      if (order == null) continue;
+
+      _events.add(NewOrderPushEvent(order: order));
+      return;
+    }
+
+    _events.add(NewOrderRefreshRequestedEvent(orderId: orderId));
+  }
+
+  Future<OrderItem?> _loadPushedOrder(String orderId) async {
     final client = SupabaseBackend.client;
-    if (client == null) return;
+    final session = client?.auth.currentSession;
+    if (client == null || session == null) return null;
 
     try {
+      if (session.isExpired) {
+        await client.auth.refreshSession();
+      }
+
       final row = await client
           .from('orders')
           .select()
           .eq('id', orderId)
           .maybeSingle();
-      if (row == null) return;
+      if (row == null) return null;
 
-      _events.add(NewOrderPushEvent(order: OrderItem.fromBackendJson(row)));
+      return OrderItem.fromBackendJson(row);
     } catch (error) {
-      _logPushDebug('Failed to load pushed order: $error');
+      _logPushDebug('Failed to load pushed order $orderId: $error');
+      return null;
     }
   }
 
