@@ -8,6 +8,7 @@ type NominatimResult = {
   lon: string;
   display_name: string;
   label: string;
+  address_line: string;
   locality: string | null;
   distance_m: number | null;
 };
@@ -155,7 +156,7 @@ function normalizeNominatimResults(data: unknown, origin: { lat: number; lng: nu
 
     const address = "address" in item && isRecord(item.address) ? item.address : {};
     const locality = getAddressPart(address, ["city", "town", "village", "municipality", "county"]);
-    const label = buildResultLabel(address, typeof displayName === "string" ? displayName : "");
+    const { addressLine, label } = buildResultAddress(address, typeof displayName === "string" ? displayName : "");
 
     return [
       {
@@ -163,6 +164,7 @@ function normalizeNominatimResults(data: unknown, origin: { lat: number; lng: nu
         lon,
         display_name: typeof displayName === "string" ? displayName : label,
         label,
+        address_line: addressLine,
         locality,
         distance_m: Math.round(distanceMeters(origin, { lat: Number(lat), lng: Number(lon) }))
       }
@@ -180,15 +182,18 @@ function dedupeResults(results: NominatimResult[]) {
   });
 }
 
-function buildResultLabel(address: Record<string, unknown>, displayName: string) {
+function buildResultAddress(address: Record<string, unknown>, displayName: string) {
   const road = getAddressPart(address, ["road", "pedestrian", "footway", "path"]);
   const house = getAddressPart(address, ["house_number"]);
   const locality = getAddressPart(address, ["city", "town", "village", "municipality", "county"]);
   const district = getAddressPart(address, ["suburb", "city_district", "district"]);
-  const streetLine = [road, house].filter(Boolean).join(", ");
+  const streetLine = [road, house].filter(Boolean).join(", ") || displayName;
   const placeLine = [locality, district].filter(Boolean).join(", ");
-  const label = [streetLine, placeLine].filter(Boolean).join(" · ");
-  return label || displayName || "Найденный адрес";
+  const label = [placeLine, streetLine].filter(Boolean).join(" · ");
+  return {
+    addressLine: streetLine || "Найденный адрес",
+    label: label || streetLine || "Найденный адрес"
+  };
 }
 
 function getAddressPart(address: Record<string, unknown>, keys: string[]) {

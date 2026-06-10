@@ -9,6 +9,7 @@ type GeocodeResult = {
   lon: string;
   display_name: string;
   label: string;
+  address_line: string;
   locality: string | null;
   distance_m: number | null;
 };
