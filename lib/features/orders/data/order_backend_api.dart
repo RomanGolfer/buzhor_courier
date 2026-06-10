@@ -42,7 +42,7 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
           .from('orders')
           .select()
           .eq('assigned_courier_id', courierId)
-          .gte('delivery_date', _todayMoscowKey())
+          .or('delivery_date.gte.${_todayMoscowKey()},delivery_date.is.null')
           .order('updated_at', ascending: false);
       final orders = parseOrderRows(rows);
       return _attachHistoricalClientRatings(client, orders);
