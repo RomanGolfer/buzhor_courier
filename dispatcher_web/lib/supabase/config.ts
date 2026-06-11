@@ -13,3 +13,17 @@ export function getSupabaseConfig() {
     anonKey,
   };
 }
+
+export function getSupabaseServiceConfig() {
+  const { url } = getSupabaseConfig();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!serviceRoleKey) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY must be configured for server-side integrations");
+  }
+
+  return {
+    url,
+    serviceRoleKey,
+  };
+}

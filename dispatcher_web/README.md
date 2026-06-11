@@ -10,6 +10,7 @@ fallback Supabase key.
 ```sh
 NEXT_PUBLIC_SUPABASE_URL=https://txzzkrqekynqansqvnbj.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_publishable_or_anon_key
+SUPABASE_SERVICE_ROLE_KEY=server_only_service_role_key
 ```
 
 For production geocoding, also set a real Nominatim contact identity:
@@ -17,6 +18,26 @@ For production geocoding, also set a real Nominatim contact identity:
 ```sh
 NOMINATIM_USER_AGENT="buzhor-dispatcher/1.0 (https://your-domain.example; ops@your-domain.example)"
 ```
+
+For PBX/ATS integration, configure the server-only telephony variables:
+
+```sh
+TELEPHONY_PROVIDER=generic
+TELEPHONY_ORIGINATE_URL=https://pbx.example.com/api/originate
+TELEPHONY_API_TOKEN=server_only_pbx_token
+TELEPHONY_FROM_EXTENSION=100
+TELEPHONY_WEBHOOK_SECRET=shared_webhook_secret
+```
+
+The dispatcher calls `POST /api/telephony/call`; the server forwards the call to
+`TELEPHONY_ORIGINATE_URL` with `{ to, from_extension, order_id,
+dispatcher_profile_id }`.
+
+Configure the PBX to send call status webhooks to `POST /api/telephony/webhook`
+with `Authorization: Bearer <TELEPHONY_WEBHOOK_SECRET>` or
+`x-telephony-secret`. Supported payload fields include `event_type`,
+`direction`, `phone`, `provider_call_id`, `order_id`, `started_at`,
+`answered_at`, `ended_at`, `duration_seconds`, and `recording_url`.
 
 Production rate limiting should use durable Upstash Redis storage:
 

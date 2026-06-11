@@ -26,3 +26,27 @@ export async function requireStaff() {
   }
   return profile;
 }
+
+export async function getApiStaffContext() {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, role, email, full_name, phone, is_active")
+    .eq("id", user.id)
+    .single();
+
+  const profile = data as Profile | null;
+  if (!profile?.is_active || !["dispatcher", "admin"].includes(profile.role)) return null;
+
+  return {
+    profile,
+    supabase,
+    user
+  };
+}

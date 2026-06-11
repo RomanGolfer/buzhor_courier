@@ -1,5 +1,7 @@
-﻿import type { Courier, Order, OrderState } from "@/lib/types";
+﻿import { Phone, X } from "lucide-react";
+import type { CallEvent, Courier, Order, OrderState } from "@/lib/types";
 import { Panel, StatusPill } from "@/components/ui";
+import { formatPhoneForDisplay } from "@/lib/phone";
 import { isOrderOverdue } from "./date-utils";
 import {
   clientRatingLabel,
@@ -20,28 +22,34 @@ export function OrderInspector({
   draftComment,
   draftFailureReason,
   isSaving,
+  isCalling,
+  callEvents,
   message,
   error,
   onStateChange,
   onCourierChange,
   onCommentChange,
   onFailureReasonChange,
+  onTelephonyCall,
   onSave,
   onClose
 }: {
   order: Order | null;
   couriers: Courier[];
+  callEvents: CallEvent[];
   draftState: OrderState;
   draftCourierId: string;
   draftComment: string;
   draftFailureReason: string;
   isSaving: boolean;
+  isCalling: boolean;
   message: string | null;
   error: string | null;
   onStateChange: (value: OrderState) => void;
   onCourierChange: (value: string) => void;
   onCommentChange: (value: string) => void;
   onFailureReasonChange: (value: string) => void;
+  onTelephonyCall: () => void;
   onSave: () => void;
   onClose?: () => void;
 }) {
@@ -73,9 +81,7 @@ export function OrderInspector({
               className="rounded-md p-1.5 text-muted hover:bg-slate-100 hover:text-ink"
               onClick={onClose}
             >
-              <svg fill="none" height="16" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24" width="16">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
+              <X size={16} strokeWidth={2.5} />
             </button>
           )}
         </div>
@@ -100,6 +106,18 @@ export function OrderInspector({
       </div>
 
       <div className="mt-4 space-y-4">
+        <button
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 text-sm font-black text-white hover:bg-slate-700 disabled:opacity-60"
+          disabled={isCalling || !order.client_phone}
+          onClick={onTelephonyCall}
+          type="button"
+        >
+          <Phone size={16} />
+          {isCalling ? "Соединяем..." : "Позвонить через АТС"}
+        </button>
+
+        <CallHistory callEvents={callEvents} />
+
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Статус</span>
           <select
@@ -164,6 +182,65 @@ export function OrderInspector({
       </div>
     </Panel>
   );
+}
+
+function CallHistory({ callEvents }: { callEvents: CallEvent[] }) {
+  return (
+    <section className="border-y border-line py-3">
+      <div className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-muted">Звонки</div>
+      {callEvents.length === 0 ? (
+        <div className="text-sm font-semibold text-muted">Истории звонков пока нет</div>
+      ) : (
+        <div className="space-y-2">
+          {callEvents.map((event) => (
+            <div className="grid grid-cols-[1fr_auto] gap-2 text-sm" key={event.id}>
+              <div>
+                <div className="font-bold text-ink">
+                  {callDirectionLabel(event)} · {callEventLabel(event.event_type)}
+                </div>
+                <div className="text-xs text-muted">
+                  {formatCallDate(event.created_at)}
+                  {event.client_phone ? ` · ${formatPhoneForDisplay(event.client_phone)}` : ""}
+                  {event.duration_seconds !== null ? ` · ${event.duration_seconds} сек` : ""}
+                </div>
+              </div>
+              {event.recording_url ? (
+                <a className="text-xs font-bold text-brand hover:text-brandDark" href={event.recording_url} rel="noreferrer" target="_blank">
+                  Запись
+                </a>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function callDirectionLabel(event: CallEvent) {
+  return event.direction === "inbound" ? "Входящий" : "Исходящий";
+}
+
+function callEventLabel(value: string) {
+  const labels: Record<string, string> = {
+    answered: "отвечен",
+    completed: "завершён",
+    failed: "ошибка",
+    missed: "пропущен",
+    outbound_requested: "запрошен",
+    recording_ready: "запись готова",
+    ringing: "звонит"
+  };
+  return labels[value] ?? value;
+}
+
+function formatCallDate(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit"
+  }).format(new Date(value));
 }
 
 function InfoRow({ label, value, href }: { label: string; value: string; href?: string }) {

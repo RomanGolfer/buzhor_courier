@@ -1,10 +1,12 @@
 ﻿import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
 import { notifyOrderPush } from "@/lib/order-push";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import type { Order, OrderState } from "@/lib/types";
+import type { CallEvent, Order, OrderState } from "@/lib/types";
 
 export const orderSelect =
   "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_date, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
+const callEventSelect =
+  "id, provider, provider_call_id, direction, event_type, order_id, client_phone, client_phone_normalized, dispatcher_profile_id, courier_id, started_at, answered_at, ended_at, duration_seconds, recording_url, payload, created_at, updated_at";
 
 type BrowserSupabaseClient = ReturnType<typeof createBrowserSupabaseClient>;
 
@@ -36,6 +38,50 @@ export async function loadOrdersForDate(supabase: BrowserSupabaseClient, dateKey
 
   if (!data) return null;
   return loadClientRatingStats(supabase, data as unknown as Order[]);
+}
+
+export async function loadCallEventsForOrder(supabase: BrowserSupabaseClient, order: Order | null) {
+  if (!order) return [];
+
+  const normalizedPhone = normalizeClientPhone(order.client_phone);
+  let query = supabase
+    .from("call_events")
+    .select(callEventSelect)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  query = normalizedPhone
+    ? query.or(`order_id.eq.${order.id},client_phone_normalized.eq.${normalizedPhone}`)
+    : query.eq("order_id", order.id);
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn("Call events load failed", error);
+    return [];
+  }
+
+  return (data ?? []) as unknown as CallEvent[];
+}
+
+export async function requestTelephonyCall({ order }: { order: Order }) {
+  const response = await fetch("/api/telephony/call", {
+    body: JSON.stringify({
+      order_id: order.id,
+      phone: order.client_phone
+    }),
+    headers: {
+      "Content-Type": "application/json"
+    },
+    method: "POST"
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = typeof data.error === "string" ? data.error : "Не удалось поставить звонок в очередь АТС";
+    return { error };
+  }
+
+  return { error: null };
 }
 
 export async function saveDispatcherOrderUpdate({

@@ -90,3 +90,26 @@ export type CourierStats = Courier & {
   ordersToday: number;
   deliveredToday: number;
 };
+
+export type CallDirection = "inbound" | "outbound";
+
+export type CallEvent = {
+  id: string;
+  provider: string;
+  provider_call_id: string | null;
+  direction: CallDirection;
+  event_type: string;
+  order_id: string | null;
+  client_phone: string | null;
+  client_phone_normalized: string | null;
+  dispatcher_profile_id: string | null;
+  courier_id: string | null;
+  started_at: string | null;
+  answered_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  recording_url: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};

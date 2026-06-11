@@ -23,6 +23,10 @@ type ClientLookupOrder = {
 const CLIENT_LOOKUP_RATE_LIMIT = 60;
 const CLIENT_LOOKUP_RATE_WINDOW_MS = 60_000;
 const CLIENT_LOOKUP_SCAN_LIMIT = 1000;
+const DEFAULT_COORDINATE_PAIR = {
+  lat: 44.8951,
+  lng: 37.3168
+};
 
 export const dynamic = "force-dynamic";
 
@@ -102,14 +106,15 @@ export async function GET(request: Request) {
 
 function mergeClientOrders(orders: ClientLookupOrder[]) {
   const latest = orders[0];
+  const coordinates = firstCoordinatePair(orders);
 
   return {
     client_name: firstText(orders, "client_name") ?? latest.client_name,
     client_phone: latest.client_phone,
     address: firstText(orders, "address") ?? latest.address,
     district: firstText(orders, "district"),
-    lat: firstCoordinate(orders, "lat"),
-    lng: firstCoordinate(orders, "lng"),
+    lat: coordinates?.lat ?? null,
+    lng: coordinates?.lng ?? null,
     payment_method: latest.payment_method,
     bottles: Number.isFinite(Number(latest.bottles)) ? Number(latest.bottles) : null,
     time_slot: firstText(orders, "time_slot"),
@@ -129,14 +134,27 @@ function firstText<K extends keyof ClientLookupOrder>(orders: ClientLookupOrder[
   return null;
 }
 
-function firstCoordinate(orders: ClientLookupOrder[], key: "lat" | "lng") {
+function firstCoordinatePair(orders: ClientLookupOrder[]) {
   for (const order of orders) {
-    const value = order[key];
-    if (value === null || value === "") continue;
-    const number = Number(value);
-    if (Number.isFinite(number)) return number.toFixed(7);
+    if (order.lat === null || order.lat === "" || order.lng === null || order.lng === "") continue;
+    const lat = Number(order.lat);
+    const lng = Number(order.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+    if (isDefaultCoordinatePair(lat, lng)) continue;
+
+    return {
+      lat: lat.toFixed(7),
+      lng: lng.toFixed(7)
+    };
   }
   return null;
+}
+
+function isDefaultCoordinatePair(lat: number, lng: number) {
+  return (
+    Math.abs(lat - DEFAULT_COORDINATE_PAIR.lat) < 0.0000001 &&
+    Math.abs(lng - DEFAULT_COORDINATE_PAIR.lng) < 0.0000001
+  );
 }
 
 function normalizeClientPhone(value: string | null | undefined) {

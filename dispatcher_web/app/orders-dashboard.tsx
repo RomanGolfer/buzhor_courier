@@ -1,11 +1,18 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Phone, X } from "lucide-react";
+import { formatPhoneForDisplay, normalizePhone } from "@/lib/phone";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import type { Courier, Order, OrderState } from "@/lib/types";
+import type { CallEvent, Courier, Order, OrderState } from "@/lib/types";
 import { todayDateKey } from "./orders-dashboard/date-utils";
 import { OrderInspector } from "./orders-dashboard/order-inspector";
-import { loadOrdersForDate, saveDispatcherOrderUpdate } from "./orders-dashboard/orders-data-client";
+import {
+  loadCallEventsForOrder,
+  loadOrdersForDate,
+  requestTelephonyCall,
+  saveDispatcherOrderUpdate
+} from "./orders-dashboard/orders-data-client";
 import { OrdersTable } from "./orders-dashboard/orders-table";
 
 export function OrdersDashboard({
@@ -31,8 +38,11 @@ export function OrdersDashboard({
   const [draftComment, setDraftComment] = useState(initialOrders[0]?.delivery_comment ?? "");
   const [draftFailureReason, setDraftFailureReason] = useState(initialOrders[0]?.failure_reason ?? "");
   const [isSaving, setIsSaving] = useState(false);
+  const [isCalling, setIsCalling] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [callEvents, setCallEvents] = useState<CallEvent[]>([]);
+  const [incomingCall, setIncomingCall] = useState<CallEvent | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(() => new Date(initialLoadedAt));
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -116,6 +126,45 @@ export function OrdersDashboard({
     return orders.find((order) => order.id === selectedOrderId) ?? filtered[0] ?? null;
   }, [filtered, orders, selectedOrderId]);
 
+  const loadSelectedCallEvents = useCallback(() => {
+    return loadCallEventsForOrder(supabase, selectedOrder);
+  }, [selectedOrder, supabase]);
+
+  const refreshCallEvents = useCallback(async () => {
+    setCallEvents(await loadSelectedCallEvents());
+  }, [loadSelectedCallEvents]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    void loadSelectedCallEvents().then((nextCallEvents) => {
+      if (isActive) {
+        setCallEvents(nextCallEvents);
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [loadSelectedCallEvents]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("dispatcher-call-events")
+      .on("postgres_changes", { event: "*", schema: "public", table: "call_events" }, (payload) => {
+        const nextEvent = payload.new as CallEvent | null;
+        if (nextEvent?.direction === "inbound" && ["ringing", "answered"].includes(nextEvent.event_type)) {
+          setIncomingCall(nextEvent);
+        }
+        void refreshCallEvents();
+      })
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [refreshCallEvents, supabase]);
+
   function selectOrder(order: Order) {
     setSelectedOrderId(order.id);
     syncDraftFromOrder(order);
@@ -165,13 +214,42 @@ export function OrdersDashboard({
     setIsSaving(false);
   }
 
+  async function callSelectedOrder() {
+    if (!selectedOrder) return;
+
+    setIsCalling(true);
+    setSaveMessage(null);
+    setSaveError(null);
+
+    const result = await requestTelephonyCall({ order: selectedOrder });
+    if (result.error) {
+      setSaveError(result.error);
+      setIsCalling(false);
+      await refreshCallEvents();
+      return;
+    }
+
+    setSaveMessage("Звонок поставлен в очередь АТС");
+    setIsCalling(false);
+    await refreshCallEvents();
+  }
+
+  function selectOrderFromCall(call: CallEvent) {
+    const order = findOrderForCall(call, orders);
+    if (order) {
+      selectOrder(order);
+    }
+  }
+
   const inspectorProps = {
+    callEvents,
     couriers,
     draftComment,
     draftCourierId,
     draftFailureReason,
     draftState,
     error: saveError,
+    isCalling,
     isSaving,
     message: saveMessage,
     order: selectedOrder,
@@ -179,8 +257,11 @@ export function OrdersDashboard({
     onCourierChange: (value: string) => setDraftCourierId(value),
     onFailureReasonChange: (value: string) => setDraftFailureReason(value),
     onSave: saveSelectedOrder,
-    onStateChange: (value: OrderState) => setDraftState(value)
+    onStateChange: (value: OrderState) => setDraftState(value),
+    onTelephonyCall: callSelectedOrder
   };
+
+  const incomingOrder = incomingCall ? findOrderForCall(incomingCall, orders) : null;
 
   return (
     <>
@@ -201,6 +282,15 @@ export function OrdersDashboard({
         />
       </div>
 
+      {incomingCall && (
+        <IncomingCallToast
+          call={incomingCall}
+          order={incomingOrder}
+          onClose={() => setIncomingCall(null)}
+          onOpenOrder={() => selectOrderFromCall(incomingCall)}
+        />
+      )}
+
       {isDrawerOpen && (
         <>
           <div
@@ -215,4 +305,63 @@ export function OrdersDashboard({
       )}
     </>
   );
+}
+
+function IncomingCallToast({
+  call,
+  order,
+  onClose,
+  onOpenOrder
+}: {
+  call: CallEvent;
+  order: Order | null;
+  onClose: () => void;
+  onOpenOrder: () => void;
+}) {
+  const phone = call.client_phone ?? call.client_phone_normalized;
+
+  return (
+    <section className="fixed bottom-5 right-5 z-50 w-[min(420px,calc(100vw-40px))] border border-line bg-white p-4 shadow-2xl">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-good">
+            <Phone size={18} />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-black uppercase tracking-[0.14em] text-muted">Входящий звонок</div>
+            <div className="mt-1 truncate text-lg font-black text-ink">{formatPhoneForDisplay(phone)}</div>
+            <div className="text-sm font-semibold text-muted">
+              {order ? `${order.order_number} · ${order.client_name}` : "Клиент не найден в заказах на экране"}
+            </div>
+          </div>
+        </div>
+        <button className="rounded-md p-1.5 text-muted hover:bg-slate-100 hover:text-ink" onClick={onClose} type="button">
+          <X size={16} strokeWidth={2.5} />
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {order ? (
+          <button className="rounded-md bg-brand px-3 py-2 text-sm font-black text-white hover:bg-brandDark" onClick={onOpenOrder} type="button">
+            Открыть заказ
+          </button>
+        ) : null}
+        {phone ? (
+          <a className="rounded-md border border-line px-3 py-2 text-sm font-bold text-ink hover:border-brand hover:text-brand" href={`/orders/new?phone=${encodeURIComponent(phone)}`}>
+            Новый заказ
+          </a>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function findOrderForCall(call: CallEvent, orders: Order[]) {
+  if (call.order_id) {
+    const byId = orders.find((order) => order.id === call.order_id);
+    if (byId) return byId;
+  }
+
+  const phone = normalizePhone(call.client_phone ?? call.client_phone_normalized);
+  if (!phone) return null;
+  return orders.find((order) => normalizePhone(order.client_phone) === phone) ?? null;
 }

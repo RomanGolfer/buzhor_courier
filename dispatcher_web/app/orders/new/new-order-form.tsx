@@ -55,7 +55,7 @@ type ClientLookupResponse =
       };
     };
 
-export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
+export function NewOrderForm({ couriers, initialPhone = "" }: { couriers: Courier[]; initialPhone?: string }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +63,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [bottles, setBottles] = useState(2);
   const [deliveryDate, setDeliveryDate] = useState(todayDateKey);
-  const [clientPhone, setClientPhone] = useState("");
+  const [clientPhone, setClientPhone] = useState(() => formatRussianPhoneInput(initialPhone));
   const [address, setAddress] = useState("");
   const [district, setDistrict] = useState("");
   const [deliveryComment, setDeliveryComment] = useState("");
@@ -78,7 +78,18 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
   const applyClientLookupRef = useRef<(client: Extract<ClientLookupResponse, { found: true }>["client"]) => void>(
     () => undefined
   );
-  const { lat, setLat, lng, setLng, geocoding, geocodeHint, geocodeResults, geocodeAddress, applyGeocodeResult } =
+  const {
+    lat,
+    setLat,
+    lng,
+    setLng,
+    geocoding,
+    geocodeHint,
+    geocodeResults,
+    geocodeAddress,
+    geocodeAddressNow,
+    applyGeocodeResult
+  } =
     useAddressGeocoding();
 
   useEffect(() => {
@@ -92,6 +103,15 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
 
   function markTouched(field: AutofillField) {
     touchedFields.current.add(field);
+  }
+
+  function clearAutoCoordinates() {
+    if (!touchedFields.current.has("lat")) {
+      setLat("");
+    }
+    if (!touchedFields.current.has("lng")) {
+      setLng("");
+    }
   }
 
   function fillTextField(
@@ -111,6 +131,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
     fillTextField("address", address, client.address ? normalizeAddressShortcuts(client.address) : null, (value) => {
       setAddress(value);
       if (!client.lat || !client.lng) {
+        clearAutoCoordinates();
         geocodeAddress(value);
       }
     });
@@ -214,15 +235,32 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
     } = await supabase.auth.getUser();
 
     const selectedDeliveryDate = String(form.get("delivery_date") ?? "") || deliveryDate || todayDateKey();
+    const normalizedAddress = normalizeAddressShortcuts(address);
+    const manualCoordinates = touchedFields.current.has("lat") || touchedFields.current.has("lng");
+    let resolvedLat = nullableNumber(form.get("lat"));
+    let resolvedLng = nullableNumber(form.get("lng"));
+
+    if (
+      normalizedAddress &&
+      !manualCoordinates &&
+      (!hasCoordinatePair(resolvedLat, resolvedLng) || isDefaultCoordinatePair(resolvedLat, resolvedLng))
+    ) {
+      const geocodeResult = await geocodeAddressNow(normalizedAddress);
+      if (geocodeResult) {
+        resolvedLat = Number(geocodeResult.lat);
+        resolvedLng = Number(geocodeResult.lon);
+      }
+    }
+
     const payload = {
       order_number: orderNumber,
       state: "assigned",
       client_name: clientName.trim(),
       client_phone: normalizeRussianPhone(String(form.get("client_phone") ?? "")) || null,
-      address: normalizeAddressShortcuts(address),
+      address: normalizedAddress,
       district: district.trim() || null,
-      lat: nullableNumber(form.get("lat")),
-      lng: nullableNumber(form.get("lng")),
+      lat: resolvedLat,
+      lng: resolvedLng,
       bottles: bottleCount,
       price,
       payment_method: paymentMethod,
@@ -236,6 +274,12 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
 
     if (!payload.client_name || !payload.address) {
       setError("Заполните клиента и адрес");
+      setIsSaving(false);
+      return;
+    }
+
+    if (!hasCoordinatePair(payload.lat, payload.lng)) {
+      setError("Не удалось определить координаты по адресу. Выберите подсказку или введите Lat/Lng вручную.");
       setIsSaving(false);
       return;
     }
@@ -288,6 +332,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
               const normalized = normalizeAddressShortcuts(event.target.value);
               if (normalized !== address) {
                 setAddress(normalized);
+                clearAutoCoordinates();
                 geocodeAddress(normalized);
               }
             }}
@@ -295,6 +340,7 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
               markTouched("address");
               const formattedAddress = normalizeAddressShortcuts(event.target.value, false);
               setAddress(formattedAddress);
+              clearAutoCoordinates();
               geocodeAddress(formattedAddress);
             }}
             placeholder="ул. Крымская, 45, кв. 12"
@@ -309,18 +355,25 @@ export function NewOrderForm({ couriers }: { couriers: Courier[] }) {
                 className="rounded-md border border-line bg-white px-3 py-2 text-left text-sm hover:border-brand hover:text-brand"
                 key={`${result.lat}-${result.lon}-${result.label}`}
                 onClick={() => {
-                  markTouched("address");
-                  setAddress(
-                    mergeSelectedAddressWithDetails(
-                      result.address_line || stripLocalityFromAddress(result.label, result.locality),
-                      address
-                    )
-                  );
+                  if (result.match_type === "exact") {
+                    markTouched("address");
+                    setAddress(
+                      mergeSelectedAddressWithDetails(
+                        result.address_line || stripLocalityFromAddress(result.label, result.locality),
+                        address
+                      )
+                    );
+                  }
                   applyGeocodeResult(result);
                 }}
                 type="button"
               >
-                <span className="block font-bold">{result.label}</span>
+                <span className="block font-bold">
+                  {result.match_type === "nearby" ? `Ближайший дом на карте: ${result.label}` : result.label}
+                </span>
+                {result.match_type === "nearby" && (
+                  <span className="block text-xs font-semibold text-muted">Адрес заказа останется как введено</span>
+                )}
                 {result.distance_m !== null && (
                   <span className="block text-xs font-semibold text-muted">{formatDistance(result.distance_m)}</span>
                 )}
@@ -516,6 +569,23 @@ function nullableNumber(value: FormDataEntryValue | null) {
   if (value === null || String(value).trim() === "") return null;
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
+}
+
+const defaultCoordinatePair = {
+  lat: 44.8951,
+  lng: 37.3168
+};
+
+function hasCoordinatePair(lat: number | null, lng: number | null) {
+  return lat !== null && lng !== null;
+}
+
+function isDefaultCoordinatePair(lat: number | null, lng: number | null) {
+  if (lat === null || lng === null) return false;
+  return (
+    Math.abs(lat - defaultCoordinatePair.lat) < 0.0000001 &&
+    Math.abs(lng - defaultCoordinatePair.lng) < 0.0000001
+  );
 }
 
 function normalizeRussianPhone(value: string) {
