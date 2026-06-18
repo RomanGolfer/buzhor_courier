@@ -42,7 +42,57 @@ class BuzhorApp extends ConsumerWidget {
           child: RealtimeOrderListener(child: child ?? const SizedBox.shrink()),
         );
       },
-      home: const AuthGate(),
+      home: const _StartupSplash(child: AuthGate()),
+    );
+  }
+}
+
+class _StartupSplash extends StatefulWidget {
+  const _StartupSplash({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_StartupSplash> createState() => _StartupSplashState();
+}
+
+class _StartupSplashState extends State<_StartupSplash> {
+  static const _minimumDuration = Duration(milliseconds: 1200);
+
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(_minimumDuration, () {
+      if (!mounted) return;
+      setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 220),
+      child: _ready ? widget.child : const _LaunchLogoScreen(),
+    );
+  }
+}
+
+class _LaunchLogoScreen extends StatelessWidget {
+  const _LaunchLogoScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: Image.asset(
+          'assets/buzhor_logo_transparent.png',
+          width: 240,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }

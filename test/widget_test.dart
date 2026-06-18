@@ -11,7 +11,8 @@ void main() {
 
   testWidgets('Login screen smoke test', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BuzhorApp()));
-    // Drain the 100 ms Future.delayed that starts the logo animation.
+    // Drain the startup splash and the 100 ms delayed login logo animation.
+    await tester.pump(const Duration(milliseconds: 1500));
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('Войти'), findsOneWidget);
@@ -20,6 +21,7 @@ void main() {
 
   testWidgets('App configures light and dark themes', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: BuzhorApp()));
+    await tester.pump(const Duration(milliseconds: 1500));
     await tester.pump(const Duration(milliseconds: 200));
 
     final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
