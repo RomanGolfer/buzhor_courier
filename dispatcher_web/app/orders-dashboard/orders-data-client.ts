@@ -66,8 +66,7 @@ export async function loadCallEventsForOrder(supabase: BrowserSupabaseClient, or
 export async function requestTelephonyCall({ order }: { order: Order }) {
   const response = await fetch("/api/telephony/call", {
     body: JSON.stringify({
-      order_id: order.id,
-      phone: order.client_phone
+      order_id: order.id
     }),
     headers: {
       "Content-Type": "application/json"

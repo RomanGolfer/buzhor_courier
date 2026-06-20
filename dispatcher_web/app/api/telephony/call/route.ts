@@ -41,33 +41,32 @@ export async function POST(request: Request) {
 
   const body = await readRequestBody(request);
   const rawOrderId = getString(body, "order_id");
-  if (rawOrderId && !isUuid(rawOrderId)) {
+  if (!rawOrderId) {
+    return NextResponse.json({ error: "missing_order_id" }, { status: 400 });
+  }
+  if (!isUuid(rawOrderId)) {
     return NextResponse.json({ error: "invalid_order_id" }, { status: 400 });
   }
 
   const orderId = rawOrderId;
-  const requestedPhone = getString(body, "phone");
-  let orderPhone: string | null = null;
+  const { data: order, error } = await context.supabase
+    .from("orders")
+    .select("id, client_phone")
+    .eq("id", orderId)
+    .maybeSingle();
 
-  if (orderId) {
-    const { data: order, error } = await context.supabase
-      .from("orders")
-      .select("id, client_phone")
-      .eq("id", orderId)
-      .maybeSingle();
-
-    if (error) {
-      console.warn("Telephony order lookup failed", error);
-      return NextResponse.json({ error: "order_lookup_failed" }, { status: 500 });
-    }
-    if (!order) {
-      return NextResponse.json({ error: "order_not_found" }, { status: 404 });
-    }
-    orderPhone = typeof order.client_phone === "string" ? order.client_phone : null;
+  if (error) {
+    console.warn("Telephony order lookup failed", error);
+    return NextResponse.json({ error: "order_lookup_failed" }, { status: 500 });
+  }
+  if (!order) {
+    return NextResponse.json({ error: "order_not_found" }, { status: 404 });
   }
 
-  const phone = normalizePhoneForTelephony(requestedPhone ?? orderPhone);
-  if (!phone) {
+  const phone = normalizePhoneForTelephony(
+    typeof order.client_phone === "string" ? order.client_phone : null
+  );
+  if (!phone || !isRussianCustomerPhone(phone)) {
     return NextResponse.json({ error: "invalid_phone" }, { status: 400 });
   }
 
@@ -150,4 +149,8 @@ function getString(body: Record<string, unknown>, key: string) {
 
 function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function isRussianCustomerPhone(value: string) {
+  return /^7\d{10}$/.test(value);
 }
