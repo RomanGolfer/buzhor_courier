@@ -89,7 +89,7 @@ class _LaunchLogoScreen extends StatelessWidget {
       body: Center(
         child: Image.asset(
           'assets/buzhor_logo_transparent.png',
-          width: 240,
+          width: 192,
           fit: BoxFit.contain,
         ),
       ),
