@@ -23,7 +23,7 @@
     "@types/estree": "^1.0.9",
     "@types/json-schema": "^7.0.15",
     "@types/json5": "^2.2.0",
-    "@types/node": "^20.19.26",
+    "@types/node": "^25.9.2",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
