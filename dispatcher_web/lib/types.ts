@@ -150,6 +150,90 @@ export type CourierStats = Courier & {
   deliveredToday: number;
 };
 
+export type CourierDailySalesRow = {
+  courier_id: string;
+  courier_name: string;
+  courier_phone: string | null;
+  courier_region: string | null;
+  courier_active: boolean;
+  vehicle_plate: string | null;
+  work_date: string;
+  delivered_orders: number;
+  active_orders: number;
+  failed_orders: number;
+  cash_orders: number;
+  cash_amount: number;
+  card_orders: number;
+  card_amount: number;
+  qr_orders: number;
+  qr_amount: number;
+  online_orders: number;
+  online_amount: number;
+  contract_orders: number;
+  contract_amount: number;
+  total_amount: number;
+  sold_full_bottles: number;
+  collected_empty_bottles: number;
+  inventory_configured: boolean;
+  loaded_full_bottles: number;
+  opening_empty_bottles: number;
+  unloaded_full_bottles: number;
+  unloaded_empty_bottles: number;
+  remaining_full_bottles: number | null;
+  remaining_empty_bottles: number | null;
+  inventory_notes: string | null;
+  inventory_updated_at: string | null;
+};
+
+export type CourierDailySalesRpcRow = Omit<
+  CourierDailySalesRow,
+  | "delivered_orders"
+  | "active_orders"
+  | "failed_orders"
+  | "cash_orders"
+  | "cash_amount"
+  | "card_orders"
+  | "card_amount"
+  | "qr_orders"
+  | "qr_amount"
+  | "online_orders"
+  | "online_amount"
+  | "contract_orders"
+  | "contract_amount"
+  | "total_amount"
+  | "sold_full_bottles"
+  | "collected_empty_bottles"
+  | "loaded_full_bottles"
+  | "opening_empty_bottles"
+  | "unloaded_full_bottles"
+  | "unloaded_empty_bottles"
+  | "remaining_full_bottles"
+  | "remaining_empty_bottles"
+> & {
+  delivered_orders: number | string;
+  active_orders: number | string;
+  failed_orders: number | string;
+  cash_orders: number | string;
+  cash_amount: number | string;
+  card_orders: number | string;
+  card_amount: number | string;
+  qr_orders: number | string;
+  qr_amount: number | string;
+  online_orders: number | string;
+  online_amount: number | string;
+  contract_orders: number | string;
+  contract_amount: number | string;
+  total_amount: number | string;
+  sold_full_bottles: number | string;
+  collected_empty_bottles: number | string;
+  loaded_full_bottles: number | string;
+  opening_empty_bottles: number | string;
+  unloaded_full_bottles: number | string;
+  unloaded_empty_bottles: number | string;
+  remaining_full_bottles: number | string | null;
+  remaining_empty_bottles: number | string | null;
+};
+
 export type VehicleServiceStatus = "ready" | "maintenance" | "inactive";
 
 export type VehicleFleetRow = {

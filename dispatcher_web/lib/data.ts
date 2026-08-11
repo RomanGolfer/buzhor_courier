@@ -5,6 +5,8 @@ import type {
   ClientDirectoryRow,
   ClientFeedbackRow,
   Courier,
+  CourierDailySalesRow,
+  CourierDailySalesRpcRow,
   CourierStats,
   DeliveryZone,
   DeliveryZoneLearningCandidate,
@@ -138,6 +140,43 @@ export async function getDriverStats() {
   }
 
   return [...stats.values()];
+}
+
+export async function getCourierDailySales(workDate: string) {
+  const selectedDate = workDate.match(/^\d{4}-\d{2}-\d{2}$/) ? workDate : moscowDateKey(new Date());
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_courier_daily_sales", { p_work_date: selectedDate });
+
+  if (error) throw error;
+  return ((data ?? []) as CourierDailySalesRpcRow[]).map(normalizeCourierDailySalesRow);
+}
+
+function normalizeCourierDailySalesRow(row: CourierDailySalesRpcRow): CourierDailySalesRow {
+  return {
+    ...row,
+    delivered_orders: Number(row.delivered_orders),
+    active_orders: Number(row.active_orders),
+    failed_orders: Number(row.failed_orders),
+    cash_orders: Number(row.cash_orders),
+    cash_amount: Number(row.cash_amount),
+    card_orders: Number(row.card_orders),
+    card_amount: Number(row.card_amount),
+    qr_orders: Number(row.qr_orders),
+    qr_amount: Number(row.qr_amount),
+    online_orders: Number(row.online_orders),
+    online_amount: Number(row.online_amount),
+    contract_orders: Number(row.contract_orders),
+    contract_amount: Number(row.contract_amount),
+    total_amount: Number(row.total_amount),
+    sold_full_bottles: Number(row.sold_full_bottles),
+    collected_empty_bottles: Number(row.collected_empty_bottles),
+    loaded_full_bottles: Number(row.loaded_full_bottles),
+    opening_empty_bottles: Number(row.opening_empty_bottles),
+    unloaded_full_bottles: Number(row.unloaded_full_bottles),
+    unloaded_empty_bottles: Number(row.unloaded_empty_bottles),
+    remaining_full_bottles: row.remaining_full_bottles === null ? null : Number(row.remaining_full_bottles),
+    remaining_empty_bottles: row.remaining_empty_bottles === null ? null : Number(row.remaining_empty_bottles)
+  };
 }
 
 export async function getVehicleFleet() {
