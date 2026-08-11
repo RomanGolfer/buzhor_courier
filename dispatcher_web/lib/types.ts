@@ -72,8 +72,40 @@ export type DeliveryZone = {
   priority: number;
   is_active: boolean;
   customer_order_enabled: boolean;
+  auto_expand_enabled: boolean;
+  learning_min_deliveries: number;
+  learning_lookback_days: number;
+  learning_max_distance_m: number;
+  learning_radius_m: number;
+  last_learning_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type DeliveryZoneLearningCandidate = {
+  id: string;
+  zone_id: string;
+  address_text: string;
+  lat: number;
+  lng: number;
+  delivery_count: number;
+  distance_m: number;
+  status: "observing" | "applied" | "ignored" | "reverted" | "needs_review";
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  applied_at: string | null;
+  ignored_at: string | null;
+  reverted_at: string | null;
+  last_error: string | null;
+};
+
+export type DeliveryZoneLearningCandidateRow = Omit<
+  DeliveryZoneLearningCandidate,
+  "lat" | "lng" | "distance_m"
+> & {
+  lat: number | string;
+  lng: number | string;
+  distance_m: number | string;
 };
 
 export type DeliveryCoverage = {

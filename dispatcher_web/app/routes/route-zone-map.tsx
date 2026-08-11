@@ -2,7 +2,7 @@
 
 import * as L from "leaflet";
 import { useEffect, useRef } from "react";
-import type { DeliveryZone } from "@/lib/types";
+import type { DeliveryZone, DeliveryZoneLearningCandidate } from "@/lib/types";
 
 export type ZoneMapPoint = {
   lat: number;
@@ -15,6 +15,7 @@ type RouteZoneMapProps = {
   editingZoneId: string | null;
   points: ZoneMapPoint[];
   zones: DeliveryZone[];
+  learningCandidates: DeliveryZoneLearningCandidate[];
   onAddPoint: (point: ZoneMapPoint) => void;
   onMovePoint: (index: number, point: ZoneMapPoint) => void;
   onSelectZone: (zoneId: string) => void;
@@ -87,6 +88,27 @@ export function RouteZoneMap(props: RouteZoneMapProps) {
       shapes.addLayer(polygon);
     }
 
+    for (const candidate of props.learningCandidates) {
+      const zone = props.zones.find((item) => item.id === candidate.zone_id);
+      if (!zone) continue;
+      const style = candidateStyle(candidate.status, zone.color);
+      const marker = L.circle([candidate.lat, candidate.lng], {
+        color: style.color,
+        dashArray: style.dashArray,
+        fillColor: style.color,
+        fillOpacity: style.fillOpacity,
+        opacity: style.opacity,
+        radius: candidate.status === "applied" ? zone.learning_radius_m : 45,
+        weight: candidate.status === "applied" ? 3 : 2
+      });
+      marker.on("click", (event) => {
+        if (event.originalEvent) L.DomEvent.stopPropagation(event.originalEvent);
+        latestProps.current.onSelectZone(candidate.zone_id);
+      });
+      marker.bindTooltip(candidateTooltip(candidate), { direction: "top", sticky: true });
+      shapes.addLayer(marker);
+    }
+
     if (props.points.length >= 3) {
       shapes.addLayer(
         L.polygon(props.points.map(toLatLng), {
@@ -122,13 +144,18 @@ export function RouteZoneMap(props: RouteZoneMapProps) {
       }
       shapes.addLayer(marker);
     });
-  }, [props.editable, props.editingZoneId, props.points, props.zones]);
+  }, [props.editable, props.editingZoneId, props.learningCandidates, props.points, props.zones]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map || props.drawingEnabled) return;
 
-    const points = props.points.length > 0 ? props.points : props.zones.flatMap(boundaryToMapPoints);
+    const learnedPoints = props.learningCandidates
+      .filter((candidate) => candidate.status !== "ignored" && candidate.status !== "reverted")
+      .map((candidate) => ({ lat: candidate.lat, lng: candidate.lng }));
+    const points = props.points.length > 0
+      ? props.points
+      : [...props.zones.flatMap(boundaryToMapPoints), ...learnedPoints];
     if (points.length === 0) return;
     if (points.length === 1) {
       map.setView(toLatLng(points[0]), 14);
@@ -136,7 +163,7 @@ export function RouteZoneMap(props: RouteZoneMapProps) {
     }
 
     map.fitBounds(L.latLngBounds(points.map(toLatLng)), { maxZoom: 15, padding: [36, 36] });
-  }, [props.drawingEnabled, props.points, props.zones]);
+  }, [props.drawingEnabled, props.learningCandidates, props.points, props.zones]);
 
   return <div className="h-[620px] min-h-[460px] w-full bg-slate-100" ref={containerRef} />;
 }
@@ -175,4 +202,24 @@ function zoneTooltip(zone: DeliveryZone) {
   name.textContent = zone.name;
   content.append(name, document.createElement("br"), zone.is_active ? "Активная зона" : "Зона выключена");
   return content;
+}
+
+function candidateTooltip(candidate: DeliveryZoneLearningCandidate) {
+  const content = document.createElement("span");
+  const title = document.createElement("strong");
+  title.textContent = candidate.status === "applied" ? "Добавлено по статистике" : "Новый повторный адрес";
+  const details = document.createTextNode(
+    `${candidate.address_text} · ${candidate.delivery_count} доставок · ${Math.round(candidate.distance_m)} м от границы`
+  );
+  content.append(title, document.createElement("br"), details);
+  return content;
+}
+
+function candidateStyle(status: DeliveryZoneLearningCandidate["status"], zoneColor: string) {
+  if (status === "applied") return { color: zoneColor, dashArray: undefined, fillOpacity: 0.28, opacity: 1 };
+  if (status === "needs_review") return { color: "#dc2626", dashArray: "5 5", fillOpacity: 0.12, opacity: 0.9 };
+  if (status === "ignored" || status === "reverted") {
+    return { color: "#94a3b8", dashArray: "4 6", fillOpacity: 0.04, opacity: 0.45 };
+  }
+  return { color: "#d97706", dashArray: "6 5", fillOpacity: 0.12, opacity: 0.9 };
 }

@@ -7,6 +7,8 @@ import type {
   Courier,
   CourierStats,
   DeliveryZone,
+  DeliveryZoneLearningCandidate,
+  DeliveryZoneLearningCandidateRow,
   DataImportHistoryRow,
   Order,
   OrderEventFeedRow,
@@ -43,6 +45,19 @@ export async function getDeliveryZones() {
 
   if (error) throw error;
   return (data ?? []) as DeliveryZone[];
+}
+
+export async function getDeliveryZoneLearningCandidates() {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_delivery_zone_learning_candidates");
+
+  if (error) throw error;
+  return ((data ?? []) as DeliveryZoneLearningCandidateRow[]).map((candidate): DeliveryZoneLearningCandidate => ({
+    ...candidate,
+    lat: Number(candidate.lat),
+    lng: Number(candidate.lng),
+    distance_m: Number(candidate.distance_m)
+  }));
 }
 
 export async function getOrdersByDate(dateKey?: string) {

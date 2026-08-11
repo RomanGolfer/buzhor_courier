@@ -1,13 +1,17 @@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
-import { getDeliveryZones } from "@/lib/data";
+import { getDeliveryZoneLearningCandidates, getDeliveryZones } from "@/lib/data";
 import { RouteZonesManager } from "@/app/routes/route-zones-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function DeliveryZonesPage() {
-  const [profile, zones] = await Promise.all([requireStaff(), getDeliveryZones()]);
+  const [profile, zones, learningCandidates] = await Promise.all([
+    requireStaff(),
+    getDeliveryZones(),
+    getDeliveryZoneLearningCandidates()
+  ]);
 
   return (
     <AppShell profile={profile}>
@@ -15,11 +19,15 @@ export default async function DeliveryZonesPage() {
         title="Зоны доставки"
         description={
           profile.role === "admin"
-            ? "Нарисуйте границы на карте. Адрес заказа будет автоматически отнесён к подходящей зоне."
+            ? "Границы можно рисовать вручную и автоматически уточнять по повторным подтверждённым доставкам."
             : "Просмотр действующих зон доставки. Изменять границы и настройки может только администратор."
         }
       />
-      <RouteZonesManager canManage={profile.role === "admin"} initialZones={zones} />
+      <RouteZonesManager
+        canManage={profile.role === "admin"}
+        initialLearningCandidates={learningCandidates}
+        initialZones={zones}
+      />
     </AppShell>
   );
 }
