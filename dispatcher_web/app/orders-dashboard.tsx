@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Phone, X } from "lucide-react";
 import { formatPhoneForDisplay, normalizePhone } from "@/lib/phone";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import type { CallEvent, Courier, Order, OrderState } from "@/lib/types";
+import type { CallEvent, Courier, DeliveryZone, Order, OrderState } from "@/lib/types";
 import { todayDateKey } from "./orders-dashboard/date-utils";
 import { OrderInspector } from "./orders-dashboard/order-inspector";
 import {
@@ -19,12 +19,14 @@ export function OrdersDashboard({
   initialDate,
   initialLoadedAt,
   initialOrders,
-  couriers
+  couriers,
+  deliveryZones
 }: {
   initialDate?: string;
   initialLoadedAt: string;
   initialOrders: Order[];
   couriers: Courier[];
+  deliveryZones: DeliveryZone[];
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [selectedDate, setSelectedDate] = useState(
@@ -32,6 +34,7 @@ export function OrdersDashboard({
   );
   const [stateFilter, setStateFilter] = useState<"all" | OrderState>("all");
   const [courierFilter, setCourierFilter] = useState("all");
+  const [zoneFilter, setZoneFilter] = useState("all");
   const [selectedOrderId, setSelectedOrderId] = useState(initialOrders[0]?.id ?? "");
   const [draftState, setDraftState] = useState<OrderState>(initialOrders[0]?.state ?? "assigned");
   const [draftCourierId, setDraftCourierId] = useState(initialOrders[0]?.assigned_courier_id ?? "");
@@ -118,9 +121,10 @@ export function OrdersDashboard({
     return orders.filter((order) => {
       const stateOk = stateFilter === "all" || order.state === stateFilter;
       const courierOk = courierFilter === "all" || order.assigned_courier_id === courierFilter;
-      return stateOk && courierOk;
+      const zoneOk = zoneFilter === "all" || order.delivery_zone_id === zoneFilter;
+      return stateOk && courierOk && zoneOk;
     });
-  }, [orders, stateFilter, courierFilter]);
+  }, [orders, stateFilter, courierFilter, zoneFilter]);
 
   const selectedOrder = useMemo(() => {
     return orders.find((order) => order.id === selectedOrderId) ?? filtered[0] ?? null;
@@ -269,16 +273,19 @@ export function OrdersDashboard({
         <OrdersTable
           courierFilter={courierFilter}
           couriers={couriers}
+          deliveryZones={deliveryZones}
           lastUpdatedAt={lastUpdatedAt}
           onCourierFilterChange={setCourierFilter}
           onDateChange={changeSelectedDate}
           onRefresh={() => void refreshOrders()}
           onSelectOrder={selectOrder}
           onStateFilterChange={setStateFilter}
+          onZoneFilterChange={setZoneFilter}
           orders={filtered}
           selectedDate={selectedDate}
           selectedOrderId={selectedOrder?.id ?? ""}
           stateFilter={stateFilter}
+          zoneFilter={zoneFilter}
         />
       </div>
 

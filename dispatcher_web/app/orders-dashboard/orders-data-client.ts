@@ -4,7 +4,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type { CallEvent, Order, OrderState } from "@/lib/types";
 
 export const orderSelect =
-  "id, order_number, assigned_courier_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_date, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name)";
+  "id, order_number, assigned_courier_id, delivery_zone_id, state, client_name, client_phone, address, district, lat, lng, payment_method, price, bottles, marking_codes, fiscal_receipt, client_rating, time_slot, delivery_date, delivery_comment, failure_reason, created_at, updated_at, couriers(id, display_name), delivery_zones(id, name, color)";
 const callEventSelect =
   "id, provider, provider_call_id, direction, event_type, order_id, client_phone, client_phone_normalized, dispatcher_profile_id, courier_id, started_at, answered_at, ended_at, duration_seconds, recording_url, payload, created_at, updated_at";
 

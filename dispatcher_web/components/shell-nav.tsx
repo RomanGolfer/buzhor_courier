@@ -1,28 +1,52 @@
 "use client";
 
-import { ClipboardList, Map, Plus, Truck, UsersRound, type LucideIcon } from "lucide-react";
+import {
+  Bell,
+  BriefcaseBusiness,
+  ClipboardList,
+  Map,
+  MapPin,
+  MessageCircleReply,
+  MessagesSquare,
+  Store,
+  Truck,
+  UserCog,
+  UsersRound,
+  type LucideIcon
+} from "lucide-react";
 import Link from "next/link";
+import type { Route } from "next";
 import { usePathname } from "next/navigation";
+import type { Role } from "@/lib/types";
 
 const links: {
-  href: "/" | "/orders/new" | "/routes" | "/couriers" | "/users";
+  href: Route;
   icon: LucideIcon;
   label: string;
   match: (pathname: string) => boolean;
+  adminOnly?: boolean;
 }[] = [
+  { href: "/notifications", icon: Bell, label: "Оповещения", match: (pathname) => pathname.startsWith("/notifications") },
   { href: "/", icon: ClipboardList, label: "Заказы", match: (pathname) => pathname === "/" },
-  { href: "/orders/new", icon: Plus, label: "Новый", match: (pathname) => pathname.startsWith("/orders/new") },
-  { href: "/routes", icon: Map, label: "Маршруты", match: (pathname) => pathname.startsWith("/routes") },
-  { href: "/couriers", icon: Truck, label: "Курьеры", match: (pathname) => pathname.startsWith("/couriers") },
-  { href: "/users", icon: UsersRound, label: "Пользователи", match: (pathname) => pathname.startsWith("/users") }
+  { href: "/routes", icon: Map, label: "Маршрутные листы", match: (pathname) => pathname.startsWith("/routes") },
+  { href: "/clients", icon: UsersRound, label: "Клиенты", match: (pathname) => pathname.startsWith("/clients") },
+  { href: "/organizations", icon: BriefcaseBusiness, label: "Организации", match: (pathname) => pathname.startsWith("/organizations") },
+  { href: "/addresses", icon: MapPin, label: "Адреса", match: (pathname) => pathname.startsWith("/addresses") },
+  { href: "/couriers", icon: Truck, label: "Водители", match: (pathname) => pathname.startsWith("/couriers") },
+  { href: "/chat", icon: MessagesSquare, label: "Чат", match: (pathname) => pathname.startsWith("/chat") },
+  { href: "/feedback", icon: MessageCircleReply, label: "Обратная связь", match: (pathname) => pathname.startsWith("/feedback") },
+  { href: "/micro-markets", icon: Store, label: "Микромаркеты", match: (pathname) => pathname.startsWith("/micro-markets") },
+  { href: "/delivery-zones", icon: Map, label: "Зоны доставки", match: (pathname) => pathname.startsWith("/delivery-zones") },
+  { href: "/users", icon: UserCog, label: "Пользователи", match: (pathname) => pathname.startsWith("/users"), adminOnly: true }
 ];
 
-export function ShellNav() {
+export function ShellNav({ role }: { role: Role }) {
   const pathname = usePathname();
+  const visibleLinks = links.filter((link) => !link.adminOnly || role === "admin");
 
   return (
     <nav className="app-scrollbar flex-1 overflow-y-auto py-3">
-      {links.map((link) => {
+      {visibleLinks.map((link) => {
         const Icon = link.icon;
         const isActive = link.match(pathname);
 

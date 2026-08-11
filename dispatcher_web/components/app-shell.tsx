@@ -24,7 +24,7 @@ export function AppShell({ profile, children }: AppShellProps) {
             {profile.full_name?.slice(0, 1).toUpperCase() || "A"}
           </div>
         </div>
-        <ShellNav />
+        <ShellNav role={profile.role} />
         <form action={signOut} className="border-t border-line p-2">
           <button className="w-full px-2 py-3 text-xs font-semibold text-ink hover:text-brand">
             Выйти

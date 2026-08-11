@@ -1,22 +1,22 @@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader, Panel, StatusPill } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
-import { getCourierStats } from "@/lib/data";
+import { getDriverStats } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
 export default async function CouriersPage() {
-  const [profile, couriers] = await Promise.all([requireStaff(), getCourierStats()]);
+  const [profile, couriers] = await Promise.all([requireStaff(), getDriverStats()]);
 
   return (
     <AppShell profile={profile}>
-      <PageHeader title="Курьеры" description="Активные курьеры, нагрузка на сегодня и выполненные доставки." />
+      <PageHeader title={`Водители ${couriers.length}`} description="Водители, их рабочий статус и нагрузка на сегодня." />
       <Panel>
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-[0.12em] text-muted">
               <tr>
-                <th className="border-b border-line px-4 py-3">Курьер</th>
+                <th className="border-b border-line px-4 py-3">Водитель</th>
                 <th className="border-b border-line px-4 py-3">Телефон</th>
                 <th className="border-b border-line px-4 py-3">Регион</th>
                 <th className="border-b border-line px-4 py-3">Заказов сегодня</th>

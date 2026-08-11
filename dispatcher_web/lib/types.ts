@@ -110,6 +110,7 @@ export type Order = {
   created_at: string;
   updated_at: string;
   couriers?: Pick<Courier, "id" | "display_name"> | null;
+  delivery_zones?: Pick<DeliveryZone, "id" | "name" | "color"> | null;
 };
 
 export type CourierStats = Courier & {
@@ -138,4 +139,56 @@ export type CallEvent = {
   payload: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+};
+
+export type ClientDirectoryRow = {
+  key: string;
+  name: string;
+  phone: string | null;
+  address: string;
+  district: string | null;
+  order_count: number;
+  last_order_number: string;
+  last_order_at: string;
+  rating_average: number | null;
+  rating_count: number;
+};
+
+export type AddressDirectoryRow = {
+  key: string;
+  client_name: string;
+  client_phone: string | null;
+  address: string;
+  district: string | null;
+  lat: number | null;
+  lng: number | null;
+  order_count: number;
+  last_order_at: string;
+};
+
+export type OrganizationDirectoryRow = {
+  key: string;
+  name: string;
+  phone: string | null;
+  address: string;
+  order_count: number;
+  last_order_at: string;
+};
+
+export type OrderEventFeedRow = {
+  id: string;
+  event_type: string;
+  payload: Record<string, unknown>;
+  created_at: string;
+  orders: Pick<Order, "id" | "order_number" | "client_name" | "address"> | null;
+  profiles: Pick<Profile, "full_name"> | null;
+};
+
+export type ClientFeedbackRow = {
+  id: string;
+  rating: number;
+  client_phone: string | null;
+  created_at: string;
+  orders: Pick<Order, "id" | "order_number" | "client_name" | "address"> | null;
+  couriers: Pick<Courier, "id" | "display_name"> | null;
 };

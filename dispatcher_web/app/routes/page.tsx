@@ -1,25 +1,33 @@
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
-import { getDeliveryZones } from "@/lib/data";
-import { RouteZonesManager } from "./route-zones-manager";
+import { getCouriers, getOrdersByDate, moscowDateKey } from "@/lib/data";
+import { RouteSheetsBoard } from "./route-sheets-board";
 
 export const dynamic = "force-dynamic";
 
-export default async function RoutesPage() {
-  const [profile, zones] = await Promise.all([requireStaff(), getDeliveryZones()]);
+export default async function RoutesPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ date?: string | string[] }>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  const dateParam = resolvedSearchParams?.date;
+  const selectedDate = Array.isArray(dateParam) ? dateParam[0] : dateParam;
+  const effectiveDate = selectedDate?.match(/^\d{4}-\d{2}-\d{2}$/) ? selectedDate : moscowDateKey(new Date());
+  const [profile, orders, couriers] = await Promise.all([
+    requireStaff(),
+    getOrdersByDate(effectiveDate),
+    getCouriers()
+  ]);
 
   return (
     <AppShell profile={profile}>
       <PageHeader
-        title="Маршруты и зоны доставки"
-        description={
-          profile.role === "admin"
-            ? "Нарисуйте границы на карте. Адрес заказа будет автоматически проверяться и относиться к подходящей зоне."
-            : "Просмотр действующих зон доставки. Изменять границы и настройки может только администратор."
-        }
+        title="Маршрутные листы"
+        description="Сгруппируйте заказы по району и интервалу, затем назначьте выбранную группу водителю."
       />
-      <RouteZonesManager canManage={profile.role === "admin"} initialZones={zones} />
+      <RouteSheetsBoard couriers={couriers} initialOrders={orders} key={effectiveDate} selectedDate={effectiveDate} />
     </AppShell>
   );
 }
