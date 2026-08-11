@@ -3,6 +3,7 @@
 import {
   Bell,
   BriefcaseBusiness,
+  CarFront,
   ClipboardList,
   FileUp,
   Map,
@@ -34,6 +35,7 @@ const links: {
   { href: "/organizations", icon: BriefcaseBusiness, label: "Организации", match: (pathname) => pathname.startsWith("/organizations") },
   { href: "/addresses", icon: MapPin, label: "Адреса", match: (pathname) => pathname.startsWith("/addresses") },
   { href: "/couriers", icon: Truck, label: "Водители", match: (pathname) => pathname.startsWith("/couriers") },
+  { href: "/vehicles", icon: CarFront, label: "Автомобили", match: (pathname) => pathname.startsWith("/vehicles") },
   { href: "/chat", icon: MessagesSquare, label: "Чат", match: (pathname) => pathname.startsWith("/chat") },
   { href: "/feedback", icon: MessageCircleReply, label: "Обратная связь", match: (pathname) => pathname.startsWith("/feedback") },
   { href: "/micro-markets", icon: Store, label: "Микромаркеты", match: (pathname) => pathname.startsWith("/micro-markets") },

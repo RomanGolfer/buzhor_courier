@@ -150,6 +150,39 @@ export type CourierStats = Courier & {
   deliveredToday: number;
 };
 
+export type VehicleServiceStatus = "ready" | "maintenance" | "inactive";
+
+export type VehicleFleetRow = {
+  id: string;
+  license_plate: string;
+  make: string | null;
+  model: string | null;
+  color: string | null;
+  service_status: VehicleServiceStatus;
+  notes: string | null;
+  current_assignment_id: string | null;
+  current_courier_id: string | null;
+  current_courier_name: string | null;
+  current_courier_phone: string | null;
+  assigned_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type VehicleAssignmentHistoryRow = {
+  id: string;
+  vehicle_id: string;
+  license_plate: string;
+  courier_id: string;
+  courier_name: string;
+  assigned_by_name: string | null;
+  assigned_at: string;
+  released_by_name: string | null;
+  released_at: string | null;
+  assignment_note: string | null;
+  release_note: string | null;
+};
+
 export type CallDirection = "inbound" | "outbound";
 
 export type CallEvent = {

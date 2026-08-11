@@ -13,7 +13,9 @@ import type {
   Order,
   OrderEventFeedRow,
   OrganizationDirectoryRow,
-  Profile
+  Profile,
+  VehicleAssignmentHistoryRow,
+  VehicleFleetRow
 } from "@/lib/types";
 
 export function moscowDateKey(date: Date) {
@@ -136,6 +138,25 @@ export async function getDriverStats() {
   }
 
   return [...stats.values()];
+}
+
+export async function getVehicleFleet() {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_vehicle_fleet");
+
+  if (error) throw error;
+  return (data ?? []) as VehicleFleetRow[];
+}
+
+export async function getVehicleAssignmentHistory(limit = 100) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_vehicle_assignment_history", {
+    p_limit: limit,
+    p_vehicle_id: null
+  });
+
+  if (error) throw error;
+  return (data ?? []) as VehicleAssignmentHistoryRow[];
 }
 
 export async function getProfilesForManagement() {
