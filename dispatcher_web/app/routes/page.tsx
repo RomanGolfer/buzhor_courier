@@ -13,9 +13,13 @@ export default async function RoutesPage() {
     <AppShell profile={profile}>
       <PageHeader
         title="Маршруты и зоны доставки"
-        description="Нарисуйте границы на карте. Адрес заказа будет автоматически проверяться и относиться к подходящей зоне."
+        description={
+          profile.role === "admin"
+            ? "Нарисуйте границы на карте. Адрес заказа будет автоматически проверяться и относиться к подходящей зоне."
+            : "Просмотр действующих зон доставки. Изменять границы и настройки может только администратор."
+        }
       />
-      <RouteZonesManager initialZones={zones} />
+      <RouteZonesManager canManage={profile.role === "admin"} initialZones={zones} />
     </AppShell>
   );
 }

@@ -11,6 +11,7 @@ export type ZoneMapPoint = {
 
 type RouteZoneMapProps = {
   drawingEnabled: boolean;
+  editable: boolean;
   editingZoneId: string | null;
   points: ZoneMapPoint[];
   zones: DeliveryZone[];
@@ -108,18 +109,20 @@ export function RouteZoneMap(props: RouteZoneMapProps) {
 
     props.points.forEach((point, index) => {
       const marker = L.marker(toLatLng(point), {
-        draggable: true,
+        draggable: props.editable,
         icon: vertexIcon(index + 1),
         keyboard: true,
         title: `Точка ${index + 1}`
       });
-      marker.on("dragend", () => {
-        const position = marker.getLatLng();
-        latestProps.current.onMovePoint(index, { lat: position.lat, lng: position.lng });
-      });
+      if (props.editable) {
+        marker.on("dragend", () => {
+          const position = marker.getLatLng();
+          latestProps.current.onMovePoint(index, { lat: position.lat, lng: position.lng });
+        });
+      }
       shapes.addLayer(marker);
     });
-  }, [props.editingZoneId, props.points, props.zones]);
+  }, [props.editable, props.editingZoneId, props.points, props.zones]);
 
   useEffect(() => {
     const map = mapRef.current;

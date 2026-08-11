@@ -24,10 +24,10 @@ type EditorState = {
   points: ZoneMapPoint[];
 };
 
-export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone[] }) {
+export function RouteZonesManager({ initialZones, canManage }: { initialZones: DeliveryZone[]; canManage: boolean }) {
   const [zones, setZones] = useState(initialZones);
   const [editor, setEditor] = useState<EditorState | null>(() => initialZones[0] ? editorFromZone(initialZones[0]) : null);
-  const [drawingEnabled, setDrawingEnabled] = useState(initialZones.length === 0);
+  const [drawingEnabled, setDrawingEnabled] = useState(canManage && initialZones.length === 0);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -42,6 +42,7 @@ export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone
   }
 
   function createZone() {
+    if (!canManage) return;
     setEditor({
       id: null,
       name: `Маршрут ${zones.length + 1}`,
@@ -57,7 +58,7 @@ export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone
   }
 
   async function saveZone() {
-    if (!editor) return;
+    if (!canManage || !editor) return;
     const name = editor.name.trim();
     if (!name) {
       setError("Введите название маршрута");
@@ -110,7 +111,7 @@ export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone
   }
 
   async function deleteZone() {
-    if (!editor?.id) return;
+    if (!canManage || !editor?.id) return;
     if (!window.confirm(`Удалить маршрут «${editor.name}»? Заказы останутся в системе без этой привязки.`)) return;
 
     setIsSaving(true);
@@ -152,16 +153,24 @@ export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone
               <h2 className="font-black text-ink">Зоны обслуживания</h2>
               <p className="mt-1 text-xs font-semibold text-muted">Приоритет определяет выбор, если зоны пересекаются.</p>
             </div>
-            <button className="rounded-md bg-brand px-3 py-2 text-xs font-black text-white hover:bg-brandDark" onClick={createZone} type="button">
-              Новая
-            </button>
+            {canManage ? (
+              <button className="rounded-md bg-brand px-3 py-2 text-xs font-black text-white hover:bg-brandDark" onClick={createZone} type="button">
+                Новая
+              </button>
+            ) : null}
           </div>
 
           <div className="mt-4 grid max-h-64 gap-2 overflow-y-auto pr-1 app-scrollbar">
             {zones.length === 0 ? (
-              <button className="rounded-md border border-dashed border-brand/50 bg-brand/5 px-4 py-5 text-left text-sm font-bold text-brand" onClick={createZone} type="button">
-                Создайте первую зону и отметьте её границы на карте
-              </button>
+              canManage ? (
+                <button className="rounded-md border border-dashed border-brand/50 bg-brand/5 px-4 py-5 text-left text-sm font-bold text-brand" onClick={createZone} type="button">
+                  Создайте первую зону и отметьте её границы на карте
+                </button>
+              ) : (
+                <div className="rounded-md border border-dashed border-line bg-slate-50 px-4 py-5 text-sm font-semibold text-muted">
+                  Зоны ещё не настроены. Создать первую зону может администратор.
+                </div>
+              )
             ) : (
               zones.map((zone) => (
                 <button
@@ -186,7 +195,8 @@ export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone
         </Panel>
 
         {editor ? (
-          <Panel className="grid gap-4 p-4">
+          canManage ? (
+            <Panel className="grid gap-4 p-4">
             <label className="block">
               <span className="mb-1 block text-sm font-bold text-ink">Название маршрута</span>
               <input
@@ -298,31 +308,74 @@ export function RouteZonesManager({ initialZones }: { initialZones: DeliveryZone
             >
               {isSaving ? "Сохраняем..." : "Сохранить маршрут"}
             </button>
-          </Panel>
+            </Panel>
+          ) : (
+            <ReadOnlyZoneDetails zone={editor} />
+          )
         ) : null}
       </div>
 
       <Panel className="relative overflow-hidden">
         <RouteZoneMap
-          drawingEnabled={drawingEnabled && Boolean(editor)}
-          editingZoneId={editor?.id ?? null}
-          onAddPoint={(point) => editor && setEditor({ ...editor, points: [...editor.points, point] })}
+          drawingEnabled={canManage && drawingEnabled && Boolean(editor)}
+          editable={canManage}
+          editingZoneId={canManage ? editor?.id ?? null : null}
+          onAddPoint={(point) => canManage && editor && setEditor({ ...editor, points: [...editor.points, point] })}
           onMovePoint={(index, point) => {
-            if (!editor) return;
+            if (!canManage || !editor) return;
             const points = editor.points.map((candidate, candidateIndex) => candidateIndex === index ? point : candidate);
             setEditor({ ...editor, points });
           }}
           onSelectZone={selectZone}
-          points={editor?.points ?? []}
+          points={canManage ? editor?.points ?? [] : []}
           zones={zones}
         />
-        {drawingEnabled ? (
+        {canManage && drawingEnabled ? (
           <div className="pointer-events-none absolute left-1/2 top-4 z-[500] -translate-x-1/2 rounded-full bg-ink/90 px-4 py-2 text-xs font-black text-white shadow-panel">
             Кликайте по карте, чтобы поставить точки границы
           </div>
         ) : null}
       </Panel>
     </div>
+  );
+}
+
+function ReadOnlyZoneDetails({ zone }: { zone: EditorState }) {
+  return (
+    <Panel className="grid gap-4 p-4">
+      <div className="flex items-center gap-3">
+        <span className="size-4 shrink-0 rounded-full" style={{ backgroundColor: zone.color }} />
+        <div>
+          <h2 className="font-black text-ink">{zone.name}</h2>
+          <p className="text-xs font-semibold text-muted">Просмотр без права изменения</p>
+        </div>
+      </div>
+      <dl className="grid gap-3 text-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
+          <dt className="font-semibold text-muted">Приоритет</dt>
+          <dd className="font-black text-ink">{zone.priority}</dd>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
+          <dt className="font-semibold text-muted">Зона</dt>
+          <dd className={`font-black ${zone.isActive ? "text-good" : "text-muted"}`}>
+            {zone.isActive ? "Активна" : "Выключена"}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-3 border-b border-line pb-3">
+          <dt className="font-semibold text-muted">Заказы клиентов</dt>
+          <dd className={`font-black ${zone.customerOrderEnabled ? "text-good" : "text-muted"}`}>
+            {zone.customerOrderEnabled ? "Разрешены" : "Запрещены"}
+          </dd>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <dt className="font-semibold text-muted">Точек границы</dt>
+          <dd className="font-black text-ink">{zone.points.length}</dd>
+        </div>
+      </dl>
+      <p className="rounded-md bg-slate-50 px-3 py-2 text-xs font-semibold text-muted">
+        Изменять границы, активность и доступность клиентских заказов может только администратор.
+      </p>
+    </Panel>
   );
 }
 
