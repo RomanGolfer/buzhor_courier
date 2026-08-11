@@ -1,17 +1,18 @@
 "use client";
 
-import { ClipboardList, Plus, Truck, UsersRound, type LucideIcon } from "lucide-react";
+import { ClipboardList, Map, Plus, Truck, UsersRound, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links: {
-  href: "/" | "/orders/new" | "/couriers" | "/users";
+  href: "/" | "/orders/new" | "/routes" | "/couriers" | "/users";
   icon: LucideIcon;
   label: string;
   match: (pathname: string) => boolean;
 }[] = [
   { href: "/", icon: ClipboardList, label: "Заказы", match: (pathname) => pathname === "/" },
   { href: "/orders/new", icon: Plus, label: "Новый", match: (pathname) => pathname.startsWith("/orders/new") },
+  { href: "/routes", icon: Map, label: "Маршруты", match: (pathname) => pathname.startsWith("/routes") },
   { href: "/couriers", icon: Truck, label: "Курьеры", match: (pathname) => pathname.startsWith("/couriers") },
   { href: "/users", icon: UsersRound, label: "Пользователи", match: (pathname) => pathname.startsWith("/users") }
 ];

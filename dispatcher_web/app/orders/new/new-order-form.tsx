@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Panel } from "@/components/ui";
 import { notifyOrderPush } from "@/lib/order-push";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import type { Courier, PaymentMethod } from "@/lib/types";
+import type { Courier, DeliveryCoverage, PaymentMethod } from "@/lib/types";
 import { datePresets, formatShortDate, todayDateKey } from "./new-order-date-utils";
 import { Field, Spinner } from "./new-order-form-fields";
 import { useAddressGeocoding } from "./new-order-geocoding";
@@ -71,10 +71,16 @@ export function NewOrderForm({ couriers, initialPhone = "" }: { couriers: Courie
   const [timeSlot, setTimeSlot] = useState(timeSlots[0]);
   const [clientLookupHint, setClientLookupHint] = useState<string | null>(null);
   const [clientLookupLoading, setClientLookupLoading] = useState(false);
+  const [coverageResult, setCoverageResult] = useState<{
+    key: string;
+    coverage: DeliveryCoverage | null;
+    checkFailed: boolean;
+  } | null>(null);
   const touchedFields = useRef(new Set<AutofillField>());
   const clientLookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clientLookupAbortController = useRef<AbortController | null>(null);
   const clientLookupRequestId = useRef(0);
+  const coverageRequestId = useRef(0);
   const applyClientLookupRef = useRef<(client: Extract<ClientLookupResponse, { found: true }>["client"]) => void>(
     () => undefined
   );
@@ -205,6 +211,28 @@ export function NewOrderForm({ couriers, initialPhone = "" }: { couriers: Courie
     }, clientLookupDelayMs);
   }, [clientPhone]);
 
+  useEffect(() => {
+    const parsedLat = Number(lat);
+    const parsedLng = Number(lng);
+    const key = coverageKey(parsedLat, parsedLng);
+    if (!key) return;
+
+    const requestId = coverageRequestId.current + 1;
+    coverageRequestId.current = requestId;
+
+    const timer = setTimeout(async () => {
+      const result = await checkDeliveryCoverage(parsedLat, parsedLng);
+      if (coverageRequestId.current !== requestId) return;
+      setCoverageResult({
+        key,
+        coverage: result.coverage,
+        checkFailed: Boolean(result.error)
+      });
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [lat, lng]);
+
   function updateClientPhone(value: string, finalize = false) {
     const nextPhone = finalize ? normalizeRussianPhone(value) : formatRussianPhoneInput(value);
     setClientPhone(nextPhone);
@@ -278,8 +306,26 @@ export function NewOrderForm({ couriers, initialPhone = "" }: { couriers: Courie
       return;
     }
 
-    if (!hasCoordinatePair(payload.lat, payload.lng)) {
+    if (payload.lat === null || payload.lng === null) {
       setError("Не удалось определить координаты по адресу. Выберите подсказку или введите Lat/Lng вручную.");
+      setIsSaving(false);
+      return;
+    }
+
+    const coverageResult = await checkDeliveryCoverage(payload.lat, payload.lng);
+    if (coverageResult.error || !coverageResult.coverage) {
+      setError("Не удалось проверить адрес по границам маршрутов. Попробуйте ещё раз.");
+      setIsSaving(false);
+      return;
+    }
+
+    if (coverageResult.coverage.configured && !coverageResult.coverage.available) {
+      setCoverageResult({
+        key: coverageKey(payload.lat, payload.lng) ?? "",
+        coverage: coverageResult.coverage,
+        checkFailed: false
+      });
+      setError("Адрес находится вне активных зон, в которых разрешены заказы клиентов.");
       setIsSaving(false);
       return;
     }
@@ -504,6 +550,17 @@ export function NewOrderForm({ couriers, initialPhone = "" }: { couriers: Courie
         {geocodeHint && (
           <p className="text-xs text-gray-400 md:col-span-2">{geocodeHint}</p>
         )}
+        <CoverageStatus
+          checkFailed={Boolean(
+            coverageResult && coverageResult.key === coverageKey(Number(lat), Number(lng)) && coverageResult.checkFailed
+          )}
+          checking={Boolean(
+            coverageKey(Number(lat), Number(lng)) && coverageResult?.key !== coverageKey(Number(lat), Number(lng))
+          )}
+          coverage={
+            coverageResult?.key === coverageKey(Number(lat), Number(lng)) ? coverageResult.coverage : null
+          }
+        />
         <label className="block">
           <span className="mb-1 block text-sm font-bold text-ink">Бутыли</span>
           <input
@@ -578,6 +635,65 @@ const defaultCoordinatePair = {
 
 function hasCoordinatePair(lat: number | null, lng: number | null) {
   return lat !== null && lng !== null;
+}
+
+function isValidCoordinatePair(lat: number, lng: number) {
+  return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+function coverageKey(lat: number, lng: number) {
+  return isValidCoordinatePair(lat, lng) ? `${lat.toFixed(7)}:${lng.toFixed(7)}` : null;
+}
+
+async function checkDeliveryCoverage(lat: number, lng: number) {
+  try {
+    const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+    const response = await fetch(`/api/delivery-coverage?${params.toString()}`, { cache: "no-store" });
+    if (!response.ok) return { coverage: null, error: new Error("coverage_lookup_failed") };
+    const coverage = (await response.json()) as DeliveryCoverage;
+    return { coverage, error: null };
+  } catch (error) {
+    return { coverage: null, error };
+  }
+}
+
+function CoverageStatus({
+  checkFailed,
+  checking,
+  coverage
+}: {
+  checkFailed: boolean;
+  checking: boolean;
+  coverage: DeliveryCoverage | null;
+}) {
+  if (checking) {
+    return <p className="rounded-md bg-slate-50 px-3 py-2 text-xs font-semibold text-muted md:col-span-2">Проверяем адрес по границам маршрутов...</p>;
+  }
+  if (checkFailed) {
+    return <p className="rounded-md bg-red-50 px-3 py-2 text-xs font-semibold text-bad md:col-span-2">Не удалось проверить зону доставки</p>;
+  }
+  if (!coverage) return null;
+  if (!coverage.configured) {
+    return (
+      <p className="rounded-md bg-amber-50 px-3 py-2 text-xs font-semibold text-warn md:col-span-2">
+        Активные границы маршрутов ещё не настроены. Заказ можно создать без привязки к зоне.
+      </p>
+    );
+  }
+  if (!coverage.available) {
+    return (
+      <p className="rounded-md bg-red-50 px-3 py-2 text-xs font-semibold text-bad md:col-span-2">
+        Адрес вне зон, доступных для заказов клиентов.
+      </p>
+    );
+  }
+
+  return (
+    <p className="flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-2 text-xs font-semibold text-good md:col-span-2">
+      <span className="size-2.5 rounded-full" style={{ backgroundColor: coverage.zone_color ?? "#15945b" }} />
+      Адрес входит в маршрут «{coverage.zone_name}»
+    </p>
+  );
 }
 
 function isDefaultCoordinatePair(lat: number | null, lng: number | null) {

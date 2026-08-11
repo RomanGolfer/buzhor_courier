@@ -35,7 +35,7 @@ function buildCsp(nonce: string): string {
     "frame-ancestors 'none'",
     "frame-src 'none'",
     "form-action 'self'",
-    "img-src 'self' data:",
+    "img-src 'self' data: https://*.tile.openstreetmap.org",
     // unsafe-inline is unavoidable for Tailwind utility classes.
     "style-src 'self' 'unsafe-inline'",
     // In production: strict-dynamic trusts dynamically loaded chunks from any

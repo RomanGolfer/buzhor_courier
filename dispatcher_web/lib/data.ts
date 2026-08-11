@@ -1,6 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { attachClientRatingStats, normalizeClientPhone, type ClientRatingRow } from "@/lib/client-ratings";
-import type { Courier, CourierStats, Order, Profile } from "@/lib/types";
+import type { Courier, CourierStats, DeliveryZone, Order, Profile } from "@/lib/types";
 
 function moscowDateKey(date: Date) {
   const parts = new Intl.DateTimeFormat("en", {
@@ -23,6 +23,14 @@ export async function getCouriers() {
 
   if (error) throw error;
   return (data ?? []) as Courier[];
+}
+
+export async function getDeliveryZones() {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_delivery_zones");
+
+  if (error) throw error;
+  return (data ?? []) as DeliveryZone[];
 }
 
 export async function getOrdersByDate(dateKey?: string) {

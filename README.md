@@ -196,6 +196,13 @@ npm run typecheck
 npm run build
 ```
 
+The **Маршруты** section lets dispatchers draw service-area polygons on an
+OpenStreetMap map, set overlap priority, activate or disable a zone, and decide
+whether customers may order inside it. Supabase stores the polygons in PostGIS,
+automatically assigns matching zones to new orders, and exposes the coverage
+check only through the authenticated dispatcher API. Until the first zone is
+activated, existing order creation remains unrestricted.
+
 The root `package.json` also proxies production build/start commands into
 `dispatcher_web/` for deployment environments that use the repository root.
 

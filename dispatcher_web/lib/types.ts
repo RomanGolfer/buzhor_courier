@@ -59,10 +59,36 @@ export type Courier = {
   is_active: boolean;
 };
 
+export type GeoJsonPolygon = {
+  type: "Polygon";
+  coordinates: number[][][];
+};
+
+export type DeliveryZone = {
+  id: string;
+  name: string;
+  color: string;
+  boundary: GeoJsonPolygon;
+  priority: number;
+  is_active: boolean;
+  customer_order_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DeliveryCoverage = {
+  configured: boolean;
+  available: boolean;
+  zone_id: string | null;
+  zone_name: string | null;
+  zone_color: string | null;
+};
+
 export type Order = {
   id: string;
   order_number: string;
   assigned_courier_id: string | null;
+  delivery_zone_id?: string | null;
   state: OrderState;
   client_name: string;
   client_phone: string | null;
