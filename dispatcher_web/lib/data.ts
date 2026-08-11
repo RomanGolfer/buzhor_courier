@@ -7,6 +7,7 @@ import type {
   Courier,
   CourierStats,
   DeliveryZone,
+  DataImportHistoryRow,
   Order,
   OrderEventFeedRow,
   OrganizationDirectoryRow,
@@ -133,51 +134,38 @@ export async function getProfilesForManagement() {
   return (data ?? []) as unknown as Profile[];
 }
 
-type DirectoryOrder = Pick<
-  Order,
-  | "id"
-  | "order_number"
-  | "client_name"
-  | "client_phone"
-  | "address"
-  | "district"
-  | "lat"
-  | "lng"
-  | "payment_method"
-  | "created_at"
-  | "updated_at"
->;
-
-async function getDirectorySource() {
+export async function getClientsDirectory() {
   const supabase = await createServerSupabaseClient();
-  const [ordersResult, ratingsResult] = await Promise.all([
+  const [clientsResult, addressesResult, ordersResult, ratingsResult] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("id, legacy_id, full_name, phone, email, status, loyalty_points, tare_debt, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(5000),
+    supabase
+      .from("client_addresses")
+      .select("client_id, address_text, district, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(10000),
     supabase
       .from("orders")
-      .select(
-        "id, order_number, client_name, client_phone, address, district, lat, lng, payment_method, created_at, updated_at"
-      )
+      .select("client_id, order_number, updated_at")
+      .not("client_id", "is", null)
       .order("updated_at", { ascending: false })
-      .limit(2000),
+      .limit(10000),
     supabase
       .from("client_ratings")
       .select("client_phone_normalized, rating")
       .order("created_at", { ascending: false })
-      .limit(2000)
+      .limit(5000)
   ]);
-
+  if (clientsResult.error) throw clientsResult.error;
+  if (addressesResult.error) throw addressesResult.error;
   if (ordersResult.error) throw ordersResult.error;
   if (ratingsResult.error) throw ratingsResult.error;
 
-  return {
-    orders: (ordersResult.data ?? []) as unknown as DirectoryOrder[],
-    ratings: (ratingsResult.data ?? []) as ClientRatingRow[]
-  };
-}
-
-export async function getClientsDirectory() {
-  const { orders, ratings } = await getDirectorySource();
+  const ratings = (ratingsResult.data ?? []) as ClientRatingRow[];
   const ratingByPhone = new Map<string, { count: number; sum: number }>();
-
   for (const rating of ratings) {
     if (!rating.client_phone_normalized) continue;
     const current = ratingByPhone.get(rating.client_phone_normalized) ?? { count: 0, sum: 0 };
@@ -186,88 +174,146 @@ export async function getClientsDirectory() {
     ratingByPhone.set(rating.client_phone_normalized, current);
   }
 
-  const clients = new Map<string, ClientDirectoryRow>();
-  for (const order of orders) {
-    const normalizedPhone = normalizeClientPhone(order.client_phone);
-    const key = normalizedPhone ?? `${order.client_name.trim().toLocaleLowerCase("ru-RU")}|${order.address.trim().toLocaleLowerCase("ru-RU")}`;
-    const current = clients.get(key);
-    if (current) {
-      current.order_count += 1;
-      continue;
-    }
-
-    const rating = normalizedPhone ? ratingByPhone.get(normalizedPhone) : null;
-    clients.set(key, {
-      key,
-      name: order.client_name,
-      phone: order.client_phone,
-      address: order.address,
-      district: order.district,
-      order_count: 1,
-      last_order_number: order.order_number,
-      last_order_at: order.updated_at,
-      rating_average: rating ? rating.sum / rating.count : null,
-      rating_count: rating?.count ?? 0
-    });
+  const latestAddressByClient = new Map<string, { address_text: string; district: string | null }>();
+  for (const address of addressesResult.data ?? []) {
+    if (!latestAddressByClient.has(address.client_id)) latestAddressByClient.set(address.client_id, address);
+  }
+  const orderStats = new Map<string, { count: number; number: string; updated_at: string }>();
+  for (const order of ordersResult.data ?? []) {
+    if (!order.client_id) continue;
+    const current = orderStats.get(order.client_id);
+    if (current) current.count += 1;
+    else orderStats.set(order.client_id, { count: 1, number: order.order_number, updated_at: order.updated_at });
   }
 
-  return [...clients.values()];
+  return (clientsResult.data ?? []).map((client): ClientDirectoryRow => {
+    const address = latestAddressByClient.get(client.id);
+    const orders = orderStats.get(client.id);
+    const normalizedPhone = normalizeClientPhone(client.phone);
+    const rating = normalizedPhone ? ratingByPhone.get(normalizedPhone) : null;
+    return {
+      key: client.id,
+      legacy_id: client.legacy_id,
+      name: client.full_name,
+      phone: client.phone,
+      email: client.email,
+      status: client.status,
+      loyalty_points: Number(client.loyalty_points ?? 0),
+      tare_debt: client.tare_debt ?? 0,
+      address: address?.address_text ?? "Адрес не указан",
+      district: address?.district ?? null,
+      order_count: orders?.count ?? 0,
+      last_order_number: orders?.number ?? null,
+      last_order_at: orders?.updated_at ?? client.updated_at,
+      rating_average: rating ? rating.sum / rating.count : null,
+      rating_count: rating?.count ?? 0
+    };
+  });
 }
 
 export async function getAddressesDirectory() {
-  const { orders } = await getDirectorySource();
-  const addresses = new Map<string, AddressDirectoryRow>();
+  const supabase = await createServerSupabaseClient();
+  const [addressesResult, ordersResult] = await Promise.all([
+    supabase
+      .from("client_addresses")
+      .select("id, client_id, address_text, zone_name, district, lat, lng, updated_at, clients(full_name, phone)")
+      .order("updated_at", { ascending: false })
+      .limit(10000),
+    supabase
+      .from("orders")
+      .select("client_id, address, updated_at")
+      .not("client_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(10000)
+  ]);
+  if (addressesResult.error) throw addressesResult.error;
+  if (ordersResult.error) throw ordersResult.error;
 
-  for (const order of orders) {
-    const normalizedPhone = normalizeClientPhone(order.client_phone) ?? order.client_name.trim().toLocaleLowerCase("ru-RU");
-    const normalizedAddress = order.address.trim().toLocaleLowerCase("ru-RU");
-    const key = `${normalizedPhone}|${normalizedAddress}`;
-    const current = addresses.get(key);
-    if (current) {
-      current.order_count += 1;
-      continue;
-    }
-
-    addresses.set(key, {
-      key,
-      client_name: order.client_name,
-      client_phone: order.client_phone,
-      address: order.address,
-      district: order.district,
-      lat: order.lat,
-      lng: order.lng,
-      order_count: 1,
-      last_order_at: order.updated_at
-    });
+  const orderStats = new Map<string, { count: number; updated_at: string }>();
+  for (const order of ordersResult.data ?? []) {
+    if (!order.client_id) continue;
+    const key = `${order.client_id}|${order.address.trim().toLocaleLowerCase("ru-RU")}`;
+    const current = orderStats.get(key);
+    if (current) current.count += 1;
+    else orderStats.set(key, { count: 1, updated_at: order.updated_at });
   }
 
-  return [...addresses.values()];
+  return (addressesResult.data ?? []).map((address): AddressDirectoryRow => {
+    const stats = orderStats.get(`${address.client_id}|${address.address_text.trim().toLocaleLowerCase("ru-RU")}`);
+    const relatedClients = address.clients as unknown;
+    const client = (Array.isArray(relatedClients) ? relatedClients[0] : relatedClients) as {
+      full_name: string;
+      phone: string | null;
+    } | null;
+    return {
+      key: address.id,
+      client_name: client?.full_name ?? "Клиент не указан",
+      client_phone: client?.phone ?? null,
+      address: address.address_text,
+      zone_name: address.zone_name,
+      district: address.district,
+      lat: address.lat === null ? null : Number(address.lat),
+      lng: address.lng === null ? null : Number(address.lng),
+      order_count: stats?.count ?? 0,
+      last_order_at: stats?.updated_at ?? address.updated_at
+    };
+  });
 }
 
 export async function getOrganizationsDirectory() {
-  const { orders } = await getDirectorySource();
-  const organizations = new Map<string, OrganizationDirectoryRow>();
+  const supabase = await createServerSupabaseClient();
+  const [organizationsResult, ordersResult] = await Promise.all([
+    supabase
+      .from("organizations")
+      .select("id, legacy_id, name, inn, kpp, phone, email, address_text, tare_debt, updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(5000),
+    supabase
+      .from("orders")
+      .select("organization_id, updated_at")
+      .not("organization_id", "is", null)
+      .order("updated_at", { ascending: false })
+      .limit(10000)
+  ]);
+  if (organizationsResult.error) throw organizationsResult.error;
+  if (ordersResult.error) throw ordersResult.error;
 
-  for (const order of orders) {
-    if (order.payment_method !== "contract") continue;
-    const key = order.client_name.trim().toLocaleLowerCase("ru-RU");
-    const current = organizations.get(key);
-    if (current) {
-      current.order_count += 1;
-      continue;
-    }
-
-    organizations.set(key, {
-      key,
-      name: order.client_name,
-      phone: order.client_phone,
-      address: order.address,
-      order_count: 1,
-      last_order_at: order.updated_at
-    });
+  const orderStats = new Map<string, { count: number; updated_at: string }>();
+  for (const order of ordersResult.data ?? []) {
+    if (!order.organization_id) continue;
+    const current = orderStats.get(order.organization_id);
+    if (current) current.count += 1;
+    else orderStats.set(order.organization_id, { count: 1, updated_at: order.updated_at });
   }
 
-  return [...organizations.values()];
+  return (organizationsResult.data ?? []).map((organization): OrganizationDirectoryRow => {
+    const stats = orderStats.get(organization.id);
+    return {
+      key: organization.id,
+      legacy_id: organization.legacy_id,
+      name: organization.name,
+      inn: organization.inn,
+      kpp: organization.kpp,
+      phone: organization.phone,
+      email: organization.email,
+      address: organization.address_text ?? "Адрес не указан",
+      tare_debt: organization.tare_debt ?? 0,
+      order_count: stats?.count ?? 0,
+      last_order_at: stats?.updated_at ?? organization.updated_at
+    };
+  });
+}
+
+export async function getDataImportHistory(limit = 20) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("data_imports")
+    .select("id, entity_kind, status, source_system, filename, total_rows, imported_rows, updated_rows, skipped_rows, failed_rows, error_summary, created_at, completed_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as DataImportHistoryRow[];
 }
 
 export async function getRecentOrderEvents(limit = 200) {

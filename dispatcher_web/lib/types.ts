@@ -143,12 +143,17 @@ export type CallEvent = {
 
 export type ClientDirectoryRow = {
   key: string;
+  legacy_id: string | null;
   name: string;
   phone: string | null;
+  email: string | null;
+  status: string | null;
+  loyalty_points: number;
+  tare_debt: number;
   address: string;
   district: string | null;
   order_count: number;
-  last_order_number: string;
+  last_order_number: string | null;
   last_order_at: string;
   rating_average: number | null;
   rating_count: number;
@@ -159,6 +164,7 @@ export type AddressDirectoryRow = {
   client_name: string;
   client_phone: string | null;
   address: string;
+  zone_name: string | null;
   district: string | null;
   lat: number | null;
   lng: number | null;
@@ -168,11 +174,32 @@ export type AddressDirectoryRow = {
 
 export type OrganizationDirectoryRow = {
   key: string;
+  legacy_id: string | null;
   name: string;
+  inn: string | null;
+  kpp: string | null;
   phone: string | null;
+  email: string | null;
   address: string;
+  tare_debt: number;
   order_count: number;
   last_order_at: string;
+};
+
+export type DataImportHistoryRow = {
+  id: string;
+  entity_kind: "clients" | "organizations" | "orders";
+  status: "processing" | "completed" | "completed_with_errors" | "failed";
+  source_system: string;
+  filename: string;
+  total_rows: number;
+  imported_rows: number;
+  updated_rows: number;
+  skipped_rows: number;
+  failed_rows: number;
+  error_summary: string[];
+  created_at: string;
+  completed_at: string | null;
 };
 
 export type OrderEventFeedRow = {

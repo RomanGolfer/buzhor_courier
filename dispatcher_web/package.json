@@ -18,7 +18,8 @@
     "lucide-react": "^1.16.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
-    "react-dom": "^19.2.6"
+    "react-dom": "^19.2.6",
+    "read-excel-file": "9.3.10"
   },
   "devDependencies": {
     "@types/estree": "^1.0.9",

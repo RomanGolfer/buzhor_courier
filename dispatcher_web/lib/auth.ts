@@ -27,6 +27,12 @@ export async function requireStaff() {
   return profile;
 }
 
+export async function requireAdmin() {
+  const profile = await requireStaff();
+  if (profile.role !== "admin") redirect("/");
+  return profile;
+}
+
 export async function getApiStaffContext() {
   const supabase = await createServerSupabaseClient();
   const {

@@ -17,7 +17,7 @@ export default async function ClientsPage({
   const normalizedQuery = query.toLocaleLowerCase("ru-RU");
   const visibleClients = normalizedQuery
     ? clients.filter((client) =>
-        [client.name, client.phone, client.address, client.district, client.last_order_number]
+        [client.name, client.phone, client.email, client.address, client.district, client.status, client.legacy_id, client.last_order_number]
           .filter(Boolean)
           .some((value) => String(value).toLocaleLowerCase("ru-RU").includes(normalizedQuery))
       )
@@ -27,12 +27,12 @@ export default async function ClientsPage({
     <AppShell profile={profile}>
       <PageHeader
         title={`Клиенты ${clients.length}`}
-        description="Клиентская база собрана из реальных заказов и объединена по номеру телефона."
+        description="Единая клиентская база из заказов и импортов предыдущего поставщика."
       />
       <DirectorySearch action="/clients" defaultValue={query} placeholder="ФИО, телефон, адрес или номер заказа" />
       <Panel>
         <div className="overflow-x-auto">
-          <table className="min-w-[1200px] text-left text-sm">
+          <table className="min-w-[1500px] text-left text-sm">
             <thead className="bg-slate-50 text-xs font-bold text-muted">
               <tr>
                 <th className="border-b border-line px-4 py-3">№</th>
@@ -40,6 +40,9 @@ export default async function ClientsPage({
                 <th className="border-b border-line px-4 py-3">Адрес</th>
                 <th className="border-b border-line px-4 py-3">Телефон</th>
                 <th className="border-b border-line px-4 py-3">Email</th>
+                <th className="border-b border-line px-4 py-3">Статус</th>
+                <th className="border-b border-line px-4 py-3">Баллы</th>
+                <th className="border-b border-line px-4 py-3">Долг по таре</th>
                 <th className="border-b border-line px-4 py-3">Заказы</th>
                 <th className="border-b border-line px-4 py-3">Оценка</th>
                 <th className="border-b border-line px-4 py-3">Последний заказ</th>
@@ -56,17 +59,20 @@ export default async function ClientsPage({
                     <div className="text-xs text-muted">{client.district ?? "Район не указан"}</div>
                   </td>
                   <td className="border-b border-line px-4 py-3">{client.phone ?? "—"}</td>
-                  <td className="border-b border-line px-4 py-3 text-muted">—</td>
+                  <td className="border-b border-line px-4 py-3">{client.email ?? "—"}</td>
+                  <td className="border-b border-line px-4 py-3">{client.status ?? "—"}</td>
+                  <td className="border-b border-line px-4 py-3 font-semibold">{client.loyalty_points}</td>
+                  <td className="border-b border-line px-4 py-3 font-semibold">{client.tare_debt}</td>
                   <td className="border-b border-line px-4 py-3 font-black">{client.order_count}</td>
                   <td className="border-b border-line px-4 py-3 font-black text-amber-700">
                     {client.rating_average ? `${client.rating_average.toFixed(1)} / 5 (${client.rating_count})` : "—"}
                   </td>
-                  <td className="border-b border-line px-4 py-3 font-bold text-brand">{client.last_order_number}</td>
+                  <td className="border-b border-line px-4 py-3 font-bold text-brand">{client.last_order_number ?? "—"}</td>
                   <td className="border-b border-line px-4 py-3">{formatDate(client.last_order_at)}</td>
                 </tr>
               ))}
               {visibleClients.length === 0 ? (
-                <tr><td className="px-4 py-10 text-center font-semibold text-muted" colSpan={9}>Клиенты не найдены</td></tr>
+                <tr><td className="px-4 py-10 text-center font-semibold text-muted" colSpan={12}>Клиенты не найдены</td></tr>
               ) : null}
             </tbody>
           </table>

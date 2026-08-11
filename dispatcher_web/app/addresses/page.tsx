@@ -21,7 +21,7 @@ export default async function AddressesPage({
   const baseRows = missingOnly ? withoutCoordinates : addresses;
   const visibleAddresses = normalizedQuery
     ? baseRows.filter((address) =>
-        [address.client_name, address.client_phone, address.address, address.district]
+        [address.client_name, address.client_phone, address.address, address.zone_name, address.district]
           .filter(Boolean)
           .some((value) => String(value).toLocaleLowerCase("ru-RU").includes(normalizedQuery))
       )
@@ -29,7 +29,7 @@ export default async function AddressesPage({
 
   return (
     <AppShell profile={profile}>
-      <PageHeader title="Адреса" description="Адресная база и координаты, накопленные из заказов." />
+      <PageHeader title="Адреса" description="Адресная база и координаты из заказов и импортов предыдущего поставщика." />
       <div className="mb-4 flex flex-wrap gap-4 border-b border-line">
         <Link className={`border-b-2 px-1 pb-2 text-sm font-black ${!missingOnly ? "border-brand text-brand" : "border-transparent text-ink"}`} href="/addresses">
           Все адреса {addresses.length}
@@ -57,7 +57,10 @@ export default async function AddressesPage({
               {visibleAddresses.map((address) => (
                 <tr className="hover:bg-slate-50" key={address.key}>
                   <td className="border-b border-line px-4 py-3 font-black text-ink">{address.client_name}</td>
-                  <td className="border-b border-line px-4 py-3">{address.district ?? "Не выбран"}</td>
+                  <td className="border-b border-line px-4 py-3">
+                    <div className="font-semibold">{address.zone_name ?? "Зона не выбрана"}</div>
+                    <div className="text-xs text-muted">{address.district ?? "Район не указан"}</div>
+                  </td>
                   <td className="max-w-md border-b border-line px-4 py-3 font-semibold">{address.address}</td>
                   <td className="border-b border-line px-4 py-3">{address.client_phone ?? "—"}</td>
                   <td className="border-b border-line px-4 py-3 font-mono text-xs">

@@ -4,6 +4,7 @@ import {
   Bell,
   BriefcaseBusiness,
   ClipboardList,
+  FileUp,
   Map,
   MapPin,
   MessageCircleReply,
@@ -37,6 +38,7 @@ const links: {
   { href: "/feedback", icon: MessageCircleReply, label: "Обратная связь", match: (pathname) => pathname.startsWith("/feedback") },
   { href: "/micro-markets", icon: Store, label: "Микромаркеты", match: (pathname) => pathname.startsWith("/micro-markets") },
   { href: "/delivery-zones", icon: Map, label: "Зоны доставки", match: (pathname) => pathname.startsWith("/delivery-zones") },
+  { href: "/import", icon: FileUp, label: "Импорт", match: (pathname) => pathname.startsWith("/import"), adminOnly: true },
   { href: "/users", icon: UserCog, label: "Пользователи", match: (pathname) => pathname.startsWith("/users"), adminOnly: true }
 ];
 
