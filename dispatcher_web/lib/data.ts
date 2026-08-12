@@ -8,14 +8,20 @@ import type {
   CourierDailySalesRow,
   CourierDailySalesRpcRow,
   CourierStats,
+  DispatcherAnalytics,
+  DispatcherOperations,
   DeliveryZone,
   DeliveryZoneLearningCandidate,
   DeliveryZoneLearningCandidateRow,
   DataImportHistoryRow,
+  InventoryMovementRow,
+  NotificationOutboxRow,
   Order,
   OrderEventFeedRow,
   OrganizationDirectoryRow,
   Profile,
+  ShiftReconciliationRow,
+  StaffAuditRow,
   VehicleAssignmentHistoryRow,
   VehicleFleetRow
 } from "@/lib/types";
@@ -383,12 +389,80 @@ export async function getDataImportHistory(limit = 20) {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("data_imports")
-    .select("id, entity_kind, status, source_system, filename, total_rows, imported_rows, updated_rows, skipped_rows, failed_rows, error_summary, created_at, completed_at")
+    .select("id, entity_kind, status, source_system, filename, total_rows, imported_rows, updated_rows, skipped_rows, failed_rows, error_summary, created_at, completed_at, rolled_back_at, rollback_reason")
     .order("created_at", { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  return (data ?? []) as DataImportHistoryRow[];
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+  const { data: changes, error: changesError } = await supabase
+    .from("data_import_changes")
+    .select("import_id")
+    .in("import_id", rows.map((row) => row.id));
+  if (changesError) throw changesError;
+  const changeCounts = new Map<string, number>();
+  for (const change of changes ?? []) {
+    changeCounts.set(change.import_id, (changeCounts.get(change.import_id) ?? 0) + 1);
+  }
+  return rows.map((row) => ({ ...row, change_count: changeCounts.get(row.id) ?? 0 })) as DataImportHistoryRow[];
+}
+
+export async function getDispatcherOperations(workDate: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_dispatcher_operations", { p_work_date: workDate });
+  if (error) throw error;
+  return data as DispatcherOperations;
+}
+
+export async function getShiftReconciliation(workDate: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_shift_reconciliation", { p_work_date: workDate });
+  if (error) throw error;
+  return (data ?? []) as ShiftReconciliationRow[];
+}
+
+export async function getInventoryMovements(dateFrom: string, dateTo: string, courierId: string | null = null) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_inventory_movements", {
+    p_courier_id: courierId,
+    p_date_from: dateFrom,
+    p_date_to: dateTo,
+    p_limit: 500
+  });
+  if (error) throw error;
+  return (data ?? []) as InventoryMovementRow[];
+}
+
+export async function getDispatcherAnalytics(dateFrom: string, dateTo: string) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("get_dispatcher_analytics", {
+    p_date_from: dateFrom,
+    p_date_to: dateTo
+  });
+  if (error) throw error;
+  return data as DispatcherAnalytics;
+}
+
+export async function getStaffAudit(limit = 300, entityType: string | null = null) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase.rpc("list_staff_audit", {
+    p_entity_type: entityType,
+    p_limit: limit
+  });
+  if (error) throw error;
+  return (data ?? []) as StaffAuditRow[];
+}
+
+export async function getNotificationOutbox(limit = 200) {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("notification_outbox")
+    .select("id, audience, channel, event_type, order_id, title, body, recipient, status, last_error, sent_at, created_at, orders(order_number, client_name)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as NotificationOutboxRow[];
 }
 
 export async function getRecentOrderEvents(limit = 200) {

@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
   if (action === "batch") return importBatch(context.supabase, context.profile.id, body);
   if (action === "finish") return finishImport(context.supabase, context.profile.id, body);
   if (action === "fail") return failImport(context.supabase, context.profile.id, body);
+  if (action === "rollback") return rollbackImport(context.supabase, body);
   return NextResponse.json({ error: "Неизвестное действие импорта" }, { status: 400 });
 }
 
@@ -133,9 +134,9 @@ async function importBatch(supabase: SupabaseClient, profileId: string, body: Re
 
   let result: BatchResult;
   if (record.entity_kind === "clients") {
-    result = await processClients(supabase, rows, record.source_system, offset);
+    result = await processClients(supabase, rows, record.source_system, offset, importId);
   } else if (record.entity_kind === "organizations") {
-    result = await processOrganizations(supabase, rows, record.source_system, offset);
+    result = await processOrganizations(supabase, rows, record.source_system, offset, importId);
   } else {
     result = await processOrders(supabase, rows, record.source_system, record.filename, importId, profileId, offset);
   }
@@ -206,11 +207,35 @@ async function failImport(supabase: SupabaseClient, profileId: string, body: Rec
   return NextResponse.json({ status: "failed" });
 }
 
+async function rollbackImport(supabase: SupabaseClient, body: Record<string, unknown>) {
+  const importId = typeof body.importId === "string" && UUID_PATTERN.test(body.importId) ? body.importId : null;
+  const reason = limitedText(body.reason, 1000);
+  if (!importId || !reason || reason.trim().length < 5) {
+    return NextResponse.json({ error: "Укажите причину отмены импорта" }, { status: 400 });
+  }
+  const { data, error } = await supabase.rpc("rollback_data_import", {
+    p_import_id: importId,
+    p_reason: reason.trim()
+  });
+  if (error) {
+    const message = error.message.includes("import_record_changed")
+      ? "После импорта данные уже изменялись. Автоматическая отмена остановлена, чтобы не потерять новые правки."
+      : error.message.includes("import_change_log_missing")
+        ? "Для этого старого импорта ещё нет точного журнала изменений, поэтому безопасная отмена недоступна."
+        : error.message.includes("import_not_rollbackable")
+          ? "Этот импорт нельзя отменить в текущем состоянии."
+          : "Не удалось отменить импорт.";
+    return NextResponse.json({ error: message }, { status: 409 });
+  }
+  return NextResponse.json({ rolledBack: Number(data ?? 0) });
+}
+
 async function processClients(
   supabase: SupabaseClient,
   rows: LegacyRawRow[],
   sourceSystem: string,
-  offset: number
+  offset: number,
+  importId: string
 ): Promise<BatchResult> {
   const normalized = rows.map(normalizeClientRow);
   const errors = validationErrors(normalized, offset);
@@ -222,7 +247,7 @@ async function processClients(
   const keys = [...unique.keys()];
   const { data: existingData, error: existingError } = await supabase
     .from("clients")
-    .select("id, dedupe_key, legacy_id, full_name, phone, email, status, loyalty_points, tare_debt, notes, legacy_data")
+    .select("id, dedupe_key, legacy_id, full_name, phone, email, status, loyalty_points, tare_debt, notes, source_system, legacy_data")
     .in("dedupe_key", keys);
   if (existingError) return databaseFailure(rows.length, existingError.message, offset);
 
@@ -250,6 +275,20 @@ async function processClients(
     .select("id, dedupe_key");
   if (saveError) return databaseFailure(rows.length, saveError.message, offset);
 
+  const payloadByKey = new Map(payloads.map((payload) => [payload.dedupe_key, payload]));
+  const changeError = await recordImportChanges(supabase, importId, (saved ?? []).map((savedRow) => {
+    const existing = existingByKey.get(savedRow.dedupe_key);
+    return {
+      import_id: importId,
+      entity_table: "clients",
+      entity_id: savedRow.id,
+      operation: existing ? "updated" : "created",
+      before_data: existing ?? null,
+      after_data: payloadByKey.get(savedRow.dedupe_key) ?? {}
+    };
+  }));
+  if (changeError) return databaseFailure(rows.length, `Журнал отмены: ${changeError}`, offset);
+
   const idByKey = new Map((saved ?? []).map((row) => [row.dedupe_key, row.id]));
   const addressPayloads = [...unique].flatMap(([key, row]) => {
     const clientId = idByKey.get(key);
@@ -257,10 +296,29 @@ async function processClients(
     return [addressPayload(clientId, row, sourceSystem)];
   });
   if (addressPayloads.length > 0) {
-    const { error: addressError } = await supabase
+    const clientIds = [...new Set(addressPayloads.map((payload) => payload.client_id))];
+    const addressKeys = [...new Set(addressPayloads.map((payload) => payload.dedupe_key))];
+    const existingAddressesResult = await supabase
       .from("client_addresses")
-      .upsert(addressPayloads, { onConflict: "client_id,dedupe_key" });
+      .select("id, client_id, dedupe_key, legacy_id, address_text, zone_name, district, locality, street, house, building, structure, entrance, floor, apartment, lat, lng, source_system, legacy_data")
+      .in("client_id", clientIds)
+      .in("dedupe_key", addressKeys);
+    if (existingAddressesResult.error) return databaseFailure(rows.length, existingAddressesResult.error.message, offset);
+    const existingAddressByKey = new Map((existingAddressesResult.data ?? []).map((address) => [`${address.client_id}:${address.dedupe_key}`, address]));
+    const { data: savedAddresses, error: addressError } = await supabase
+      .from("client_addresses")
+      .upsert(addressPayloads, { onConflict: "client_id,dedupe_key" })
+      .select("id, client_id, dedupe_key");
     if (addressError) errors.push(`Адреса: ${addressError.message}`);
+    else {
+      const addressPayloadByKey = new Map(addressPayloads.map((payload) => [`${payload.client_id}:${payload.dedupe_key}`, payload]));
+      const addressChangeError = await recordImportChanges(supabase, importId, (savedAddresses ?? []).map((savedAddress) => {
+        const key = `${savedAddress.client_id}:${savedAddress.dedupe_key}`;
+        const existing = existingAddressByKey.get(key);
+        return { import_id: importId, entity_table: "client_addresses", entity_id: savedAddress.id, operation: existing ? "updated" : "created", before_data: existing ?? null, after_data: addressPayloadByKey.get(key) ?? {} };
+      }));
+      if (addressChangeError) errors.push(`Журнал отмены адресов: ${addressChangeError}`);
+    }
   }
 
   return counts(unique.size - existingByKey.size, existingByKey.size, duplicateCount, normalized.length - valid.length, errors);
@@ -270,7 +328,8 @@ async function processOrganizations(
   supabase: SupabaseClient,
   rows: LegacyRawRow[],
   sourceSystem: string,
-  offset: number
+  offset: number,
+  importId: string
 ): Promise<BatchResult> {
   const normalized = rows.map(normalizeOrganizationRow);
   const errors = validationErrors(normalized, offset);
@@ -282,7 +341,7 @@ async function processOrganizations(
   const keys = [...unique.keys()];
   const { data: existingData, error: existingError } = await supabase
     .from("organizations")
-    .select("dedupe_key, legacy_id, name, inn, kpp, phone, email, address_text, tare_debt, legacy_data")
+    .select("id, dedupe_key, legacy_id, name, inn, kpp, phone, email, address_text, tare_debt, source_system, legacy_data")
     .in("dedupe_key", keys);
   if (existingError) return databaseFailure(rows.length, existingError.message, offset);
 
@@ -304,8 +363,14 @@ async function processOrganizations(
     };
   });
 
-  const { error: saveError } = await supabase.from("organizations").upsert(payloads, { onConflict: "dedupe_key" });
+  const { data: saved, error: saveError } = await supabase.from("organizations").upsert(payloads, { onConflict: "dedupe_key" }).select("id, dedupe_key");
   if (saveError) return databaseFailure(rows.length, saveError.message, offset);
+  const payloadByKey = new Map(payloads.map((payload) => [payload.dedupe_key, payload]));
+  const changeError = await recordImportChanges(supabase, importId, (saved ?? []).map((savedRow) => {
+    const existing = existingByKey.get(savedRow.dedupe_key);
+    return { import_id: importId, entity_table: "organizations", entity_id: savedRow.id, operation: existing ? "updated" : "created", before_data: existing ?? null, after_data: payloadByKey.get(savedRow.dedupe_key) ?? {} };
+  }));
+  if (changeError) return databaseFailure(rows.length, `Журнал отмены: ${changeError}`, offset);
   return counts(unique.size - existingByKey.size, existingByKey.size, duplicateCount, normalized.length - valid.length, errors);
 }
 
@@ -349,9 +414,9 @@ async function processOrders(
     return counts(0, 0, duplicateCount + existingCount, normalized.length - valid.length, errors);
   }
 
-  const clientIds = await upsertOrderClients(supabase, newItems.map((item) => item.row), sourceSystem);
+  const clientIds = await upsertOrderClients(supabase, newItems.map((item) => item.row), sourceSystem, importId);
   if (clientIds.error) return databaseFailure(rows.length, clientIds.error, offset);
-  const organizationIds = await upsertOrderOrganizations(supabase, newItems.map((item) => item.row), sourceSystem);
+  const organizationIds = await upsertOrderOrganizations(supabase, newItems.map((item) => item.row), sourceSystem, importId);
   if (organizationIds.error) return databaseFailure(rows.length, organizationIds.error, offset);
   const couriers = await loadCouriers(supabase);
   if (couriers.error) return databaseFailure(rows.length, couriers.error, offset);
@@ -400,6 +465,16 @@ async function processOrders(
   }
 
   if (inserted.length > 0) {
+    const payloadByNumber = new Map(payloads.map((payload) => [payload.order_number, payload]));
+    const changeError = await recordImportChanges(supabase, importId, inserted.map((order) => ({
+      import_id: importId,
+      entity_table: "orders",
+      entity_id: order.id,
+      operation: "created",
+      before_data: null,
+      after_data: payloadByNumber.get(order.order_number) ?? {}
+    })));
+    if (changeError) errors.push(`Журнал отмены заказов: ${changeError}`);
     const { error: eventError } = await supabase.from("order_events").insert(
       inserted.map((order) => ({
         order_id: order.id,
@@ -421,10 +496,10 @@ async function processOrders(
   );
 }
 
-async function upsertOrderClients(supabase: SupabaseClient, rows: NormalizedOrderRow[], sourceSystem: string) {
+async function upsertOrderClients(supabase: SupabaseClient, rows: NormalizedOrderRow[], sourceSystem: string, importId: string) {
   const unique = new Map(rows.map((row) => [orderClientKey(row, sourceSystem), row]));
   const keys = [...unique.keys()];
-  const existingResult = await supabase.from("clients").select("dedupe_key, legacy_data").in("dedupe_key", keys);
+  const existingResult = await supabase.from("clients").select("id, dedupe_key, legacy_id, full_name, phone, email, status, loyalty_points, tare_debt, notes, source_system, legacy_data").in("dedupe_key", keys);
   if (existingResult.error) return { byKey: new Map<string, string>(), error: existingResult.error.message };
   const legacyByKey = new Map((existingResult.data ?? []).map((row) => [row.dedupe_key, row.legacy_data]));
   const payloads = [...unique].map(([key, row]) => ({
@@ -437,6 +512,13 @@ async function upsertOrderClients(supabase: SupabaseClient, rows: NormalizedOrde
   }));
   const saved = await supabase.from("clients").upsert(payloads, { onConflict: "dedupe_key" }).select("id, dedupe_key");
   if (saved.error) return { byKey: new Map<string, string>(), error: saved.error.message };
+  const existingByKey = new Map((existingResult.data ?? []).map((row) => [row.dedupe_key, row]));
+  const payloadByKey = new Map(payloads.map((payload) => [payload.dedupe_key, payload]));
+  const clientChangeError = await recordImportChanges(supabase, importId, (saved.data ?? []).map((savedRow) => {
+    const existing = existingByKey.get(savedRow.dedupe_key);
+    return { import_id: importId, entity_table: "clients", entity_id: savedRow.id, operation: existing ? "updated" : "created", before_data: existing ?? null, after_data: payloadByKey.get(savedRow.dedupe_key) ?? {} };
+  }));
+  if (clientChangeError) return { byKey: new Map<string, string>(), error: `Журнал отмены клиентов: ${clientChangeError}` };
   const byKey = new Map((saved.data ?? []).map((row) => [row.dedupe_key, row.id]));
 
   const addressPayloads = rows.flatMap((row) => {
@@ -454,13 +536,19 @@ async function upsertOrderClients(supabase: SupabaseClient, rows: NormalizedOrde
     }];
   });
   if (addressPayloads.length > 0) {
-    const addressResult = await supabase.from("client_addresses").upsert(addressPayloads, { onConflict: "client_id,dedupe_key" });
+    const existingAddressResult = await supabase.from("client_addresses").select("id, client_id, dedupe_key, legacy_id, address_text, zone_name, district, locality, street, house, building, structure, entrance, floor, apartment, lat, lng, source_system, legacy_data").in("client_id", [...new Set(addressPayloads.map((payload) => payload.client_id))]).in("dedupe_key", [...new Set(addressPayloads.map((payload) => payload.dedupe_key))]);
+    if (existingAddressResult.error) return { byKey, error: existingAddressResult.error.message };
+    const addressResult = await supabase.from("client_addresses").upsert(addressPayloads, { onConflict: "client_id,dedupe_key" }).select("id, client_id, dedupe_key");
     if (addressResult.error) return { byKey, error: addressResult.error.message };
+    const existingAddressByKey = new Map((existingAddressResult.data ?? []).map((row) => [`${row.client_id}:${row.dedupe_key}`, row]));
+    const addressPayloadByKey = new Map(addressPayloads.map((payload) => [`${payload.client_id}:${payload.dedupe_key}`, payload]));
+    const addressChangeError = await recordImportChanges(supabase, importId, (addressResult.data ?? []).map((savedRow) => { const key = `${savedRow.client_id}:${savedRow.dedupe_key}`; const existing = existingAddressByKey.get(key); return { import_id: importId, entity_table: "client_addresses", entity_id: savedRow.id, operation: existing ? "updated" : "created", before_data: existing ?? null, after_data: addressPayloadByKey.get(key) ?? {} }; }));
+    if (addressChangeError) return { byKey, error: `Журнал отмены адресов: ${addressChangeError}` };
   }
   return { byKey, error: null };
 }
 
-async function upsertOrderOrganizations(supabase: SupabaseClient, rows: NormalizedOrderRow[], sourceSystem: string) {
+async function upsertOrderOrganizations(supabase: SupabaseClient, rows: NormalizedOrderRow[], sourceSystem: string, importId: string) {
   const relevant = rows.filter((row) => row.organization);
   const unique = new Map(relevant.map((row) => [orderOrganizationKey(row, sourceSystem), row]));
   if (unique.size === 0) return { byKey: new Map<string, string>(), error: null };
@@ -474,8 +562,14 @@ async function upsertOrderOrganizations(supabase: SupabaseClient, rows: Normaliz
     source_system: sourceSystem,
     legacy_data: mergeLegacyData(null, row.original, sourceSystem)
   }));
+  const existingResult = await supabase.from("organizations").select("id, dedupe_key, legacy_id, name, inn, kpp, phone, email, address_text, tare_debt, source_system, legacy_data").in("dedupe_key", [...unique.keys()]);
+  if (existingResult.error) return { byKey: new Map<string, string>(), error: existingResult.error.message };
   const saved = await supabase.from("organizations").upsert(payloads, { onConflict: "dedupe_key" }).select("id, dedupe_key");
   if (saved.error) return { byKey: new Map<string, string>(), error: saved.error.message };
+  const existingByKey = new Map((existingResult.data ?? []).map((row) => [row.dedupe_key, row]));
+  const payloadByKey = new Map(payloads.map((payload) => [payload.dedupe_key, payload]));
+  const changeError = await recordImportChanges(supabase, importId, (saved.data ?? []).map((savedRow) => { const existing = existingByKey.get(savedRow.dedupe_key); return { import_id: importId, entity_table: "organizations", entity_id: savedRow.id, operation: existing ? "updated" : "created", before_data: existing ?? null, after_data: payloadByKey.get(savedRow.dedupe_key) ?? {} }; }));
+  if (changeError) return { byKey: new Map<string, string>(), error: `Журнал отмены организаций: ${changeError}` };
   return { byKey: new Map((saved.data ?? []).map((row) => [row.dedupe_key, row.id])), error: null };
 }
 
@@ -496,6 +590,25 @@ function courierId(row: NormalizedOrderRow, byName: Map<string, string>, byPhone
   const phone = normalizePhone(row.courierPhone);
   if (phone && byPhone.has(phone)) return byPhone.get(phone) ?? null;
   return row.courierName ? byName.get(normalizeText(row.courierName)) ?? null : null;
+}
+
+async function recordImportChanges(
+  supabase: SupabaseClient,
+  importId: string,
+  changes: Array<{
+    import_id: string;
+    entity_table: string;
+    entity_id: string;
+    operation: string;
+    before_data: unknown;
+    after_data: unknown;
+  }>
+) {
+  if (changes.length === 0) return null;
+  const { error } = await supabase
+    .from("data_import_changes")
+    .upsert(changes.map((change) => ({ ...change, import_id: importId })), { onConflict: "import_id,entity_table,entity_id" });
+  return error?.message ?? null;
 }
 
 function addressPayload(clientId: string, row: NormalizedClientRow, sourceSystem: string) {

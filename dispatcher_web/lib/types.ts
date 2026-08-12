@@ -57,6 +57,209 @@ export type Courier = {
   phone: string | null;
   region: string | null;
   is_active: boolean;
+  last_lat?: number | null;
+  last_lng?: number | null;
+  last_location_accuracy_m?: number | null;
+  last_location_at?: string | null;
+};
+
+export type OperationsSummary = {
+  total_orders: number;
+  delivered_orders: number;
+  active_orders: number;
+  unassigned_orders: number;
+  failed_orders: number;
+  overdue_orders: number;
+  open_issues: number;
+  planned_bottles: number;
+  revenue: number;
+};
+
+export type OperationsOrder = {
+  id: string;
+  order_number: string;
+  state: OrderState;
+  client_name: string;
+  address: string;
+  lat: number | null;
+  lng: number | null;
+  district: string | null;
+  time_slot: string | null;
+  bottles: number;
+  price: number;
+  payment_method: PaymentMethod;
+  courier_id: string | null;
+  courier_name: string | null;
+  zone_id: string | null;
+  zone_name: string | null;
+  zone_color: string | null;
+  is_overdue: boolean;
+};
+
+export type OperationsCourier = {
+  id: string;
+  name: string;
+  phone: string | null;
+  is_active: boolean;
+  lat: number | null;
+  lng: number | null;
+  location_accuracy_m: number | null;
+  location_at: string | null;
+  vehicle_id: string | null;
+  vehicle_plate: string | null;
+  total_orders: number;
+  delivered_orders: number;
+  active_orders: number;
+  failed_orders: number;
+  planned_bottles: number;
+  inventory_configured: boolean;
+  loaded_full_bottles: number | null;
+  remaining_full_bottles: number | null;
+  remaining_empty_bottles: number | null;
+  estimated_finish: string | null;
+};
+
+export type OperationalIssue = {
+  issue_key: string;
+  issue_type: string;
+  severity: "critical" | "high" | "medium";
+  order_id: string | null;
+  courier_id: string | null;
+  title: string;
+  detail: string;
+  lat: number | null;
+  lng: number | null;
+  status: "open" | "acknowledged" | "resolved" | "dismissed";
+  note: string | null;
+  handled_at: string | null;
+  handled_by_name: string | null;
+};
+
+export type DispatcherOperations = {
+  work_date: string;
+  summary: OperationsSummary;
+  orders: OperationsOrder[];
+  couriers: OperationsCourier[];
+  issues: OperationalIssue[];
+};
+
+export type ShiftReconciliationRow = {
+  courier_id: string;
+  courier_name: string;
+  courier_active: boolean;
+  vehicle_plate: string | null;
+  delivered_orders: number;
+  active_orders: number;
+  failed_orders: number;
+  expected_cash: number;
+  expected_card: number;
+  expected_qr: number;
+  expected_online: number;
+  expected_contract: number;
+  expected_total: number;
+  actual_cash: number | null;
+  actual_card: number | null;
+  actual_qr: number | null;
+  actual_online: number | null;
+  actual_contract: number | null;
+  cash_difference: number | null;
+  non_cash_difference: number | null;
+  sold_full_bottles: number;
+  collected_empty_bottles: number;
+  inventory_configured: boolean;
+  expected_full_bottles: number | null;
+  expected_empty_bottles: number | null;
+  actual_full_bottles: number | null;
+  actual_empty_bottles: number | null;
+  full_difference: number | null;
+  empty_difference: number | null;
+  start_mileage: number | null;
+  end_mileage: number | null;
+  distance_km: number | null;
+  status: "open" | "closed";
+  was_reopened: boolean;
+  discrepancy_reason: string | null;
+  notes: string | null;
+  closed_at: string | null;
+  closed_by_name: string | null;
+  reopened_at: string | null;
+  reopen_reason: string | null;
+  readiness: "closed" | "active_orders" | "inventory_missing" | "ready";
+};
+
+export type InventoryMovementRow = {
+  id: string;
+  work_date: string;
+  created_at: string;
+  courier_id: string;
+  courier_name: string;
+  vehicle_plate: string | null;
+  event_type: "dispatcher_inventory" | "delivery" | "delivery_correction" | "shift_close" | "manual_adjustment";
+  full_bottles_delta: number;
+  empty_bottles_delta: number;
+  order_number: string | null;
+  actor_name: string | null;
+  note: string | null;
+  metadata: Record<string, unknown>;
+};
+
+export type AnalyticsSummary = {
+  total_orders: number;
+  delivered_orders: number;
+  failed_orders: number;
+  cancelled_orders: number;
+  revenue: number;
+  average_order: number;
+  full_bottles: number;
+  empty_bottles: number;
+  unique_clients: number;
+  average_rating: number;
+  rating_count: number;
+  closed_shifts: number;
+  shifts_with_discrepancy: number;
+};
+
+export type DispatcherAnalytics = {
+  date_from: string;
+  date_to: string;
+  previous_date_from: string;
+  previous_date_to: string;
+  summary: AnalyticsSummary;
+  previous: Pick<AnalyticsSummary, "total_orders" | "delivered_orders" | "failed_orders" | "revenue" | "full_bottles">;
+  trend: Array<{ day: string; orders: number; delivered: number; failed: number; revenue: number; full_bottles: number; empty_bottles: number }>;
+  payments: Array<{ method: PaymentMethod; orders: number; amount: number }>;
+  couriers: Array<{ id: string; display_name: string; total_orders: number; delivered_orders: number; failed_orders: number; revenue: number; full_bottles: number; average_rating: number; rating_count: number }>;
+  zones: Array<{ id: string; name: string; color: string; total_orders: number; delivered_orders: number; failed_orders: number; revenue: number }>;
+  quality: { missing_coordinates: number; missing_phone: number; without_zone: number; without_courier: number; unconfirmed_payment: number };
+};
+
+export type StaffAuditRow = {
+  id: string;
+  created_at: string;
+  actor_name: string;
+  actor_role: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  summary: string;
+  before_data: Record<string, unknown> | null;
+  after_data: Record<string, unknown> | null;
+};
+
+export type NotificationOutboxRow = {
+  id: string;
+  audience: "dispatcher" | "client";
+  channel: "panel" | "push" | "sms" | "messenger";
+  event_type: string;
+  order_id: string | null;
+  title: string;
+  body: string;
+  recipient: string | null;
+  status: "ready" | "waiting_provider" | "sent" | "failed" | "cancelled";
+  last_error: string | null;
+  sent_at: string | null;
+  created_at: string;
+  orders: Pick<Order, "order_number" | "client_name"> | null;
 };
 
 export type GeoJsonPolygon = {
@@ -338,7 +541,7 @@ export type OrganizationDirectoryRow = {
 export type DataImportHistoryRow = {
   id: string;
   entity_kind: "clients" | "organizations" | "orders";
-  status: "processing" | "completed" | "completed_with_errors" | "failed";
+  status: "processing" | "completed" | "completed_with_errors" | "failed" | "rolled_back";
   source_system: string;
   filename: string;
   total_rows: number;
@@ -349,6 +552,9 @@ export type DataImportHistoryRow = {
   error_summary: string[];
   created_at: string;
   completed_at: string | null;
+  rolled_back_at: string | null;
+  rollback_reason: string | null;
+  change_count: number;
 };
 
 export type OrderEventFeedRow = {

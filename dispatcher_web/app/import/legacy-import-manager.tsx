@@ -144,6 +144,27 @@ export function LegacyImportManager({ history }: { history: DataImportHistoryRow
     }
   }
 
+  async function rollbackImport(row: DataImportHistoryRow) {
+    const reason = window.prompt("Укажите причину отмены импорта. Данные будут восстановлены только если после импорта их никто не менял.");
+    if (reason === null) return;
+    if (reason.trim().length < 5) {
+      setMessage("Причина отмены должна содержать не менее пяти символов.");
+      return;
+    }
+    if (!window.confirm(`Отменить импорт «${row.filename}»? Операция остановится без изменений, если обнаружит более новые правки.`)) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await api<{ rolledBack: number }>({ action: "rollback", importId: row.id, reason: reason.trim() });
+      setMessage(`Импорт отменён. Восстановлено или удалено записей: ${response.rolledBack}.`);
+      router.refresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не удалось отменить импорт");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -250,7 +271,7 @@ export function LegacyImportManager({ history }: { history: DataImportHistoryRow
         </section>
       ) : null}
 
-      <ImportHistory rows={history} />
+      <ImportHistory busy={busy} onRollback={(row) => void rollbackImport(row)} rows={history} />
     </div>
   );
 }
@@ -297,7 +318,7 @@ function previewValues(entity: LegacyImportEntity, preview: LegacyImportPreview)
   return ["", "", "", ""];
 }
 
-function ImportHistory({ rows }: { rows: DataImportHistoryRow[] }) {
+function ImportHistory({ busy, onRollback, rows }: { busy: boolean; onRollback: (row: DataImportHistoryRow) => void; rows: DataImportHistoryRow[] }) {
   return (
     <section className="border border-line bg-white shadow-sm">
       <div className="border-b border-line px-6 py-4">
@@ -317,6 +338,7 @@ function ImportHistory({ rows }: { rows: DataImportHistoryRow[] }) {
               <th className="border-b border-line px-4 py-3">Пропущено</th>
               <th className="border-b border-line px-4 py-3">Ошибки</th>
               <th className="border-b border-line px-4 py-3">Статус</th>
+              <th className="border-b border-line px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -331,9 +353,14 @@ function ImportHistory({ rows }: { rows: DataImportHistoryRow[] }) {
                 <td className="border-b border-line px-4 py-3 text-amber-700">{row.skipped_rows}</td>
                 <td className="border-b border-line px-4 py-3 text-red-700">{row.failed_rows}</td>
                 <td className="border-b border-line px-4 py-3 font-bold">{statusLabel(row.status)}</td>
+                <td className="border-b border-line px-4 py-3 text-right">
+                  {row.change_count > 0 && ["completed", "completed_with_errors", "failed"].includes(row.status) ? (
+                    <button className="rounded-md border border-red-200 px-3 py-2 text-xs font-black text-bad hover:bg-red-50 disabled:opacity-50" disabled={busy} onClick={() => onRollback(row)} type="button">Отменить импорт</button>
+                  ) : row.status === "rolled_back" ? <span className="text-xs font-bold text-muted">{row.rollback_reason ?? "Отменён"}</span> : null}
+                </td>
               </tr>
             ))}
-            {rows.length === 0 ? <tr><td className="px-4 py-10 text-center font-semibold text-muted" colSpan={9}>Импортов пока не было</td></tr> : null}
+            {rows.length === 0 ? <tr><td className="px-4 py-10 text-center font-semibold text-muted" colSpan={10}>Импортов пока не было</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -435,6 +462,7 @@ function statusLabel(status: DataImportHistoryRow["status"]) {
   if (status === "completed") return "Завершён";
   if (status === "completed_with_errors") return "Есть ошибки";
   if (status === "failed") return "Ошибка";
+  if (status === "rolled_back") return "Отменён";
   return "В процессе";
 }
 

@@ -4,12 +4,16 @@ import {
   Bell,
   BriefcaseBusiness,
   CarFront,
+  ChartNoAxesCombined,
+  ClipboardCheck,
   ClipboardList,
   FileUp,
+  LayoutDashboard,
   Map,
   MapPin,
   MessageCircleReply,
   MessagesSquare,
+  ShieldCheck,
   Store,
   Truck,
   UserCog,
@@ -28,6 +32,9 @@ const links: {
   match: (pathname: string) => boolean;
   adminOnly?: boolean;
 }[] = [
+  { href: "/operations", icon: LayoutDashboard, label: "Диспетчерская", match: (pathname) => pathname.startsWith("/operations") },
+  { href: "/shifts", icon: ClipboardCheck, label: "Закрытие смен", match: (pathname) => pathname.startsWith("/shifts") },
+  { href: "/analytics", icon: ChartNoAxesCombined, label: "Аналитика", match: (pathname) => pathname.startsWith("/analytics") },
   { href: "/notifications", icon: Bell, label: "Оповещения", match: (pathname) => pathname.startsWith("/notifications") },
   { href: "/", icon: ClipboardList, label: "Заказы", match: (pathname) => pathname === "/" },
   { href: "/routes", icon: Map, label: "Маршрутные листы", match: (pathname) => pathname.startsWith("/routes") },
@@ -41,6 +48,7 @@ const links: {
   { href: "/micro-markets", icon: Store, label: "Микромаркеты", match: (pathname) => pathname.startsWith("/micro-markets") },
   { href: "/delivery-zones", icon: Map, label: "Зоны доставки", match: (pathname) => pathname.startsWith("/delivery-zones") },
   { href: "/import", icon: FileUp, label: "Импорт", match: (pathname) => pathname.startsWith("/import"), adminOnly: true },
+  { href: "/audit", icon: ShieldCheck, label: "Журнал контроля", match: (pathname) => pathname.startsWith("/audit") },
   { href: "/users", icon: UserCog, label: "Пользователи", match: (pathname) => pathname.startsWith("/users"), adminOnly: true }
 ];
 
