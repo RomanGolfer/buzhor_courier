@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Panel, StatusPill } from "@/components/ui";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import type {
@@ -47,6 +48,7 @@ export function VehicleFleetManager({
   couriers: Courier[];
   canManageRegistry: boolean;
 }) {
+  const router = useRouter();
   const [vehicles, setVehicles] = useState(initialVehicles);
   const [history, setHistory] = useState(initialHistory);
   const [editor, setEditor] = useState<VehicleEditor | null>(null);
@@ -142,6 +144,7 @@ export function VehicleFleetManager({
 
     try {
       await refreshData();
+      router.refresh();
       setEditor(null);
       setNotice(editor.id ? "Карточка автомобиля обновлена" : "Автомобиль добавлен в автопарк");
     } catch (refreshError) {
@@ -194,6 +197,7 @@ export function VehicleFleetManager({
 
     try {
       await refreshData();
+      router.refresh();
       setNotice(courier ? `${vehicle.license_plate} назначен водителю ${courier.display_name}` : `${vehicle.license_plate} освобождён`);
     } catch (refreshError) {
       console.warn("Vehicle assignment refresh failed", refreshError);

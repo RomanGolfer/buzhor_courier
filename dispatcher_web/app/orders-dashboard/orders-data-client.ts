@@ -119,6 +119,9 @@ export async function saveDispatcherOrderUpdate({
 
   if (error) {
     console.warn("Order update failed", error);
+    if (error.message.includes("closed_shift_locked")) {
+      return { error: "Смена водителя за этот день закрыта. Сначала откройте её повторно в разделе «Закрытие смен»." };
+    }
     return { error: "Не удалось сохранить заказ. Попробуйте еще раз." };
   }
 
