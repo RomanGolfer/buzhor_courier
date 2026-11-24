@@ -2,7 +2,7 @@ import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/features/orders/models/time_slot.dart';
 import 'package:buzhor_courier/features/orders/screens/order_detail_screen.dart';
 import 'package:buzhor_courier/features/orders/widgets/order_card.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 part 'slot_header_summary.dart';
 part 'slot_orders_list.dart';

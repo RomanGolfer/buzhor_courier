@@ -5,7 +5,7 @@ import 'package:buzhor_courier/features/auth/data/auth_repository.dart';
 import 'package:buzhor_courier/features/auth/screens/login_screen.dart';
 import 'package:buzhor_courier/features/orders/screens/home_screen.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatelessWidget {

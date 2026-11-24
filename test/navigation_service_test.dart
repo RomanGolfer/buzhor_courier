@@ -1,5 +1,5 @@
 import 'package:buzhor_courier/core/services/navigation_service.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -170,6 +170,25 @@ void main() {
     expect(launchCalls.single, startsWith('sms:+79385358777'));
     expect(launchCalls.single, contains('body='));
   });
+
+  test(
+    'phone and SMS return false when the launcher fails asynchronously',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(urlLauncherChannel, (call) async {
+            throw PlatformException(code: 'launcher_unavailable');
+          });
+
+      expect(await NavigationService.callPhone(_testPhone), isFalse);
+      expect(
+        await NavigationService.sendSms(
+          phone: _testPhone,
+          message: _testMessage,
+        ),
+        isFalse,
+      );
+    },
+  );
 
   test('sendSms does not launch without phone', () async {
     final success = await NavigationService.sendSms(
