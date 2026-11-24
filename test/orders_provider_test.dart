@@ -244,9 +244,13 @@ void main() {
   });
 
   test('groups future active orders by delivery date and time slot', () async {
-    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    // Order grouping uses Moscow calendar dates, not the test runner's zone.
+    // Two days ahead stays in the future if midnight passes during the test.
+    final futureDate = DateTime.now()
+        .toUtc()
+        .add(const Duration(days: 2, hours: 3));
     final futureOrder = _incomingOrder.copyWith(
-      deliveryDate: DateTime(tomorrow.year, tomorrow.month, tomorrow.day),
+      deliveryDate: DateTime(futureDate.year, futureDate.month, futureDate.day),
       timeSlot: '18:00 - 21:00',
     );
     final notifier = OrdersNotifier(
@@ -255,8 +259,8 @@ void main() {
     await Future<void>.delayed(Duration.zero);
 
     final expectedDate =
-        '${tomorrow.day.toString().padLeft(2, '0')}.'
-        '${tomorrow.month.toString().padLeft(2, '0')}';
+        '${futureDate.day.toString().padLeft(2, '0')}.'
+        '${futureDate.month.toString().padLeft(2, '0')}';
     expect(notifier.state.timeSlots, hasLength(1));
     expect(
       notifier.state.timeSlots.single.label,

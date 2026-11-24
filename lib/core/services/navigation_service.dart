@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,7 +28,7 @@ class NavigationService {
     if (normalizedPhone == null) return false;
 
     try {
-      return launchUrl(
+      return await launchUrl(
         Uri(scheme: 'tel', path: normalizedPhone),
         mode: LaunchMode.externalApplication,
       );
@@ -45,7 +45,7 @@ class NavigationService {
     if (normalizedPhone == null) return false;
 
     try {
-      return launchUrl(
+      return await launchUrl(
         Uri(
           scheme: 'sms',
           path: normalizedPhone,

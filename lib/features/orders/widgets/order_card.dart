@@ -2,7 +2,7 @@ import 'package:buzhor_courier/core/constants/app_colors.dart';
 import 'package:buzhor_courier/core/services/navigation_service.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
 import 'package:buzhor_courier/features/orders/services/order_timing_service.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 part 'order_card_badges.dart';
 part 'order_card_content.dart';

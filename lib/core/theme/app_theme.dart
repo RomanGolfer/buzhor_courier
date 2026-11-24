@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 const _seedColor = Color(0xFF1B5FA8);
 const _lightBackground = Color(0xFFF0F5FB);

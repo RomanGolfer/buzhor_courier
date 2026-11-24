@@ -12,7 +12,7 @@ import 'package:buzhor_courier/features/orders/screens/qr_scanner_screen.dart';
 import 'package:buzhor_courier/features/orders/services/order_pricing_service.dart';
 import 'package:buzhor_courier/features/orders/services/payment_status_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

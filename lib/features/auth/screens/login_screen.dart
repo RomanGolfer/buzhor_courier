@@ -5,7 +5,7 @@ import 'package:buzhor_courier/features/auth/data/auth_credentials_storage.dart'
 import 'package:buzhor_courier/features/auth/data/auth_repository.dart';
 import 'package:buzhor_courier/shared/models/bubble.dart';
 import 'package:buzhor_courier/core/constants/app_colors.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/auth/widgets/bubble_painter.dart';

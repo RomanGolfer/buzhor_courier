@@ -48,7 +48,7 @@ class SupabaseOrderBackendApi implements OrderBackendApi {
       if (_debugBackendLogs) {
         _logBackendDebug('Fetched ${orders.length} assigned orders');
       }
-      return _attachHistoricalClientRatings(client, orders);
+      return await _attachHistoricalClientRatings(client, orders);
     } catch (error, stackTrace) {
       _logBackendDebug('Failed to fetch assigned orders: $error', stackTrace);
       return null;

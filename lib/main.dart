@@ -1,6 +1,6 @@
 import 'package:buzhor_courier/core/backend/supabase_backend.dart';
 import 'package:buzhor_courier/features/orders/data/order_sync_worker.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:buzhor_courier/features/auth/widgets/auth_gate.dart';
@@ -38,8 +38,14 @@ class BuzhorApp extends ConsumerWidget {
       darkTheme: darkTheme,
       themeMode: themeMode,
       builder: (context, child) {
-        return PushNotificationListener(
-          child: RealtimeOrderListener(child: child ?? const SizedBox.shrink()),
+        // flutter_map still reads the SDK Material theme for map attribution.
+        // ignore: deprecated_member_use
+        return MaterialUiCompatibilityBridge(
+          child: PushNotificationListener(
+            child: RealtimeOrderListener(
+              child: child ?? const SizedBox.shrink(),
+            ),
+          ),
         );
       },
       home: const _StartupSplash(child: AuthGate()),

@@ -1,6 +1,6 @@
 import 'package:buzhor_courier/features/route/screens/route_screen.dart';
 import 'package:buzhor_courier/features/orders/models/order_item.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const _orders = [
